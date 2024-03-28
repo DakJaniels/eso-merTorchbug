@@ -66,14 +66,15 @@ end
 function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
 --d("[TBUG]GlobalInspector:connectFilterComboboxToPanel-tabIndex:" ..tostring(tabIndex))
     --Prepare the combobox filters at the panel
-    local comboBox = self.filterComboBox
-    local dropdown = self.filterComboBoxDropdown
+    local comboBoxCtrl = self.filterComboBox
+    local comboBox = ZO_ComboBox_ObjectFromContainer(comboBoxCtrl)
+    --local dropdown = self.filterComboBoxDropdown
     --Clear the combobox/dropdown
     --dropdown:HideDropdownInternal()
-    dropdown:ClearAllSelections()
-    dropdown:ClearItems()
+    comboBox:ClearAllSelections()
+    comboBox:ClearItems()
     self:SetSelectedFilterText()
-    comboBox:SetHidden(true)
+    comboBoxCtrl:SetHidden(true)
     comboBox.filterMode = nil
 
     if not tabIndex then return end
@@ -104,12 +105,12 @@ function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
         --Add the filter data to the combobox's dropdown
         for controlType, controlTypeName in pairs(filterDataToAdd) do
             if type(controlType) == "number" and controlType > -1 then
-                local entry = dropdown:CreateItemEntry(controlTypeName)
+                local entry = comboBox:CreateItemEntry(controlTypeName)
                 entry.filterType = controlType
-                dropdown:AddItem(entry)
+                comboBox:AddItem(entry)
             end
         end
-        comboBox:SetHidden(false)
+        comboBoxCtrl:SetHidden(false)
     end
 end
 

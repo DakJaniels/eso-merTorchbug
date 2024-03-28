@@ -488,17 +488,26 @@ function tbug.isAControlOfTypes(data, searchedControlTypes)
     if data == nil then return false end
     local key = data.key
     local value = data.value
+
+    --d("[TBUG]isAControlOfTypes-key: " ..tostring(key) .. ", value: " ..tostring(value))
     if key == nil or (value == nil or (value ~= nil and (value.SetHidden == nil) or (type(value) ~= "userdata"))) then return false end
 
     if searchedControlTypes == nil then
         --No dropdown filterTypes selected -> Allow all
         return true
     else
-        for typeToCheck, _ in pairs(searchedControlTypes) do
-            if not excludeTypes[typeToCheck] then
-                local typeOfControl, _ = getControlCTType(value)
-                if typeOfControl ~= nil and typeToCheck == typeOfControl then
-                    return true
+        local typeOfControl, _ = getControlCTType(value)
+--[[
+if TBUG._debugNow == true then
+    d("[TBUG]isAControlOfTypes-type: " ..tostring(typeOfControl))
+end
+]]
+        if typeOfControl ~= nil then
+            for typeToCheck, isAllowed in pairs(searchedControlTypes) do
+                if isAllowed and not excludeTypes[typeToCheck] then
+                    if typeToCheck == typeOfControl then
+                        return true
+                    end
                 end
             end
         end

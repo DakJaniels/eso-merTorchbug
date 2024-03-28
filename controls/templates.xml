@@ -76,7 +76,7 @@
 					<Anchor point="TOPLEFT" offsetX="1" offsetY="1" />
 					<Anchor point="BOTTOMRIGHT" relativeTo="$(parent)ModeButton" offsetX="1" />
 				</Texture>
-				<Control name="$(parent)ComboBox" inherits="ZO_MultiselectComboBox" tier="LOW" layer="CONTROLS" level="1">
+				<Control name="$(parent)ComboBox" inherits="ZO_ComboBox" tier="LOW" layer="CONTROLS" level="1"> <!-- inherits="ZO_MultiselectComboBox" -->
 					<Anchor point="RIGHT" offsetX="-4" offsetY="0" />
 					<Dimensions x="200" y="22" />
 

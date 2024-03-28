@@ -17,6 +17,7 @@ local earliestTimeStamp = 1
 local latestTimeStamp = 2147483647
 
 local RT = tbug.RT
+local possibleTranslationTextKeys = tbug.possibleTranslationTextKeys
 
 local function createPanelFunc(inspector, panelClass)
     local function createPanel(pool)
@@ -193,17 +194,26 @@ function BasicInspectorPanel:filterScrollList()
     if filterFunc ~= nil or dropdownFilterFunc ~= nil then
         local filterFuncIsFunc = (filterFunc ~= nil and type(filterFunc) == "function" and true) or false
         local dropdownFilterFuncIsFunc = (dropdownFilterFunc ~= nil and type(dropdownFilterFunc) == "function" and true) or false
-
+--d(">dropdownFilterFuncIsFunc: " ..tos(dropdownFilterFuncIsFunc))
         local j = 1
+--[[
+if TBUG._debugNow then
+    TBUG._debugLastMasterList = ZO_ShallowTableCopy(masterList)
+    local dropdownFilterFuncCopy = dropdownFilterFunc
+    TBUG._debugDropdownFilterFunc = dropdownFilterFuncCopy
+end
+]]
+
         for i = 1, #masterList do
             local dataEntry = masterList[i]
-            local dropdownFilterResult = (dropdownFilterFuncIsFunc == true and dropdownFilterFunc(dataEntry.data)) or false --comboBox dropdown filter
+
+            local dropdownFilterResult = (dropdownFilterFuncIsFunc == true and dropdownFilterFunc(dataEntry.data, self)) or false --comboBox dropdown filter
             if dropdownFilterResult == false and dropdownFilterFunc == false then dropdownFilterResult = true end
 
             local textFilterResult = (filterFuncIsFunc == true and filterFunc(dataEntry.data)) or false                   --text editbox filter
             if textFilterResult == false and filterFunc == false then textFilterResult = true end
 
-            if dropdownFilterResult and textFilterResult then
+            if dropdownFilterResult == true and textFilterResult == true then
                 dataList[j] = dataEntry
                 j = j + 1
             end
@@ -219,7 +229,7 @@ end
 
 
 function BasicInspectorPanel:initScrollList(control)
-    --d("BasicInspectorPanel:initScrollList")
+--d("BasicInspectorPanel:initScrollList")
 
     local list = assert(control:GetNamedChild("List"))
     tbug.inspectorScrollLists[list] = self
@@ -323,9 +333,6 @@ local function isTimeStampRow(row, data, value)
     return false
 end
 
-local possibleTranslationTextKeys = {
-    ["descriptor"] = true,
-}
 local function isTranslationTextRow(row, data, value)
     if row._isTranslationText then return true end
     local key = data.key
@@ -467,10 +474,12 @@ function BasicInspectorPanel:onRowMouseDoubleClick(row, data, mouseButton, upIns
 end
 
 function BasicInspectorPanel:readyForUpdate(pendingUpdate)
+--d("[TBUG]BasicInspectorPanel:readyForUpdate-pendingUpdateNew: " ..tos(pendingUpdate) .. ", lockedForUpd: " ..tos(self._lockedForUpdates))
     if not self._lockedForUpdates then
         return true
     end
     if self._pendingUpdate < pendingUpdate then
+--d(">pendingUpdate changed from: " .. tos(self._pendingUpdate) .. " to: " ..tos(pendingUpdate))
         self._pendingUpdate = pendingUpdate
     end
     return false
@@ -478,7 +487,10 @@ end
 
 
 function BasicInspectorPanel:refreshData()
---d("BasicInspectorPanel:refreshData")
+    local dropdownFilterFunc = self.dropdownFilterFunc
+d("BasicInspectorPanel:refreshData-dropdownFilterFunc: " ..tos(dropdownFilterFunc))
+
+
     if self:readyForUpdate(UPDATE_MASTER) then
 --d(">MasterList")
         self:buildMasterList()
@@ -492,9 +504,11 @@ function BasicInspectorPanel:refreshData()
 end
 
 
-function BasicInspectorPanel:refreshFilter()
---d("[TBUG]BasicInspectorPanel:refreshFilter")
-    if self:readyForUpdate(UPDATE_FILTER) then
+function BasicInspectorPanel:refreshFilter(override)
+    override = override or false
+--d("[TBUG]BasicInspectorPanel:refreshFilter-override: " ..tos(override))
+    if override == true or self:readyForUpdate(UPDATE_FILTER) then
+--d(">filter update starting")
         self:filterScrollList()
         self:sortScrollList()
         self:commitScrollList()
@@ -541,15 +555,18 @@ function BasicInspectorPanel:setFilterFunc(filterFunc, forceRefresh)
     if tbug.doDebug then d("[TBUG]BasicInspectorPanel:setFilterFunc: " ..tos(filterFunc) .. ", forceRefresh: " ..tos(forceRefresh)) end
     if forceRefresh == true or self.filterFunc ~= filterFunc then
         self.filterFunc = filterFunc
-        self:refreshFilter()
+        self:refreshFilter(true)
     end
 end
 
 function BasicInspectorPanel:setDropDownFilterFunc(dropdownFilterFunc)
     if tbug.doDebug then d("[TBUG]BasicInspectorPanel:setDropDownFilterFunc: " ..tos(dropdownFilterFunc)) end
+
+--d("[TBUG]BasicInspectorPanel:setDropDownFilterFunc: " ..tos(dropdownFilterFunc))
     if self.dropdownFilterFunc ~= dropdownFilterFunc then
         self.dropdownFilterFunc = dropdownFilterFunc
-        self:refreshFilter()
+--d(">refreshing the filters")
+        self:refreshFilter(true)
     end
 end
 

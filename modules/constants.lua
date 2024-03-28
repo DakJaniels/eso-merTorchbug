@@ -237,7 +237,7 @@ local panelNames = {
 }
 tbug.panelNames = panelNames
 tbug.panelCount = NonContiguousCount(panelNames)
-tbug.filterComboboxFilterTypesPerPanel = {} --for the filter comboBox dropdown entries, see file glokup.lua function doRefresh for the fill
+tbug.filterComboboxFilterTypesPerPanel = {} --for the filter comboBox dropdown entries, see file glookup.lua function doRefresh for the fill
 
 --The string prefix for special /tb <specialInspectTabTitle> calls
 local specialInspectTabTitles = {
@@ -419,3 +419,9 @@ for k,_ in pairs(keyToSpecialEnum) do
     isSpecialInspectorKey[k] = true
 end
 tbug.isSpecialInspectorKey = isSpecialInspectorKey
+
+--The possible keys used for basicinspector function isTranslationTextRow() -> checking for ESOStrings or descriptor entries of ZO_MainMenu buttons etc.
+local possibleTranslationTextKeys = {
+    ["descriptor"] = true,
+}
+tbug.possibleTranslationTextKeys = possibleTranslationTextKeys

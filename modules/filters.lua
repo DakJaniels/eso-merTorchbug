@@ -270,11 +270,17 @@ end
 -->selectedDropdownFilters is a table that contains the selected multi select dropdown filterTypes
 function FilterFactory.ctrl(selectedDropdownFilters)
     headerIdsToShow = {}
-    local function ctrlFilter(data)
+    local function ctrlFilter(data, selfVar)
         local retVar = false
         local key = data.key
-
         FilterFactory.searchedData["ctrl"][data] = data
+
+--[[
+if TBUG._debugNow == true then
+TBUG._debugSelectedDropdownFilters = ZO_ShallowTableCopy(selectedDropdownFilters)
+d("FilterFactory.ctrl-key: " ..tos(key) .. "; value: " ..tos(data.value) .. "; retVar: " .. tos(isAControlOfTypes(data, selectedDropdownFilters)))
+end
+]]
 
         if key ~= nil and type(key) == "string" then
             --Check if the value is a control and if the control type matches

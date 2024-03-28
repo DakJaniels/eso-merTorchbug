@@ -669,15 +669,16 @@ function TabWindow:__init__(control, id)
     self.filterComboBox.filterMode = 1
     -- Initialize the filtertypes multiselect combobox.
     -->Fill with control types at the "Control" tab e.g.
-    local dropdown = ZO_ComboBox_ObjectFromContainer(self.filterComboBox)
-    self.filterComboBoxDropdown = dropdown
+    local comboBox = ZO_ComboBox_ObjectFromContainer(self.filterComboBox)
+    comboBox:EnableMultiSelect(filterSelectedText, noFilterSelectedText)
+    --self.filterComboBoxDropdown = dropdown
     --TBUG._globalInspectorFilterComboboxDropdown = self.filterComboBoxDropdown
     local function onFilterComboBoxChanged()
         self:OnFilterComboBoxChanged()
     end
-    dropdown:SetHideDropdownCallback(onFilterComboBoxChanged)
+    comboBox:SetHideDropdownCallback(onFilterComboBoxChanged) --Calls the filter function as the multiselection combobox's dropdown hides
     self:SetSelectedFilterText()
-    dropdown:SetSortsItems(true)
+    comboBox:SetSortsItems(true)
     -->Contents of the filter combobox are set at function GlobalInspector:selectTab()
     -->The filterTypes to use per panel are defined here in this file at the top at tbug.filterComboboxFilterTypesPerPanel -> Coming from glookup.lua doRefresh()
 
@@ -1613,14 +1614,15 @@ end
 
 function TabWindow:connectFilterComboboxToPanel(tabIndex)
     --Prepare the combobox filters at the panel
-    local comboBox = self.filterComboBox
-    local dropdown = self.filterComboBoxDropdown
+    local comboBoxCtrl = self.filterComboBox
+    local comboBox = ZO_ComboBox_ObjectFromContainer(comboBoxCtrl)
+    --local dropdown = self.filterComboBoxDropdown
     --Clear the combobox/dropdown
     --dropdown:HideDropdownInternal()
-    dropdown:ClearAllSelections()
-    dropdown:ClearItems()
+    comboBox:ClearAllSelections()
+    comboBox:ClearItems()
     self:SetSelectedFilterText()
-    comboBox:SetHidden(true)
+    comboBoxCtrl:SetHidden(true)
     comboBox.filterMode = nil
 
     --d("[TBUG]TabWindow:connectFilterComboboxToPanel-tabIndex:" ..tostring(tabIndex))
@@ -1656,25 +1658,35 @@ function TabWindow:updateFilter(filterEdit, mode, filterModeStr, searchTextDelay
     local function filterEditBoxContentsNow(p_self, p_filterEdit, p_mode, p_filterModeStr)
         if tbug.doDebug then d("[tbug]filterEditBoxContentsNow") end
 
+--[[
+TBUG._debugFilterEditBoxContentsNow = {
+    self = self,
+    p_self = p_self,
+}
+]]
+
         --Filter by MultiSelect ComboBox dropdown selected entries
-        local filterMode = self.filterComboBox.filterMode
+        local filterMode = p_self.filterComboBox.filterMode
+--TBUG._filterComboboxMode = filterMode
         if filterMode and filterMode > 0 then
-            local panel = p_self.tabs[filterMode].panel
-            if panel then
-                --TBUG._filterComboboxMode = filterMode
-                --d(">filterEditBoxContentsNow dropDownFilterMode: " .. tostring(filterMode))
+            --local panel = p_self.tabs[filterMode].panel --todo the activated panel is determined via the filterMode -> That would always relate to the 1st tab if filterMode is str (1) and makes no sense at all!
+            local activePanel = getActiveTabPanel(p_self)
+            if activePanel then
+--d(">filterEditBoxContentsNow dropDownFilterMode: " .. tostring(filterMode))
                 local dropdownFilterFunc
-                local selectedDropdownFilters = self:GetSelectedFilters()
+                local selectedDropdownFilters = p_self:GetSelectedFilters()
                 if ZO_IsTableEmpty(selectedDropdownFilters) then
+--d("[TBUG]nothing filtered in dropdown")
                     --Nothing filtered? Re-enable all entries again
                     dropdownFilterFunc = false
                 else
+--d("[TBUG]" .. tos(NonContiguousCount(selectedDropdownFilters) .. " entries in dropdown filters"))
                     --Apply a filter function for the dropdown box
                     FilterFactory.searchedData["ctrl"] = {}
-                    dropdownFilterFunc = FilterFactory["ctrl"](selectedDropdownFilters)
+                    dropdownFilterFunc = FilterFactory["ctrl"](selectedDropdownFilters) --calls filters.lua -> tbug.FilterFactory -> FilterFactory.ctrl function and passes in the selected dropdown entries table
                 end
                 --Set the filter function of the dropdown box
-                panel:setDropDownFilterFunc(dropdownFilterFunc)
+                activePanel:setDropDownFilterFunc(dropdownFilterFunc)
             end
         end
 
@@ -1752,7 +1764,7 @@ function TabWindow:updateFilter(filterEdit, mode, filterModeStr, searchTextDelay
     end
 
     throttledCall("merTorchbugSearchEditChanged", searchTextDelay,
-            filterEditBoxContentsNow, self, filterEdit, mode, filterModeStr
+        filterEditBoxContentsNow, self, filterEdit, mode, filterModeStr
     )
 
     if not filterEdit.doNotSaveToSearchHistory then
@@ -1791,29 +1803,36 @@ end
 --- Filter multi select combobox
 ---
 function TabWindow:SetSelectedFilterText()
-    local comboBox = self.filterComboBox.m_comboBox
-    local dropdown = self.filterComboBoxDropdown
-    dropdown:SetNoSelectionText(noFilterSelectedText)
+    local comboBox = ZO_ComboBox_ObjectFromContainer(self.filterComboBox)
+    --local dropdown = self.filterComboBoxDropdown
+    comboBox:SetNoSelectionText(noFilterSelectedText)
 
     local selectedEntries = comboBox:GetNumSelectedEntries()
 --d("[TBUG]TabWindow:SetSelectedFilterText - selectedEntries: " ..tostring(selectedEntries))
     if selectedEntries == 1 then
-        local selectedFilterText = tostring(comboBox.m_selectedItemData[1].name)
-        dropdown:SetMultiSelectionTextFormatter(selectedFilterText)
+        local selectedItemData = comboBox:GetSelectedItemData()
+        local selectedFilterText = selectedItemData ~= nil and tostring(selectedItemData[1].name)
+        if selectedFilterText ~= nil and selectedFilterText ~= "" then
+            comboBox:SetMultiSelectionTextFormatter(selectedFilterText)
+        end
     else
-        dropdown:SetMultiSelectionTextFormatter(filterSelectedText)
+        comboBox:SetMultiSelectionTextFormatter(filterSelectedText)
     end
 end
 
 function TabWindow:GetSelectedFilters()
 --d("[TBUG]TabWindow:GetSelectedFilters")
-    local filtersDropdown = self.filterComboBoxDropdown
+    local filtersComboBox = ZO_ComboBox_ObjectFromContainer(self.filterComboBox)
+--TBUG._filtersComboBox = filtersComboBox
+
     local selectedFilterTypes = {}
-    for _, item in ipairs(filtersDropdown:GetItems()) do
-        if filtersDropdown:IsItemSelected(item) then
+    for _, item in ipairs(filtersComboBox:GetItems()) do
+--d(">item.name: " .. tos(item.name))
+        if filtersComboBox:IsItemSelected(item) then
             selectedFilterTypes[item.filterType] = true
         end
     end
+--TBUG._selectedFilterTypes = selectedFilterTypes
     return selectedFilterTypes
 end
 
