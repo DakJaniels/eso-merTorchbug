@@ -1051,7 +1051,7 @@ end
 function tbug.buildRowContextMenuData(p_self, p_row, p_data, p_contextMenuForKey)
     p_contextMenuForKey = p_contextMenuForKey or false
     local useLibScrollableMenu = (LibScrollableMenu ~= nil and AddCustomScrollableMenuEntry ~= nil and true) or false
-d("[tbug.buildRowContextMenuData]isKey: " ..tos(p_contextMenuForKey) .. ", useLibScrollableMenu: " ..tos(useLibScrollableMenu))
+--d("[tbug.buildRowContextMenuData]isKey: " ..tos(p_contextMenuForKey) .. ", useLibScrollableMenu: " ..tos(useLibScrollableMenu))
     if LibCustomMenu == nil and useLibScrollableMenu == false or (p_self == nil or p_row == nil or p_data == nil) then return end
     --TODO: for debugging
     local doShowMenu = false

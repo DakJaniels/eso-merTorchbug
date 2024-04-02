@@ -2,7 +2,7 @@ TBUG = {}
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
 --Version and name of the AddOn
-tbug.version =  "1.67"
+tbug.version =  "1.68"
 tbug.name =     "merTorchbug"
 tbug.author =   "merlight, current: Baertram"
 
@@ -47,13 +47,12 @@ tbug.author =   "merlight, current: Baertram"
 --Script history multi line edit box to run/edit saved scripts/lua code
 
 
---------------------------------------- Version 1.62 - Baertram (since 2022-09-16)
+--------------------------------------- Version 1.68 - Baertram (last updated 2024-04-02)
 ---- [Added]
---Script history double click will not put text, which is too long for the chat editbox or which contains line breaks, to the editbox anymore but will instead put it to the multi line edit box
 
 
 ---- [Fixed]
-
+--Removed left over debug messages
 
 --
 ------------------------------------------------------------------------------------------------------------------------

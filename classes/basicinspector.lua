@@ -488,7 +488,7 @@ end
 
 function BasicInspectorPanel:refreshData()
     local dropdownFilterFunc = self.dropdownFilterFunc
-d("BasicInspectorPanel:refreshData-dropdownFilterFunc: " ..tos(dropdownFilterFunc))
+--d("BasicInspectorPanel:refreshData-dropdownFilterFunc: " ..tos(dropdownFilterFunc))
 
 
     if self:readyForUpdate(UPDATE_MASTER) then
