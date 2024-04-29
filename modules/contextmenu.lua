@@ -1140,7 +1140,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 end
                 tins(searchSubmenu,
                     {
-                        label =     "Search key",
+                        name =     "Search key",
                         callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, keyStr) end,
                     }
                 )
@@ -1148,7 +1148,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 if valType == "string" or valType == "number" then
                     tins(searchSubmenu,
                         {
-                            label =     "Search value",
+                            name =     "Search value",
                             callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, tos(currentValue)) end,
                         }
                     )
@@ -1160,7 +1160,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 if isSplittable == true then
                     tins(searchSubmenu,
                         {
-                            label =     "-",
+                            name =     "-",
                             callback =  function() end,
                         }
                     )
@@ -1171,7 +1171,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         if not searchValuesAdded[searchString] then
                             tins(searchSubmenu,
                                 {
-                                    label =     "Search '" .. searchString .. "'",
+                                    name =     "Search '" .. searchString .. "'",
                                     callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, searchString) end,
                                 }
                             )
@@ -1185,7 +1185,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 if not ZO_IsTableEmpty(upperCaseOffsetsTab) then
                     tins(searchSubmenu,
                         {
-                            label =     "-",
+                            name =     "-",
                             callback =  function() end,
                         }
                     )
@@ -1214,7 +1214,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                                         if not searchValuesAdded[searchStringWithoutDigits] then
                                             tins(searchSubmenu,
                                                     {
-                                                        label =     "Search '" .. searchStringWithoutDigits .. "'",
+                                                        name =     "Search '" .. searchStringWithoutDigits .. "'",
                                                         callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, searchStringWithoutDigits) end,
                                                     }
                                             )
@@ -1231,7 +1231,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                                 if not searchValuesAdded[searchStringCopy] then
                                     tins(searchSubmenu,
                                             {
-                                                label =     "Search '" .. searchString .. "'",
+                                                name =     "Search '" .. searchString .. "'",
                                                 callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, searchStringCopy) end,
                                             }
                                     )
@@ -1252,7 +1252,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 if keyStr ~= nil and keyStr ~= "" then
                     tins(externalSearchSubmenu,
                             {
-                                label =     strformat("Search %q in ESOUI sources at \'GitHub\'", keyStr),
+                                name =     strformat("Search %q in ESOUI sources at \'GitHub\'", keyStr),
                                 callback =  function() searchExternalURL(p_self, p_row, p_data, keyStr, "github") end,
                             }
                     )
@@ -1260,7 +1260,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 if subjectName ~= nil and subjectName ~= keyStr and type(subjectName) == "string" then
                     tins(externalSearchSubmenu,
                         {
-                            label =     strformat("Search %q in ESOUI sources at \'GitHub\'", subjectName),
+                            name =     strformat("Search %q in ESOUI sources at \'GitHub\'", subjectName),
                             callback =  function() searchExternalURL(p_self, p_row, p_data, subjectName, "github") end,
                         }
                     )
@@ -1268,7 +1268,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 if parentSubjectName ~= nil and parentSubjectName ~= subjectName and parentSubjectName ~= keyStr and type(parentSubjectName) == "string" then
                     tins(externalSearchSubmenu,
                         {
-                            label =     strformat("Search %q in ESOUI sources at \'GitHub\'", parentSubjectName),
+                            name =     strformat("Search %q in ESOUI sources at \'GitHub\'", parentSubjectName),
                             callback =  function() searchExternalURL(p_self, p_row, p_data, parentSubjectName, "github") end,
                         }
                     )
@@ -1656,7 +1656,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         AddCustomScrollableMenuEntry("Copy ITEMLINK to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "itemlink", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
                         AddCustomScrollableMenuEntry("Copy NAME to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "itemname", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
                     end
-d(">dataPropOrKey: " ..tos(dataPropOrKey) .. ", isSpecialEntry: " ..tos(isSpecialEntry))
+--d(">dataPropOrKey: " ..tos(dataPropOrKey) .. ", isSpecialEntry: " ..tos(isSpecialEntry))
                     if dataPropOrKey and (dataPropOrKey == "itemLink") or isSpecialEntry then
                         buildItemLinkContextMenuEntries(p_self, p_row, p_data, 5)
                     end
@@ -2234,7 +2234,11 @@ d(">dataPropOrKey: " ..tos(dataPropOrKey) .. ", isSpecialEntry: " ..tos(isSpecia
 ------------------------------------------------------------------------------------------------------------------------
     if doShowMenu == true then
         if useLibScrollableMenu == true then
-            ShowCustomScrollableMenu(nil, nil, nil, nil, nil, nil) --do not pass in p_row here so it anchors to the mouse cursor pos
+            --controlToAnchorTo, options
+            local options = {
+                sortEntries = false,
+            }
+            ShowCustomScrollableMenu(nil, options)
         else
             ShowMenu(p_row)
         end
