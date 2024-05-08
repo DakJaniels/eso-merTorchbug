@@ -13,6 +13,10 @@ local trem = table.remove
 local EM = EVENT_MANAGER
 
 local searchURLs = tbug.searchURLs
+
+--LibScrollableMenu
+local headerEntryColor = ZO_ColorDef:New(GetInterfaceColor(INTERFACE_COLOR_TYPE_TEXT_COLORS, INTERFACE_TEXT_COLOR_GAMEPAD_CATEGORY_HEADER))
+
 local constantsSplitSepparator = "_"
 local noSoundValue             = SOUNDS["NONE"]
 
@@ -65,6 +69,8 @@ local rtSpecialReturnValues = tbug.RTSpecialReturnValues
 local localizationStringKeyText = rtSpecialReturnValues[RT.LOCAL_STRING]
 local globalInspector
 
+local hideContextMenus = tbug.HideContextMenus
+
 local setDrawLevel = tbug.SetDrawLevel
 local cleanTitle = tbug.CleanTitle
 local getRelevantNameForCall = tbug.getRelevantNameForCall
@@ -79,6 +85,7 @@ local function addTextToChat(textToAdd, getName)
     end
     StartChatInput(textToAdd, CHAT_CHANNEL_SAY, nil)
 end
+
 
 ------------------------------------------------------------------------------------------------------------------------
 --CONTEXT MENU -> INSPECTOR ROW edit FIELD VALUE
@@ -105,7 +112,7 @@ function tbug.setEditValueFromContextMenu(p_self, p_row, p_data, p_oldValue)
             end
         end
     end
-    ClearMenu()
+    hideContextMenus()
 end
 local setEditValueFromContextMenu = tbug.setEditValueFromContextMenu
 
@@ -241,7 +248,7 @@ function tbug.setChatEditTextFromContextMenu(p_self, p_row, p_data, copyRawData,
                 editBox.panel:valueEditCancel(editBox)
             end
         end
-        ClearMenu()
+        hideContextMenus()
     end
 end
 local setChatEditTextFromContextMenu = tbug.setChatEditTextFromContextMenu
@@ -376,7 +383,7 @@ function tbug.removeScriptHistory(panel, scriptRowId, refreshScriptsTableInspect
     if not panel or not scriptRowId then return end
     refreshScriptsTableInspector = refreshScriptsTableInspector or false
     clearScriptHistory = clearScriptHistory or false
-    ClearMenu()
+    hideContextMenus()
     --Check if script is not already in
     if tbug.savedVars and tbug.savedVars.scriptHistory then
         if not clearScriptHistory then
@@ -403,7 +410,7 @@ end
 local removeScriptHistory = tbug.removeScriptHistory
 
 function tbug.editScriptHistory(panel, p_row, p_data, changeScript)
-    ClearMenu()
+    hideContextMenus()
     if not panel or not p_row or not p_data then return end
     if changeScript == nil then changeScript = true end
     --Simulate the edit of value 1 (script lua code)
@@ -414,7 +421,7 @@ end
 local editScriptHistory = tbug.editScriptHistory
 
 function tbug.testScriptHistory(panel, p_row, p_data, key)
-    ClearMenu()
+    hideContextMenus()
     if not panel or not key then return end
     panel:testScript(p_row, p_data, key, nil, true)
 end
@@ -524,7 +531,7 @@ function tbug.removeSavedInspectors(panel, savedInspectorsRowId, refreshSavedIns
     if not panel or not savedInspectorsRowId then return end
     refreshSavedInspectorsTableInspector = refreshSavedInspectorsTableInspector or false
     clearSavedInspectors                 = clearSavedInspectors or false
-    ClearMenu()
+    hideContextMenus()
     --Check if script is not already in
     if tbug.savedVars and tbug.savedVars.savedInspectors then
         if not clearSavedInspectors then
@@ -551,7 +558,7 @@ end
 local removeSavedInspectors = tbug.removeSavedInspectors
 
 function tbug.editSavedInspectors(panel, p_row, p_data, changeScript)
-    ClearMenu()
+    hideContextMenus()
     if not panel or not p_row or not p_data then return end
     if changeScript == nil then changeScript = true end
     --Simulate the edit of value 1 (script lua code)
@@ -622,7 +629,7 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
     --Did we right click the main UI's e/E toggle button?
     isEventMainUIToggle = isEventMainUIToggle or false
     if isEventMainUIToggle == true then
-        ClearMenu()
+        hideContextMenus()
     end
 
     local events    = tbug.Events
@@ -1028,7 +1035,7 @@ local function buildItemLinkContextMenuEntries(p_self, p_row, p_data, prefixDept
 
         local useLibScrollableMenu = LibScrollableMenu ~= nil and AddCustomScrollableSubMenuEntry ~= nil and true or false
         if useLibScrollableMenu then
-            AddCustomScrollableMenuEntry("ItemLink functions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
+            AddCustomScrollableMenuEntry("ItemLink functions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
         else
             AddCustomMenuItem("ItemLink functions", function()  end, MENU_ADD_OPTION_HEADER, nil, nil, nil, nil, nil)
         end
@@ -1055,7 +1062,7 @@ function tbug.buildRowContextMenuData(p_self, p_row, p_data, p_contextMenuForKey
     if LibCustomMenu == nil and useLibScrollableMenu == false or (p_self == nil or p_row == nil or p_data == nil) then return end
     --TODO: for debugging
     local doShowMenu = false
-    ClearMenu()
+    hideContextMenus()
 
     RT = tbug.RT
     local dataEntry = p_data.dataEntry
@@ -1107,7 +1114,6 @@ tbug._contextMenuLast.canEditValue =  canEditValue
 
         --Context menu for the key of the row
         if p_contextMenuForKey == true then
-            ClearCustomScrollableMenu()
             ------------------------------------------------------------------------------------------------------------------------
             ------------------------------------------------------------------------------------------------------------------------
             ------------------------------------------------------------------------------------------------------------------------
@@ -1119,17 +1125,17 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     rowActionsSuffix = " - #" .. tos(key)
                 end
 
-                --AddCustomScrollableMenuEntry(text, callback, entryType, isNew, entries)
+                --AddCustomScrollableMenuEntry(text, callback, entryType, entries, additionalData)
 
                 --General entries
-                AddCustomScrollableMenuEntry("Row actions" .. rowActionsSuffix, function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
-                AddCustomScrollableMenuEntry("Copy key RAW to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, true, nil, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                AddCustomScrollableMenuEntry("Row actions" .. rowActionsSuffix, function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
+                AddCustomScrollableMenuEntry("Copy key RAW to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, true, nil, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                 AddCustomScrollableMenuEntry("-", function() end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
                 --Add copy "value" raw to chat
                 --Default "copy raw etc." entries
-                AddCustomScrollableMenuEntry("Copy value RAW to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, true, nil, nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                AddCustomScrollableMenuEntry("Copy value RAW to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, true, nil, nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                 if tbug.isSpecialEntryAtInspectorList(p_self, p_row, p_data) then
-                    AddCustomScrollableMenuEntry("Copy value SPECIAL to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "special", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                    AddCustomScrollableMenuEntry("Copy value SPECIAL to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "special", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                 end
 
                 local searchValuesAdded = {}
@@ -1285,23 +1291,23 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 -->Show a context menu entry "Open scene"
                 if type(key) == "string" and valType == "string" and (tbug_endsWith(key, "_SCENE_NAME") == true or tbug_endsWith(key, "_SCENE_IDENTIFIER") == true) then
                     local slashCmdToShowScene = "SCENE_MANAGER:Show(\'" ..tos(currentValue) .. "\')"
-                    AddCustomScrollableMenuEntry("Scene actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
-                    AddCustomScrollableMenuEntry("Show scene", function() tbug.slashCommand(slashCmdToShowScene) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                    AddCustomScrollableMenuEntry("Scene actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
+                    AddCustomScrollableMenuEntry("Show scene", function() tbug.slashCommand(slashCmdToShowScene) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     if SCENE_MANAGER:IsShowing(tos(currentValue)) then
                         local slashCmdToHideScene = "SCENE_MANAGER:Hide(\'" ..tos(currentValue) .. "\')"
-                        AddCustomScrollableMenuEntry("Hide scene", function() tbug.slashCommand(slashCmdToHideScene) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                        AddCustomScrollableMenuEntry("Hide scene", function() tbug.slashCommand(slashCmdToHideScene) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     end
                 end
                 ------------------------------------------------------------------------------------------------------------------------
 
                 --Dialogs
                 if isDialogDataType then
-                    AddCustomScrollableMenuEntry("Dialog actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
+                    AddCustomScrollableMenuEntry("Dialog actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
                     AddCustomScrollableMenuEntry("Show platform dialog",
                             function()
                                 openDialog(p_self, p_row, p_data)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
 
                 --Functions
                --elseif isFunctionsDataType then
@@ -1309,24 +1315,24 @@ tbug._contextMenuLast.canEditValue =  canEditValue
 
                 --Localization strings
                 elseif isLocalStringDataType then
-                    AddCustomScrollableMenuEntry("Local. string actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
+                    AddCustomScrollableMenuEntry("Local. string actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
                     AddCustomScrollableMenuEntry("GetString(<constant>) to chat",
                             function()
                                 putLocalizationStringToChat(p_self, p_row, p_data, false)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     AddCustomScrollableMenuEntry("GetString('<constant>', id) to chat",
                             function()
                                 putLocalizationStringToChat(p_self, p_row, p_data, true)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
 
                     --Sounds
                 elseif isSoundsDataType then
                     local soundsHeadlineAdded = false
                     local function addSoundsHeadline()
                         if soundsHeadlineAdded == true then return false end
-                        AddCustomScrollableMenuEntry("Sounds actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
+                        AddCustomScrollableMenuEntry("Sounds actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
                         soundsHeadlineAdded = true
                         return true
                     end
@@ -1336,11 +1342,11 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                                 function()
                                     playSoundNow(p_self, p_row, p_data, 1, false)
                                 end,
-                                LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                                LSM_ENTRY_TYPE_NORMAL, nil, nil)
                         local playSoundLouderSubmenu = {}
                         for volume=2,10,1 do
                             playSoundLouderSubmenu[#playSoundLouderSubmenu+1] = {
-                                label = "Play sound louder ("..tos(volume).."x)",
+                                name = "Play sound louder ("..tos(volume).."x)",
                                 callback = function()
                                     playSoundNow(p_self, p_row, p_data, volume, false)
                                 end,
@@ -1356,7 +1362,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                                 function()
                                     playSoundNow(p_self, p_row, p_data, nil, false, nil)
                                 end,
-                                LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                                LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     else
                         if currentValue ~= noSoundValue then
                             AddCustomScrollableMenuEntry("-", function()  end)
@@ -1365,7 +1371,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                                 playSoundEndlesslyVolumeSubmenus[volume] = {}
                                 for pause=0,10,1 do
                                     playSoundEndlesslyVolumeSubmenus[volume][#playSoundEndlesslyVolumeSubmenus[volume]+1] = {
-                                        label = "Play non-stop ("..tos(pause).."s pause)",
+                                        name = "Play non-stop ("..tos(pause).."s pause)",
                                         callback = function()
                                             playSoundNow(p_self, p_row, p_data, volume, true, pause)
                                         end,
@@ -1378,7 +1384,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
 
                     --SavedInspectors KEY context menu
                 elseif isSavedInspectorsDataType then
-                    AddCustomScrollableMenuEntry("Saved inspectors actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
+                    AddCustomScrollableMenuEntry("Saved inspectors actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
                     --[[
                     AddCustomScrollableMenuEntry("Edit saved inspector entry",
                             function()
@@ -1390,54 +1396,54 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             function()
                                 editSavedInspectors(p_self, p_row, p_data, false)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-                    AddCustomScrollableMenuEntry("-", function() end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                    AddCustomScrollableMenuEntry("-", function() end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     AddCustomScrollableMenuEntry("Delete saved inspectors entry",
                             function()
                                 removeSavedInspectors(p_self, key, true, nil)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     AddCustomScrollableMenuEntry("Clear total saved inspectors",
                             function()
                                 removeSavedInspectors(p_self, key, true, true)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
 
                     --ScriptHistory KEY context menu
                 elseif isScriptHistoryDataType then
-                    AddCustomScrollableMenuEntry("Script history actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
+                    AddCustomScrollableMenuEntry("Script history actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
                     AddCustomScrollableMenuEntry("Edit script history entry",
                             function()
                                 editScriptHistory(p_self, p_row, p_data, true)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     AddCustomScrollableMenuEntry("Edit script history comment",
                             function()
                                 editScriptHistory(p_self, p_row, p_data, false)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     AddCustomScrollableMenuEntry("Test script history entry",
                             function()
                                 testScriptHistory(p_self, p_row, p_data, key)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-                    AddCustomScrollableMenuEntry("-", function() end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                    AddCustomScrollableMenuEntry("-", function() end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     AddCustomScrollableMenuEntry("Delete script history entry",
                             function()
                                 removeScriptHistory(p_self, key, true, nil)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-                    AddCustomScrollableMenuEntry("Script history clear & clean", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                    AddCustomScrollableMenuEntry("Script history clear & clean", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
                     AddCustomScrollableMenuEntry("Clean script history (duplicates)",
                             function()
                                 tbug.ShowConfirmBeforeDialog(nil, "Clean duplicates from script history\nand reassign keybinds (if assigned)?", cleanScriptHistory)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     AddCustomScrollableMenuEntry("Clear total script history",
                             function()
                                 removeScriptHistory(p_self, key, true, true)
                             end,
-                            LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            LSM_ENTRY_TYPE_NORMAL, nil, nil)
 
                     --Script keybinds
                     local submenuScriptKeybinds = {}
@@ -1445,13 +1451,13 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     local activeKeybinds = getActiveScriptKeybinds()
                     for i=1, tbug.maxScriptKeybinds, 1 do
                         local scriptKeybindSubmenuEntry = {
-                            label = not activeKeybinds[i] and "Set as Keybind #" .. tos(i) or "Reassign keybind #" .. tos(i) .. ", current script: " ..tos(activeKeybinds[i]),
+                            name = not activeKeybinds[i] and "Set as Keybind #" .. tos(i) or "Reassign keybind #" .. tos(i) .. ", current script: " ..tos(activeKeybinds[i]),
                             callback = function() setScriptKeybind(i, key) end,
                         }
                         tins(submenuScriptKeybinds, scriptKeybindSubmenuEntry)
                         if activeKeybinds[i] ~= nil then
                             local scriptKeybindRemoveSubmenuEntry = {
-                                label = "< Remove Keybind #" .. tos(i) .. ", current script: " ..tos(activeKeybinds[i]),
+                                name = "< Remove Keybind #" .. tos(i) .. ", current script: " ..tos(activeKeybinds[i]),
                                 callback = function() setScriptKeybind(i, nil, true) end,
                             }
                             tins(submenuScriptKeybindsRemove, scriptKeybindRemoveSubmenuEntry)
@@ -1460,18 +1466,18 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     if not ZO_IsTableEmpty(activeKeybinds) then
                         if not ZO_IsTableEmpty(submenuScriptKeybindsRemove) then
                             local scriptKeybindSubmenuEntry = {
-                                label = "-", --divider
+                                name = "-", --divider
                             }
                             tins(submenuScriptKeybindsRemove, scriptKeybindSubmenuEntry)
                         end
                         local scriptKeybindClearAllSubmenuEntry = {
-                            label = "Clear all script keybinds",
+                            name = "Clear all script keybinds",
                             callback = function() clearScriptKeybinds() end,
                         }
                         tins(submenuScriptKeybindsRemove, scriptKeybindClearAllSubmenuEntry)
                     end
                     if not ZO_IsTableEmpty(submenuScriptKeybinds) then
-                        AddCustomScrollableMenuEntry("Script keybinds", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
+                        AddCustomScrollableMenuEntry("Script keybinds", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
                         AddCustomScrollableSubMenuEntry("Script keybinds", submenuScriptKeybinds)
                         if not ZO_IsTableEmpty(submenuScriptKeybindsRemove) then
                             AddCustomScrollableSubMenuEntry("Script keybinds - Remove", submenuScriptKeybindsRemove)
@@ -1501,15 +1507,15 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     --d(">prop found - get: " ..tos(getterName) ..", set: " ..tos(setterName))
 
                     if getterOfCtrl ~= nil or setterOfCtrl ~= nil then
-                        AddCustomScrollableMenuEntry("Get & Set", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
+                        AddCustomScrollableMenuEntry("Get & Set", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
                         if getterOfCtrl ~= nil then
                             --p_self, p_row, p_data, copyRawData, copySpecialFuncStr, isKey
-                            AddCustomScrollableMenuEntry("Copy getter name to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "getterName", true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-                            AddCustomScrollableMenuEntry("Copy <control>:Getter() to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "control:getter", true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            AddCustomScrollableMenuEntry("Copy getter name to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "getterName", true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                            AddCustomScrollableMenuEntry("Copy <control>:Getter() to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "control:getter", true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                         end
                         if setterOfCtrl ~= nil then
-                            AddCustomScrollableMenuEntry("Copy setter name to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "setterName", true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-                            AddCustomScrollableMenuEntry("Copy <control>:Setter() to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "control:setter", true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            AddCustomScrollableMenuEntry("Copy setter name to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "setterName", true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                            AddCustomScrollableMenuEntry("Copy <control>:Setter() to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "control:setter", true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                         end
                         doShowMenu = true
                     end
@@ -1521,29 +1527,29 @@ tbug._contextMenuLast.canEditValue =  canEditValue
 
                     --Control outline KEY context menu
                     if ControlOutline and dataPropOrKey and dataPropOrKey == "outline" then
-                        AddCustomScrollableMenuEntry("Outline actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
+                        AddCustomScrollableMenuEntry("Outline actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
                         if not controlOfInspectorRow or controlOfInspectorRow:IsHidden() then
-                            AddCustomScrollableMenuEntry("Control is hidden - no outline possible", function() end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            AddCustomScrollableMenuEntry("Control is hidden - no outline possible", function() end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                         else
-                            AddCustomScrollableMenuEntry("Outline", function() outlineControl(p_self, p_row, p_data, false) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-                            AddCustomScrollableMenuEntry("Outline + child controls", function() outlineControl(p_self, p_row, p_data, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            AddCustomScrollableMenuEntry("Outline", function() outlineControl(p_self, p_row, p_data, false) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                            AddCustomScrollableMenuEntry("Outline + child controls", function() outlineControl(p_self, p_row, p_data, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                             AddCustomScrollableMenuEntry("-", function() end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-                            AddCustomScrollableMenuEntry("Blink outline 1x", function() blinkControlOutline(p_self, p_row, p_data, 1) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-                            AddCustomScrollableMenuEntry("Blink outline 3x", function() blinkControlOutline(p_self, p_row, p_data, 3) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-                            AddCustomScrollableMenuEntry("Blink outline 5x", function() blinkControlOutline(p_self, p_row, p_data, 5) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            AddCustomScrollableMenuEntry("Blink outline 1x", function() blinkControlOutline(p_self, p_row, p_data, 1) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                            AddCustomScrollableMenuEntry("Blink outline 3x", function() blinkControlOutline(p_self, p_row, p_data, 3) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                            AddCustomScrollableMenuEntry("Blink outline 5x", function() blinkControlOutline(p_self, p_row, p_data, 5) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
 
                             local controlToOutline = p_self.subject
                             local addControlClearOutline = (controlToOutline ~= nil and ControlOutline_IsControlOutlined(controlToOutline) and true) or false
                             local addClearAllOutlines = (#ControlOutline.pool.m_Active > 0 and true) or false
                             local addDividerForClearOutlines = addControlClearOutline or addClearAllOutlines
                             if addDividerForClearOutlines == true then
-                                AddCustomScrollableMenuEntry("-", function() end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                                AddCustomScrollableMenuEntry("-", function() end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                             end
                             if addControlClearOutline == true then
-                                AddCustomScrollableMenuEntry("Remove control outlines", function() hideOutline(p_self, p_row, p_data, false) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                                AddCustomScrollableMenuEntry("Remove control outlines", function() hideOutline(p_self, p_row, p_data, false) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                             end
                             if addClearAllOutlines == true then
-                                AddCustomScrollableMenuEntry("Remove all outlines", function() hideOutline(p_self, p_row, p_data, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                                AddCustomScrollableMenuEntry("Remove all outlines", function() hideOutline(p_self, p_row, p_data, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                             end
                         end
                         doShowMenu = true
@@ -1563,11 +1569,11 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 if valType == "boolean" then
                     if canEditValue then
                         if currentValue == false then
-                            AddCustomScrollableMenuEntry("+ true",  function() p_data.value = true  setEditValueFromContextMenu(p_self, p_row, p_data, false) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            AddCustomScrollableMenuEntry("+ true",  function() p_data.value = true  setEditValueFromContextMenu(p_self, p_row, p_data, false) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                         else
-                            AddCustomScrollableMenuEntry("- false", function() p_data.value = false setEditValueFromContextMenu(p_self, p_row, p_data, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                            AddCustomScrollableMenuEntry("- false", function() p_data.value = false setEditValueFromContextMenu(p_self, p_row, p_data, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                         end
-                        AddCustomScrollableMenuEntry("   NIL (Attention!)",  function() p_data.value = nil  setEditValueFromContextMenu(p_self, p_row, p_data, currentValue) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                        AddCustomScrollableMenuEntry("   NIL (Attention!)",  function() p_data.value = nil  setEditValueFromContextMenu(p_self, p_row, p_data, currentValue) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                         doShowMenu = true
                     end
                     ------------------------------------------------------------------------------------------------------------------------
@@ -1645,16 +1651,16 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         insertEnumsToContextMenu(canEditValue)
                     end
                     --Default "copy raw etc." entries
-                    AddCustomScrollableMenuEntry("Copy RAW to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, true, nil, nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                    AddCustomScrollableMenuEntry("Copy RAW to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, true, nil, nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     --Special entries for bagId/slotIndex
                     local isSpecialEntry = tbug.isSpecialEntryAtInspectorList(p_self, p_row, p_data)
                     if isSpecialEntry then
-                        AddCustomScrollableMenuEntry("Copy SPECIAL to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "special", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                        AddCustomScrollableMenuEntry("Copy SPECIAL to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "special", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     end
                     --BagId / slotIndex
                     if dataPropOrKey and (dataPropOrKey == "bagId" or dataPropOrKey =="slotIndex") then
-                        AddCustomScrollableMenuEntry("Copy ITEMLINK to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "itemlink", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-                        AddCustomScrollableMenuEntry("Copy NAME to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "itemname", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                        AddCustomScrollableMenuEntry("Copy ITEMLINK to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "itemlink", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                        AddCustomScrollableMenuEntry("Copy NAME to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "itemname", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     end
 --d(">dataPropOrKey: " ..tos(dataPropOrKey) .. ", isSpecialEntry: " ..tos(isSpecialEntry))
                     if dataPropOrKey and (dataPropOrKey == "itemLink") or isSpecialEntry then
@@ -1675,7 +1681,6 @@ tbug._contextMenuLast.canEditValue =  canEditValue
     ------------------------------------------------------------------------------------------------------------------------
     --LibCustomMenu - Non scrollable menus with 1depth submenus
     else
-
         --Context menu for the key of the row
         if p_contextMenuForKey == true then
             ------------------------------------------------------------------------------------------------------------------------
@@ -1840,7 +1845,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     )
                 end
                 if not ZO_IsTableEmpty(externalSearchSubmenu) then
-                    AddCustomScrollableSubMenuEntry("Search external", externalSearchSubmenu)
+                    AddCustomSubMenuItem("Search external", externalSearchSubmenu)
                 end
 
                 doShowMenu = true --to show general entries
@@ -2237,6 +2242,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
             --controlToAnchorTo, options
             local options = {
                 sortEntries = false,
+                --headerColor = headerEntryColor,
             }
             ShowCustomScrollableMenu(nil, options)
         else
@@ -2286,8 +2292,8 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
         local subjectName = activeTab and activeTab.subjectName
         local parentSubjectName = activeTab and activeTab.parentSubjectName
 
-        --Claer the menu
-        ClearMenu()
+        --Clear the context menu
+        hideContextMenus()
 
         --Draw layer
         local dLayer = owner:GetDrawLayer()

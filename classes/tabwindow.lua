@@ -37,6 +37,7 @@ local throttledCall = tbug.throttledCall
 local FilterFactory = tbug.FilterFactory
 
 local showTabWindowContextMenu = tbug.ShowTabWindowContextMenu
+local hideContextMenus = tbug.HideContextMenus
 
 local characterIdToName
 
@@ -599,7 +600,7 @@ function TabWindow:__init__(control, id)
     self.filterEdit:SetHandler("OnMouseUp", function(editControl, mouseButton, upInside, shift, ctrl, alt, command)
         if mouseButton == MOUSE_BUTTON_INDEX_RIGHT and upInside then
             --Clear the context menu
-            ClearMenu()
+            hideContextMenus()
             local showMenuNow = false
             if editControl:GetText() ~= "" then
                 AddCustomMenuItem("Clear search", function()
@@ -1485,6 +1486,7 @@ function TabWindow:selectTab(key, isMOC)
     isMOC = isMOC or false
     local tabIndex = self:getTabIndex(key)
     if tbug.doDebug then d("[TabWindow:selectTab]tabIndex: " ..tos(tabIndex) .. ", key: " ..tos(key) ..", isMOC: " ..tos(isMOC)) end
+    hideContextMenus()
     ZO_Tooltips_HideTextTooltip()
     hideEditAndSliderControls(self, nil)
     local tabControl = self:getTabControl(key)
@@ -1648,7 +1650,7 @@ end
 
 function TabWindow:updateFilter(filterEdit, mode, filterModeStr, searchTextDelay)
     searchTextDelay = searchTextDelay or 500
-
+    hideContextMenus()
     if tbug.doDebug then d("[tbug]TabWindow:updateFilter-mode: " ..tos(mode) .. ", filterModeStr: " ..tos(filterModeStr) .. ", searchTextDelay: " ..tos(searchTextDelay)) end
 
     local function addToSearchHistory(p_self, p_filterEdit)
@@ -1779,6 +1781,7 @@ end
 --Update the current inspector's active tab's panel filterEdit with the search text, or the searchText table,
 --set the search modem and optionally search now
 function TabWindow:updateFilterEdit(searchText, searchMode, searchDelay)
+    hideContextMenus()
     searchMode = searchMode or getFilterMode(self)
     --d("[TB]updateFilterEdit -searchText: " ..tos(searchText) .. ", searchMode: " ..tos(searchMode))
     if searchText == nil then return end
@@ -1838,6 +1841,7 @@ end
 
 function TabWindow:OnFilterComboBoxChanged()
 --d("[TBUG]TabWindow:OnFilterComboBoxChanged")
+    hideContextMenus()
     self:SetSelectedFilterText()
 
     local mode = self.filterMode

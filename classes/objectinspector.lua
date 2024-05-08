@@ -13,6 +13,7 @@ local tbug_glookup = tbug.glookup
 local getRelevantNameForCall = tbug.getRelevantNameForCall
 local getControlName = tbug.getControlName
 local isControl = tbug.isControl
+local hideContextMenus = tbug.HideContextMenus
 
 local tbug_isSliderEnabledByRowKey = tbug.isSliderEnabledByRowKey
 
@@ -175,7 +176,7 @@ function ObjectInspectorPanel:anchorEditBoxToListCell(editBox, listCell)
 end
 
 function ObjectInspectorPanel:valueEditCancel(editBox)
-    ClearMenu()
+    hideContextMenus()
     local editData = self.editData
     if editData then
         self.editData = nil
@@ -188,7 +189,7 @@ function ObjectInspectorPanel:valueEditCancel(editBox)
 end
 
 function ObjectInspectorPanel:valueEditConfirm(editBox)
-    ClearMenu()
+    hideContextMenus()
     local expr = editBox:GetText()
 --df("tbug: edit confirm: %s", expr)
     if editBox.updatedColumn ~= nil and editBox.updatedColumnIndex ~= nil then
@@ -293,7 +294,8 @@ end
 
 
 function ObjectInspectorPanel:valueEditUpdate(editBox)
-    ClearMenu()
+    hideContextMenus()
+
     local expr = editBox:GetText()
     if editBox.updatedColumn ~= nil and editBox.updatedColumnIndex ~= nil then
         if self.editData and self.editData.dataEntry and editConfirmAllowedTypes[self.editData.dataEntry.typeId] then
@@ -357,7 +359,7 @@ end
 
 function ObjectInspectorPanel:valueSliderConfirm(sliderCtrl)
     if not self.sliderCtrlActive then return end
-    ClearMenu()
+    hideContextMenus()
     local expr = tos(sliderCtrl:GetValue())
     local sliderSetupData = self.sliderSetupData
     expr = clampValue(expr, sliderSetupData.min, sliderSetupData.max)
@@ -395,7 +397,7 @@ end
 
 function ObjectInspectorPanel:valueSliderUpdate(sliderCtrl)
     if not self.sliderCtrlActive then return end
-    ClearMenu()
+    hideContextMenus()
     ZO_Tooltips_HideTextTooltip()
     local expr = tos(sliderCtrl:GetValue())
     local sliderSetupData = self.sliderSetupData
@@ -430,7 +432,7 @@ end
 function ObjectInspectorPanel:valueSliderCancel(sliderCtrl)
     if not self.sliderCtrlActive then return end
 --d("tbug: slider cancel")
-    ClearMenu()
+    hideContextMenus()
     local sliderData = self.sliderData
     if sliderData then
         self.sliderData = nil

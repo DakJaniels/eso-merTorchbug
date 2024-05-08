@@ -50,6 +50,14 @@ local function throttledCall(callbackName, timer, callback, ...)
 end
 tbug.throttledCall = throttledCall
 
+local function hideContextMenus()
+    ClearMenu()
+    if LibScrollableMenu then
+        ClearCustomScrollableMenu()
+    end
+end
+tbug.HideContextMenus = hideContextMenus
+
 local function strsplit(inputstr, sep)
    sep = sep or "%s" --whitespace
    local t={}

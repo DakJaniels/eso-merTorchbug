@@ -17,6 +17,8 @@ local tbug_truncate = tbug.truncate
 local tbug_specialKeyToColorType = tbug.specialKeyToColorType
 
 local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
+local hideContextMenus = tbug.HideContextMenus
+
 --------------------------------
 
 local function runLua(command)
@@ -291,7 +293,7 @@ end
 
 function ScriptsInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, alt, shift)
 --df("tbug:ScriptsInspectorPanel:onRowDoubleClicked")
-    ClearMenu()
+    hideContextMenus()
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         local sliderCtrl = self.sliderControl
 

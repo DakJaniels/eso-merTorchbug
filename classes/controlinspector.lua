@@ -21,6 +21,7 @@ local invoke = tbug.invoke
 local getControlName = tbug.getControlName
 local getControlType = tbug.getControlType
 
+local hideContextMenus = tbug.HideContextMenus
 
 ---------------------------------
 -- class ControlInspectorPanel --
@@ -250,7 +251,7 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
             self = self,
         }
     end
-    ClearMenu()
+    hideContextMenus()
     local sliderCtrl = self.sliderControl
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         self.editBox:LoseFocus()
@@ -335,7 +336,7 @@ end
 
 function ControlInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, alt, shift)
 --df("tbug:ControlInspectorPanel:onRowDoubleClicked")
-    ClearMenu()
+    hideContextMenus()
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         if MouseIsOver(row.cVal) then
             if self:canEditValue(data) then

@@ -35,6 +35,8 @@ local getRelevantNameForCall = tbug.getRelevantNameForCall
 local getControlName = tbug.getControlName
 local getControlType = tbug.getControlType
 
+local hideContextMenus = tbug.HideContextMenus
+
 --------------------------------
 
 local function getSpecialInspectorKeyConstant(key, value, row, data)
@@ -589,7 +591,7 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
             self = self,
         }
     end
-    ClearMenu()
+    hideContextMenus()
     local sliderCtrl = self.sliderControl
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         self.editBox:LoseFocus()
@@ -713,7 +715,7 @@ end
 
 function TableInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, alt, shift)
 --df("tbug:TableInspectorPanel:onRowDoubleClicked")
-    ClearMenu()
+    hideContextMenus()
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         local sliderCtrl = self.sliderControl
 

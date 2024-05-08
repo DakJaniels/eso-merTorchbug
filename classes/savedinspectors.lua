@@ -483,7 +483,7 @@ end
 function SavedInspectorsPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, alt, shift)
 --df("tbug:SavedInspectorsPanel:onRowDoubleClicked")
     --[[
-    ClearMenu()
+    hideContextMenus()
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         local sliderCtrl = self.sliderControl
 

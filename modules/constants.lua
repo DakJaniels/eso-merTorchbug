@@ -2,7 +2,7 @@ TBUG = {}
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
 --Version and name of the AddOn
-tbug.version =  "1.69"
+tbug.version =  "1.70"
 tbug.name =     "merTorchbug"
 tbug.author =   "merlight, current: Baertram"
 
@@ -37,22 +37,23 @@ tbug.author =   "merlight, current: Baertram"
 ]]
 
 -- [Known bugs]
-
+--LibScrollableMenu submenu entries only having data.label won't render -> need data.name too!
+--Events context menus does not show anymore if LibScrollableMenu is registered
 
 
 -- [Planned features]
 
 
 -- [Working on]
---Script history multi line edit box to run/edit saved scripts/lua code
+--
 
 
---------------------------------------- Version 1.68 - Baertram (last updated 2024-04-02)
+--------------------------------------- Version 1.70 - Baertram (last updated 2024-05-08)
 ---- [Added]
 
 
 ---- [Fixed]
---Removed left over debug messages
+--
 
 --
 ------------------------------------------------------------------------------------------------------------------------
