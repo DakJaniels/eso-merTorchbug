@@ -1490,7 +1490,8 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 elseif isEventsDataType then
 
                     showEventsContextMenu(p_self, p_row, p_data, false)
-                    doShowMenu = true --to show general entries
+                    ShowMenu(p_row)
+                    doShowMenu = false --do not show the LibScrollableMenu context menu now!
                 end
 
             end
