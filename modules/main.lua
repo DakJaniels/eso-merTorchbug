@@ -59,6 +59,8 @@ local tbug_glookup = tbug.glookup
 local tbug_getKeyOfObject = tbug.getKeyOfObject
 local getControlName = tbug.getControlName
 local isControl = tbug.isControl
+local throttledCall = tbug.throttledCall
+
 
 local tbug_inspect
 local objInsp
@@ -177,6 +179,27 @@ local function checkIfItemLinkFunc(key, value)
     end
 end
 tbug.checkIfItemLinkFunc = checkIfItemLinkFunc
+
+local function valueEdit_CancelThrottled(editBox, delay)
+    if not editBox or not editBox.panel or not editBox.panel.valueEditCancel then return end
+    delay = delay or 0
+--d("[tbug]valueEdit_CancelThrottled-text: " .. tos(editBox:GetText()) .. ", delay: " ..tos(delay))
+    throttledCall("merTorchbugPanelValueEditCancel", delay,
+            editBox.panel.valueEditCancel, editBox.panel, editBox
+    )
+end
+tbug.valueEdit_CancelThrottled = valueEdit_CancelThrottled
+
+
+local function valueSlider_CancelThrottled(sliderCtrl, delay)
+    if not sliderCtrl or not sliderCtrl.panel or not sliderCtrl.panel.valueSliderCancel then return end
+    delay = delay or 0
+--d("[tbug]valueSlider_CancelThrottled-value: " .. tos(sliderCtrl:GetValue()) .. ", delay: " ..tos(delay))
+    throttledCall("merTorchbugPanelValueSliderCancel", delay,
+            sliderCtrl.panel.valueSliderCancel, sliderCtrl.panel, sliderCtrl
+    )
+end
+tbug.valueSlider_CancelThrottled = valueSlider_CancelThrottled
 
 
 local function cleanTitle(titleText)
@@ -1941,8 +1964,10 @@ local function onAddOnLoaded(event, addOnName)
         local panelOfInspector = tbug_inspectorScrollLists[selfScrollList]
         if panelOfInspector ~= nil then
             --Hide the editBox and sliderControl at the inspector panel rows, if shown
-            panelOfInspector:valueEditCancel(panelOfInspector.editBox)
-            panelOfInspector:valueSliderCancel(panelOfInspector.sliderControl)
+            --panelOfInspector:valueEditCancel(panelOfInspector.editBox)
+            valueEdit_CancelThrottled(panelOfInspector.editBox, 100)
+            --panelOfInspector:valueSliderCancel(panelOfInspector.sliderControl)
+            valueSlider_CancelThrottled(panelOfInspector.sliderControl, 100)
         end
     end
     --For the mouse wheel and up/down button press

@@ -16,6 +16,8 @@ local isControl = tbug.isControl
 local hideContextMenus = tbug.HideContextMenus
 
 local tbug_isSliderEnabledByRowKey = tbug.isSliderEnabledByRowKey
+local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
+local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 
 local RT= tbug.RT
 local editConfirmAllowedTypes = {
@@ -110,9 +112,11 @@ local function valueEdit_OnEnter(editBox)
     editBox.panel:valueEditConfirm(editBox)
 end
 
-
 local function valueEdit_OnFocusLost(editBox)
-    editBox.panel:valueEditCancel(editBox)
+    --2040603 Fix LibScrollableMenu clicked entry having upInside = false -> maybe because the focus of the editbox is lost and then the scrolllist updates and the contextmenu closes?
+    --Delay it a bit so the context menu can work properly
+    -->This throttledCall should get overwritten from context menu's: tbug.setChatEditTextFromContextMenu
+    valueEdit_CancelThrottled(editBox, 75)
 end
 
 
@@ -128,7 +132,8 @@ end
 
 local function valueSlider_OnFocusLost(sliderCtrl)
 --d("valueSlider_OnFocusLost")
-    sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+    valueSlider_CancelThrottled(sliderCtrl, 75)
+    --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
 end
 
 
@@ -153,7 +158,7 @@ end
 --Edit box control
 function ObjectInspectorPanel:createValueEditBox(parent)
     local editBox = wm:CreateControlFromVirtual("$(parent)ValueEdit", parent,
-                                                "ZO_DefaultEdit")
+            "ZO_DefaultEdit")
     self.editBox = editBox
     self.editData = nil
     self.editBoxActive = nil
@@ -163,7 +168,7 @@ function ObjectInspectorPanel:createValueEditBox(parent)
     editBox:SetMaxInputChars(1024) -- hard limit in ESO 2.1.7
     editBox:SetFont("ZoFontGameSmall")
     editBox:SetHandler("OnEnter", valueEdit_OnEnter)
-    editBox:SetHandler("OnFocusLost", valueEdit_OnFocusLost)
+    editBox:SetHandler("OnFocusLost",   valueEdit_OnFocusLost)
     editBox:SetHandler("OnTextChanged", valueEdit_OnTextChanged)
 end
 
@@ -176,6 +181,7 @@ function ObjectInspectorPanel:anchorEditBoxToListCell(editBox, listCell)
 end
 
 function ObjectInspectorPanel:valueEditCancel(editBox)
+d("[tbug]ObjectInspectorPanel:valueEditCancel - editBox: " ..tos(editBox:GetText()))
     hideContextMenus()
     local editData = self.editData
     if editData then
@@ -224,6 +230,7 @@ end
 
 
 function ObjectInspectorPanel:valueEditStart(editBox, row, data, cValRow, columnIndex)
+--d("[tbug]]ObjectInspectorPanel:valueEditStart - editBoxActive: " ..tos(self.editBoxActive))
 --[[
 tbug._clickedRow = {
     self = self,
@@ -234,9 +241,17 @@ tbug._clickedRow = {
 }
 ]]
     if self.editData ~= data then
+        --todo 20240603 - Why is the 2nd right clicked row's text hiding?
+        if self.editBoxActive then
+            --self:valueSliderCancel(sliderCtrl)
+            valueEdit_CancelThrottled(editBox, 0)
+        end
+
         editBox.updatedColumn = nil
         editBox.updatedColumnIndex = nil
+
         editBox:LoseFocus()
+
 
         --df("tbug: edit start")
         if MouseIsOver(row.cVal) then
@@ -251,12 +266,14 @@ tbug._clickedRow = {
             local key = data.key
             local sliderData = (prop ~= nil and prop.sliderData) or nil
             if sliderData == nil then sliderData = (key ~= nil and tbug_isSliderEnabledByRowKey[data.key]) or nil end
+
             --The row should show a number slider to change the values?
             if (sliderData ~= nil and self.sliderData ~= data) then
                 --Slider is currently active? Cancel it
                 local sliderCtrl = self.sliderControl
                 if self.sliderCtrlActive then
-                    self:valueSliderCancel(sliderCtrl)
+                    --self:valueSliderCancel(sliderCtrl)
+                    valueSlider_CancelThrottled(sliderCtrl, 0)
                 end
 
                 --sliderData={min=0, max=1, step=0.1}
@@ -278,9 +295,13 @@ tbug._clickedRow = {
                 self:anchorSliderControlToListCell(sliderCtrl, cValRow)
                 self.sliderData = data
             end
+
+            --Normal editbox
             if not self.sliderCtrlActive == true then
+                self.editBoxActive = true
                 editBox.updatedColumn = cValRow
                 editBox.updatedColumnIndex = columnIndex
+--d(">cValRow:GetText(): " ..tos(cValRow:GetText()))
                 editBox:SetText(cValRow:GetText())
                 editBox:SetHidden(false)
                 editBox:TakeFocus()

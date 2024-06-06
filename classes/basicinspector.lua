@@ -19,6 +19,10 @@ local latestTimeStamp = 2147483647
 local RT = tbug.RT
 local possibleTranslationTextKeys = tbug.possibleTranslationTextKeys
 
+local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
+local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
+
+
 local function createPanelFunc(inspector, panelClass)
     local function createPanel(pool)
         local XMLtemplateName = panelClass.TEMPLATE_NAME
@@ -261,8 +265,8 @@ function BasicInspectorPanel:initScrollList(control)
 
     local function onScrollBarMouseUp(selfScrollbarVar, mouseButton, upInside)
         if upInside then
-            self:valueEditCancel(self.editBox)
-            self:valueSliderCancel(self.sliderControl)
+            valueEdit_CancelThrottled(self.editBox, 100)
+            valueSlider_CancelThrottled(self.sliderControl, 100)
         end
     end
     local scrollBarOnMouseUpHandler = scrollBar:GetHandler("OnMouseUp")

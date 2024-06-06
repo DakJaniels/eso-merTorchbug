@@ -29,6 +29,9 @@ local tbug_slashCommandSCENEMANAGER = tbug.slashCommandSCENEMANAGER
 local globalInspectorDialogTabKey = getGlobalInspectorPanelTabName("dialogs")
 local globalInspectorFunctionsTabKey = getGlobalInspectorPanelTabName("functions")
 
+--local throttledCall = tbug.throttledCall
+local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
+
 
 local DEFAULT_SCALE_PERCENT = 180
 local function GetKeyOrTexture(keyCode, textureOptions, scalePercent, useDisabledIcon)
@@ -125,6 +128,8 @@ function tbug.setChatEditTextFromContextMenu(p_self, p_row, p_data, copyRawData,
     isItemLinkSpecialFunc = isItemLinkSpecialFunc or false
     isKey = isKey or false
     if p_self and p_row and p_data then
+--d(">got all, self, row, data")
+
         local controlOfInspectorRow = p_self.subject
         local key = p_data.key
         local value = p_data.value
@@ -146,10 +151,12 @@ function tbug.setChatEditTextFromContextMenu(p_self, p_row, p_data, copyRawData,
         --Copy only raw data?
         if copyRawData == true then
             local valueToCopy = value
+--d(">>copyRawData-valueToCopy: " ..tos(valueToCopy))
             --Copy raw value?
             if not isKey then
                 local valueType = type(value)
                 if valueType == "userdata" then
+--d(">>>value = userdata")
                     --Get name of the "userdata" from global table _G
                     local objectName = tbug.glookup(value)
                     if objectName ~= nil and objectName ~= "" and objectName ~= value then
@@ -162,6 +169,7 @@ function tbug.setChatEditTextFromContextMenu(p_self, p_row, p_data, copyRawData,
                 end
             end
             chatMessageText = (isKey == true and tos(checkForSpecialDataEntryAsKey(p_data))) or tos(valueToCopy)
+--d(">chatMessageText: " .. tos(chatMessageText))
         else
             --Check the row's key value (prop.name)
             if dataPropOrKey then
@@ -186,6 +194,7 @@ function tbug.setChatEditTextFromContextMenu(p_self, p_row, p_data, copyRawData,
 --d(">isBagOrSlotIndex: " ..tostring(isBagOrSlotIndex))
             --Copy special strings
             if copySpecialFuncStr ~= nil and copySpecialFuncStr ~= "" then
+--d(">>copySpecialFuncStr")
                 if isItemLinkSpecialFunc == true then
                     if isBagOrSlotIndex == true then
                         if bagId and slotIndex then
@@ -242,11 +251,12 @@ function tbug.setChatEditTextFromContextMenu(p_self, p_row, p_data, copyRawData,
             --CHAT_SYSTEM:StartTextEntry(chatMessageText, CHAT_CHANNEL_SAY, nil, false)
             StartChatInput(chatMessageText, CHAT_CHANNEL_SAY, nil)
         end
+
+        --Right click should stop the value edit at the inspector row?
         local editBox = p_self.editBox
         if editBox then
-            if editBox.panel and editBox.panel.valueEditCancel then
-                editBox.panel:valueEditCancel(editBox)
-            end
+--d(">editBox.panel.valueEditCancel: " ..tos(editBox.panel.valueEditCancel))
+            valueEdit_CancelThrottled(editBox, 0)
         end
         hideContextMenus()
     end
@@ -1058,8 +1068,14 @@ end
 function tbug.buildRowContextMenuData(p_self, p_row, p_data, p_contextMenuForKey)
     p_contextMenuForKey = p_contextMenuForKey or false
     local useLibScrollableMenu = (LibScrollableMenu ~= nil and AddCustomScrollableMenuEntry ~= nil and true) or false
---d("[tbug.buildRowContextMenuData]isKey: " ..tos(p_contextMenuForKey) .. ", useLibScrollableMenu: " ..tos(useLibScrollableMenu))
+
+    --todo: change after debugging
+    --useLibScrollableMenu = false
+
+    --d("[tbug.buildRowContextMenuData]isKey: " ..tos(p_contextMenuForKey) .. ", useLibScrollableMenu: " ..tos(useLibScrollableMenu))
     if LibCustomMenu == nil and useLibScrollableMenu == false or (p_self == nil or p_row == nil or p_data == nil) then return end
+    local useLibCustomMenuForValueContextMenu = false
+
     --TODO: for debugging
     local doShowMenu = false
     hideContextMenus()
@@ -1073,11 +1089,12 @@ function tbug.buildRowContextMenuData(p_self, p_row, p_data, p_contextMenuForKey
     local keyType      = type(key)
     local currentValue = p_data.value
     local valType      = type(currentValue)
+    local valueIsTable = (valType == "table" and true) or false
     local prop         = p_data.prop
     local propName = prop and prop.name
     local dataPropOrKey = (propName ~= nil and propName ~= "" and propName) or key
     local keyToEnums = tbug.keyToEnums
---d(">canEditValue: " ..tos(canEditValue) .. ", forKey: " .. tos(p_contextMenuForKey) .. ", key: " ..tos(key) ..", keyType: "..tos(keyType) .. ", value: " ..tos(currentValue) .. ", valType: " ..tos(valType) .. ", propName: " .. tos(propName) ..", dataPropOrKey: " ..tos(dataPropOrKey))
+    --d(">canEditValue: " ..tos(canEditValue) .. ", forKey: " .. tos(p_contextMenuForKey) .. ", key: " ..tos(key) ..", keyType: "..tos(keyType) .. ", value: " ..tos(currentValue) .. ", valType: " ..tos(valType) .. ", propName: " .. tos(propName) ..", dataPropOrKey: " ..tos(dataPropOrKey))
 
     local activeTab = p_self.inspector and p_self.inspector.activeTab
 
@@ -1093,7 +1110,7 @@ function tbug.buildRowContextMenuData(p_self, p_row, p_data, p_contextMenuForKey
     local isSavedInspectorsDataType = dataTypeId == RT.SAVEDINSPECTORS_TABLE
     local isEventsDataType = dataTypeId == RT.EVENTS_TABLE
 
---for debugging
+    --for debugging
     --[[
 tbug._contextMenuLast = {}
 tbug._contextMenuLast.self   = p_self
@@ -1142,21 +1159,21 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 local searchSubmenu = {}
                 local keyStr = key
                 if keyType == "number" then
-                    keyStr = p_data.keyText or (p_data.value ~= nil and p_data.value.name) or tos(key)
+                    keyStr = p_data.keyText or (p_data.value ~= nil and (valueIsTable == true and p_data.value.name) or p_data.value) or tos(key)
                 end
                 tins(searchSubmenu,
-                    {
-                        name =     "Search key",
-                        callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, keyStr) end,
-                    }
+                        {
+                            name =     "Search key",
+                            callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, keyStr) end,
+                        }
                 )
                 searchValuesAdded[keyStr] = true
                 if valType == "string" or valType == "number" then
                     tins(searchSubmenu,
-                        {
-                            name =     "Search value",
-                            callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, tos(currentValue)) end,
-                        }
+                            {
+                                name =     "Search value",
+                                callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, tos(currentValue)) end,
+                            }
                     )
                     searchValuesAdded[tos(currentValue)] = true
                 end
@@ -1165,10 +1182,10 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 local isSplittable, splitTab = isSplittableString(keyStr, constantsSplitSepparator)
                 if isSplittable == true then
                     tins(searchSubmenu,
-                        {
-                            name =     "-",
-                            callback =  function() end,
-                        }
+                            {
+                                name =     "-",
+                                callback =  function() end,
+                            }
                     )
 
                     local searchString = ""
@@ -1176,10 +1193,10 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         searchString = searchString .. splitTab[i] .. constantsSplitSepparator
                         if not searchValuesAdded[searchString] then
                             tins(searchSubmenu,
-                                {
-                                    name =     "Search '" .. searchString .. "'",
-                                    callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, searchString) end,
-                                }
+                                    {
+                                        name =     "Search '" .. searchString .. "'",
+                                        callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, searchString) end,
+                                    }
                             )
                             searchValuesAdded[searchString] = true
                         end
@@ -1190,10 +1207,10 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 local upperCaseOffsetsTab = findUpperCaseCharsAndReturnOffsetsTab(keyStr)
                 if not ZO_IsTableEmpty(upperCaseOffsetsTab) then
                     tins(searchSubmenu,
-                        {
-                            name =     "-",
-                            callback =  function() end,
-                        }
+                            {
+                                name =     "-",
+                                callback =  function() end,
+                            }
                     )
 
                     local stringLength = strlen(keyStr)
@@ -1208,13 +1225,13 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             upperCaseString = strsub(keyStr, startPos, endPos)
                             --Last entry? Do not add the complete string again as "Search key" covers that already!
                             if idx == maxEntries or stringLength == endPos then
---d(">lastEntry!")
+                                --d(">lastEntry!")
                                 --Check if last entry ends with digits
                                 local digitsFoundStartPos, digitsFoundEndPos = strfind(upperCaseString, "%d+$")
---d(">>digitsFoundStartPos: " ..tos(digitsFoundStartPos) .. ", digitsFoundEndPos: " ..tos(digitsFoundEndPos))
+                                --d(">>digitsFoundStartPos: " ..tos(digitsFoundStartPos) .. ", digitsFoundEndPos: " ..tos(digitsFoundEndPos))
                                 if digitsFoundStartPos ~= nil then
                                     local upperCaseStringWithoutDigits = strsub(upperCaseString, 1, digitsFoundStartPos - 1)
---d(">>>upperCaseStringWithoutDigits: " ..tos(upperCaseStringWithoutDigits))
+                                    --d(">>>upperCaseStringWithoutDigits: " ..tos(upperCaseStringWithoutDigits))
                                     if upperCaseStringWithoutDigits ~= "" then
                                         local searchStringWithoutDigits = searchString .. upperCaseStringWithoutDigits
                                         if not searchValuesAdded[searchStringWithoutDigits] then
@@ -1233,7 +1250,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             if upperCaseString ~= nil then
                                 searchString = searchString .. upperCaseString
                                 local searchStringCopy = searchString
---d(">searchString: " ..tos(searchString) .. ", upperCaseString: " ..tos(upperCaseString))
+                                --d(">searchString: " ..tos(searchString) .. ", upperCaseString: " ..tos(upperCaseString))
                                 if not searchValuesAdded[searchStringCopy] then
                                     tins(searchSubmenu,
                                             {
@@ -1265,18 +1282,18 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 end
                 if subjectName ~= nil and subjectName ~= keyStr and type(subjectName) == "string" then
                     tins(externalSearchSubmenu,
-                        {
-                            name =     strformat("Search %q in ESOUI sources at \'GitHub\'", subjectName),
-                            callback =  function() searchExternalURL(p_self, p_row, p_data, subjectName, "github") end,
-                        }
+                            {
+                                name =     strformat("Search %q in ESOUI sources at \'GitHub\'", subjectName),
+                                callback =  function() searchExternalURL(p_self, p_row, p_data, subjectName, "github") end,
+                            }
                     )
                 end
                 if parentSubjectName ~= nil and parentSubjectName ~= subjectName and parentSubjectName ~= keyStr and type(parentSubjectName) == "string" then
                     tins(externalSearchSubmenu,
-                        {
-                            name =     strformat("Search %q in ESOUI sources at \'GitHub\'", parentSubjectName),
-                            callback =  function() searchExternalURL(p_self, p_row, p_data, parentSubjectName, "github") end,
-                        }
+                            {
+                                name =     strformat("Search %q in ESOUI sources at \'GitHub\'", parentSubjectName),
+                                callback =  function() searchExternalURL(p_self, p_row, p_data, parentSubjectName, "github") end,
+                            }
                     )
                 end
                 if not ZO_IsTableEmpty(externalSearchSubmenu) then
@@ -1309,11 +1326,11 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             end,
                             LSM_ENTRY_TYPE_NORMAL, nil, nil)
 
-                --Functions
-               --elseif isFunctionsDataType then
+                    --Functions
+                    --elseif isFunctionsDataType then
 
 
-                --Localization strings
+                    --Localization strings
                 elseif isLocalStringDataType then
                     AddCustomScrollableMenuEntry("Local. string actions", function() end, LSM_ENTRY_TYPE_HEADER, nil, nil)
                     AddCustomScrollableMenuEntry("GetString(<constant>) to chat",
@@ -1559,13 +1576,19 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 end
             end
 
-    ------------------------------------------------------------------------------------------------------------------------
-    ------------------------------------------------------------------------------------------------------------------------
-    ------------------------------------------------------------------------------------------------------------------------
-        --Context menu for the value of the row
+            ------------------------------------------------------------------------------------------------------------------------
+            ------------------------------------------------------------------------------------------------------------------------
+            ------------------------------------------------------------------------------------------------------------------------
+            --Context menu for the value of the row
         else
+            --todo 2024-06-03 Bug with LibScrollableMenu where editBox:TakeFocus() of the tbug row makes upInside = false in the XML "OnMouseUp" handler of LSM...
+            --todo That way the context menu callback of the entry will never be executed.
+            -->So we are using LibCustomMenu here now until this is fixed
+            --useLibCustomMenuForValueContextMenu = true
+            if not useLibCustomMenuForValueContextMenu then
+
             if currentValue ~= nil then
-    ------------------------------------------------------------------------------------------------------------------------
+                ------------------------------------------------------------------------------------------------------------------------
                 --boolean entries
                 if valType == "boolean" then
                     if canEditValue then
@@ -1590,7 +1613,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             --Check if dataPropOrKey == "bagId" e.g. and get the mapped enum for bagId
                             prop = {}
                             prop.enum = keyToEnums[key]
-    --d(">no props found, used key: " ..tos(key) .. " to get: " ..tos(prop.enum))
+                            --d(">no props found, used key: " ..tos(key) .. " to get: " ..tos(prop.enum))
                             if prop.enum == nil then prop = nil end
                         end
                     end
@@ -1600,8 +1623,8 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         if enumProp ~= nil then
                             local enumsTab = tbug.enums[enumProp]
                             if enumsTab ~= nil then
-                        --for debugging
-                        --tbug._contextMenuLast.enumsTab = enumsTab
+                                --for debugging
+                                --tbug._contextMenuLast.enumsTab = enumsTab
                                 local controlOfInspectorRow = p_self.subject
                                 if controlOfInspectorRow then
                                     --Setter control and func are given, enums as well
@@ -1663,7 +1686,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         AddCustomScrollableMenuEntry("Copy ITEMLINK to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "itemlink", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                         AddCustomScrollableMenuEntry("Copy NAME to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "itemname", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     end
---d(">dataPropOrKey: " ..tos(dataPropOrKey) .. ", isSpecialEntry: " ..tos(isSpecialEntry))
+                    --d(">dataPropOrKey: " ..tos(dataPropOrKey) .. ", isSpecialEntry: " ..tos(isSpecialEntry))
                     if dataPropOrKey and (dataPropOrKey == "itemLink") or isSpecialEntry then
                         buildItemLinkContextMenuEntries(p_self, p_row, p_data, 5)
                     end
@@ -1673,15 +1696,19 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     doShowMenu = true
                 end
             end
-    ------------------------------------------------------------------------------------------------------------------------
+
+            end --if not useLibCustomMenuForValueContextMenu then
+            ------------------------------------------------------------------------------------------------------------------------
         end
+
+    end --if useLibScrollableMenu == true then
 
 
     ------------------------------------------------------------------------------------------------------------------------
     ------------------------------------------------------------------------------------------------------------------------
     ------------------------------------------------------------------------------------------------------------------------
     --LibCustomMenu - Non scrollable menus with 1depth submenus
-    else
+    if useLibScrollableMenu == false or useLibCustomMenuForValueContextMenu then
         --Context menu for the key of the row
         if p_contextMenuForKey == true then
             ------------------------------------------------------------------------------------------------------------------------
@@ -1710,13 +1737,13 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 local searchSubmenu = {}
                 local keyStr = key
                 if keyType == "number" then
-                    keyStr = p_data.keyText or (p_data.value ~= nil and p_data.value.name) or tos(key)
+                    keyStr = p_data.keyText or (p_data.value ~= nil and (valueIsTable == true and p_data.value.name) or p_data.value) or tos(key)
                 end
                 tins(searchSubmenu,
-                    {
-                        label =     "Search key",
-                        callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, keyStr) end,
-                    }
+                        {
+                            label =     "Search key",
+                            callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, keyStr) end,
+                        }
                 )
                 searchValuesAdded[keyStr] = true
                 if valType == "string" or valType == "number" then
@@ -1753,67 +1780,67 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     end
                 end
 
-                    --String and got uppercase characters in there, where we could split it?
-                    local upperCaseOffsetsTab = findUpperCaseCharsAndReturnOffsetsTab(keyStr)
-                    if not ZO_IsTableEmpty(upperCaseOffsetsTab) then
-                        tins(searchSubmenu,
-                                {
-                                    label =     "-",
-                                    callback =  function() end,
-                                }
-                        )
+                --String and got uppercase characters in there, where we could split it?
+                local upperCaseOffsetsTab = findUpperCaseCharsAndReturnOffsetsTab(keyStr)
+                if not ZO_IsTableEmpty(upperCaseOffsetsTab) then
+                    tins(searchSubmenu,
+                            {
+                                label =     "-",
+                                callback =  function() end,
+                            }
+                    )
 
-                        local stringLength = strlen(keyStr)
-                        local searchString = ""
-                        local maxEntries = #upperCaseOffsetsTab
-                        for idx, offsetData in ipairs(upperCaseOffsetsTab) do
-                            local upperCaseString
-                            local startPos = offsetData.startPos
-                            local endPos = ((idx+1 <= maxEntries) and (upperCaseOffsetsTab[idx + 1].startPos - 1)) or stringLength
+                    local stringLength = strlen(keyStr)
+                    local searchString = ""
+                    local maxEntries = #upperCaseOffsetsTab
+                    for idx, offsetData in ipairs(upperCaseOffsetsTab) do
+                        local upperCaseString
+                        local startPos = offsetData.startPos
+                        local endPos = ((idx+1 <= maxEntries) and (upperCaseOffsetsTab[idx + 1].startPos - 1)) or stringLength
 
-                            if startPos ~= nil and endPos ~= nil then
-                                upperCaseString = strsub(keyStr, startPos, endPos)
-                                --Last entry? Do not add the complete string again as "Search key" covers that already!
-                                if idx == maxEntries or stringLength == endPos then
-    --d(">lastEntry!")
-                                    --Check if last entry ends with digits
-                                    local digitsFoundStartPos, digitsFoundEndPos = strfind(upperCaseString, "%d+$")
-    --d(">>digitsFoundStartPos: " ..tos(digitsFoundStartPos) .. ", digitsFoundEndPos: " ..tos(digitsFoundEndPos))
-                                    if digitsFoundStartPos ~= nil then
-                                        local upperCaseStringWithoutDigits = strsub(upperCaseString, 1, digitsFoundStartPos - 1)
-    --d(">>>upperCaseStringWithoutDigits: " ..tos(upperCaseStringWithoutDigits))
-                                        if upperCaseStringWithoutDigits ~= "" then
-                                            local searchStringWithoutDigits = searchString .. upperCaseStringWithoutDigits
-                                            if not searchValuesAdded[searchStringWithoutDigits] then
-                                                tins(searchSubmenu,
-                                                        {
-                                                            label =     "Search '" .. searchStringWithoutDigits .. "'",
-                                                            callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, searchStringWithoutDigits) end,
-                                                        }
-                                                )
-                                                searchValuesAdded[searchStringWithoutDigits] = true
-                                            end
+                        if startPos ~= nil and endPos ~= nil then
+                            upperCaseString = strsub(keyStr, startPos, endPos)
+                            --Last entry? Do not add the complete string again as "Search key" covers that already!
+                            if idx == maxEntries or stringLength == endPos then
+                                --d(">lastEntry!")
+                                --Check if last entry ends with digits
+                                local digitsFoundStartPos, digitsFoundEndPos = strfind(upperCaseString, "%d+$")
+                                --d(">>digitsFoundStartPos: " ..tos(digitsFoundStartPos) .. ", digitsFoundEndPos: " ..tos(digitsFoundEndPos))
+                                if digitsFoundStartPos ~= nil then
+                                    local upperCaseStringWithoutDigits = strsub(upperCaseString, 1, digitsFoundStartPos - 1)
+                                    --d(">>>upperCaseStringWithoutDigits: " ..tos(upperCaseStringWithoutDigits))
+                                    if upperCaseStringWithoutDigits ~= "" then
+                                        local searchStringWithoutDigits = searchString .. upperCaseStringWithoutDigits
+                                        if not searchValuesAdded[searchStringWithoutDigits] then
+                                            tins(searchSubmenu,
+                                                    {
+                                                        label =     "Search '" .. searchStringWithoutDigits .. "'",
+                                                        callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, searchStringWithoutDigits) end,
+                                                    }
+                                            )
+                                            searchValuesAdded[searchStringWithoutDigits] = true
                                         end
                                     end
                                 end
+                            end
 
-                                if upperCaseString ~= nil then
-                                    searchString = searchString .. upperCaseString
-                                    local searchStringCopy = searchString
-    --d(">searchString: " ..tos(searchString) .. ", upperCaseString: " ..tos(upperCaseString))
-                                    if not searchValuesAdded[searchStringCopy] then
-                                        tins(searchSubmenu,
-                                                {
-                                                    label =     "Search '" .. searchString .. "'",
-                                                    callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, searchStringCopy) end,
-                                                }
-                                        )
-                                        searchValuesAdded[searchStringCopy] = true
-                                    end
+                            if upperCaseString ~= nil then
+                                searchString = searchString .. upperCaseString
+                                local searchStringCopy = searchString
+                                --d(">searchString: " ..tos(searchString) .. ", upperCaseString: " ..tos(upperCaseString))
+                                if not searchValuesAdded[searchStringCopy] then
+                                    tins(searchSubmenu,
+                                            {
+                                                label =     "Search '" .. searchString .. "'",
+                                                callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, searchStringCopy) end,
+                                            }
+                                    )
+                                    searchValuesAdded[searchStringCopy] = true
                                 end
                             end
                         end
                     end
+                end
 
                 if not ZO_IsTableEmpty(searchSubmenu) then
                     AddCustomSubMenuItem("Search", searchSubmenu)
@@ -1831,18 +1858,18 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 end
                 if subjectName ~= nil and subjectName ~= keyStr then
                     tins(externalSearchSubmenu,
-                        {
-                            label =     strformat(externalUrlGitHubSearchString, subjectName),
-                            callback =  function() searchExternalURL(p_self, p_row, p_data, subjectName, "github") end,
-                        }
+                            {
+                                label =     strformat(externalUrlGitHubSearchString, subjectName),
+                                callback =  function() searchExternalURL(p_self, p_row, p_data, subjectName, "github") end,
+                            }
                     )
                 end
                 if parentSubjectName ~= nil and parentSubjectName ~= subjectName and parentSubjectName ~= keyStr then
                     tins(externalSearchSubmenu,
-                        {
-                            label =     strformat(externalUrlGitHubSearchString, parentSubjectName),
-                            callback =  function() searchExternalURL(p_self, p_row, p_data, parentSubjectName, "github") end,
-                        }
+                            {
+                                label =     strformat(externalUrlGitHubSearchString, parentSubjectName),
+                                callback =  function() searchExternalURL(p_self, p_row, p_data, parentSubjectName, "github") end,
+                            }
                     )
                 end
                 if not ZO_IsTableEmpty(externalSearchSubmenu) then
@@ -1874,7 +1901,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             end,
                             MENU_ADD_OPTION_LABEL, nil, nil, nil, nil, nil)
 
-                --Localization strings
+                    --Localization strings
                 elseif isLocalStringDataType then
                     AddCustomMenuItem("Local. string actions", function() end, MENU_ADD_OPTION_HEADER, nil, nil, nil, nil, nil)
                     AddCustomMenuItem("GetString(<constant>) to chat",
@@ -1888,7 +1915,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             end,
                             MENU_ADD_OPTION_LABEL, nil, nil, nil, nil, nil)
 
-                --Sounds
+                    --Sounds
                 elseif isSoundsDataType then
                     local soundsHeadlineAdded = false
                     local function addSoundsHeadline()
@@ -1943,7 +1970,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         end
                     end
 
-                --SavedInspectors KEY context menu
+                    --SavedInspectors KEY context menu
                 elseif isSavedInspectorsDataType then
                     AddCustomMenuItem("Saved inspectors actions", function() end, MENU_ADD_OPTION_HEADER, nil, nil, nil, nil, nil)
                     --[[
@@ -1970,7 +1997,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             end,
                             MENU_ADD_OPTION_LABEL, nil, nil, nil, nil, nil)
 
-                --ScriptHistory KEY context menu
+                    --ScriptHistory KEY context menu
                 elseif isScriptHistoryDataType then
                     AddCustomMenuItem("Script history actions", function() end, MENU_ADD_OPTION_HEADER, nil, nil, nil, nil, nil)
                     AddCustomMenuItem("Edit script history entry",
@@ -2047,7 +2074,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
 
                     doShowMenu = true
                     ------------------------------------------------------------------------------------------------------------------------
-                --Event tracking KEY context menu
+                    --Event tracking KEY context menu
                 elseif isEventsDataType then
 
                     showEventsContextMenu(p_self, p_row, p_data, false)
@@ -2119,13 +2146,13 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 end
             end
 
-    ------------------------------------------------------------------------------------------------------------------------
-    ------------------------------------------------------------------------------------------------------------------------
-    ------------------------------------------------------------------------------------------------------------------------
-        --Context menu for the value of the row
+            ------------------------------------------------------------------------------------------------------------------------
+            ------------------------------------------------------------------------------------------------------------------------
+            ------------------------------------------------------------------------------------------------------------------------
+            --Context menu for the value of the row
         else
             if currentValue ~= nil then
-    ------------------------------------------------------------------------------------------------------------------------
+                ------------------------------------------------------------------------------------------------------------------------
                 --boolean entries
                 if valType == "boolean" then
                     if canEditValue then
@@ -2150,7 +2177,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             --Check if dataPropOrKey == "bagId" e.g. and get the mapped enum for bagId
                             prop = {}
                             prop.enum = keyToEnums[key]
-    --d(">no props found, used key: " ..tos(key) .. " to get: " ..tos(prop.enum))
+                            --d(">no props found, used key: " ..tos(key) .. " to get: " ..tos(prop.enum))
                             if prop.enum == nil then prop = nil end
                         end
                     end
@@ -2160,8 +2187,8 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         if enumProp ~= nil then
                             local enumsTab = tbug.enums[enumProp]
                             if enumsTab ~= nil then
-                        --for debugging
-                        --tbug._contextMenuLast.enumsTab = enumsTab
+                                --for debugging
+                                --tbug._contextMenuLast.enumsTab = enumsTab
                                 local controlOfInspectorRow = p_self.subject
                                 if controlOfInspectorRow then
                                     --Setter control and func are given, enums as well
@@ -2230,14 +2257,14 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     doShowMenu = true
                 end
             end
-    ------------------------------------------------------------------------------------------------------------------------
+            ------------------------------------------------------------------------------------------------------------------------
         end
 
-    end --useLibScrollableMenu
+    end --useLibScrollableMenu --if useLibScrollableMenu == false then
 
------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------
+    -----------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------
     if doShowMenu == true then
         if useLibScrollableMenu == true then
             --controlToAnchorTo, options

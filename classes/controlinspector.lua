@@ -22,6 +22,7 @@ local getControlName = tbug.getControlName
 local getControlType = tbug.getControlType
 
 local hideContextMenus = tbug.HideContextMenus
+local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 
 ---------------------------------
 -- class ControlInspectorPanel --
@@ -256,7 +257,8 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         self.editBox:LoseFocus()
         if sliderCtrl ~= nil then
-            sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+            --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+            valueSlider_CancelThrottled(sliderCtrl, 50)
         end
 
         if MouseIsOver(row.cKeyRight) then
@@ -313,7 +315,8 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
     elseif mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
         if MouseIsOver(row.cVal) then
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
             if self:canEditValue(data) then
                 self:valueEditStart(self.editBox, row, data)
@@ -322,13 +325,15 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
         elseif MouseIsOver(row.cKeyLeft) or MouseIsOver(row.cKeyRight) then
             self.editBox:LoseFocus()
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
             tbug_buildRowContextMenuData(self, row, data, true)
         else
             self.editBox:LoseFocus()
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
         end
     end

@@ -39,6 +39,8 @@ local FilterFactory = tbug.FilterFactory
 local showTabWindowContextMenu = tbug.ShowTabWindowContextMenu
 local hideContextMenus = tbug.HideContextMenus
 
+local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
+
 local characterIdToName
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -500,7 +502,8 @@ local function hideEditAndSliderControls(selfVar, activeTabPanel)
         local sliderCtrl = activeTabPanel.sliderControl
         if sliderCtrl then
 --d(">found slider control")
-            sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+            --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+            valueSlider_CancelThrottled(sliderCtrl, 50)
         end
     end
 end

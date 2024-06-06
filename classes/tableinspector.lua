@@ -36,6 +36,7 @@ local getControlName = tbug.getControlName
 local getControlType = tbug.getControlType
 
 local hideContextMenus = tbug.HideContextMenus
+local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 
 --------------------------------
 
@@ -596,7 +597,8 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         self.editBox:LoseFocus()
         if sliderCtrl ~= nil then
-            sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+            --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+            valueSlider_CancelThrottled(sliderCtrl, 50)
         end
 
         local value = data.value
@@ -674,40 +676,51 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
         end
     elseif mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
         if self:canEditValue(data) then
+d(">can edit value!")
             if MouseIsOver(row.cVal) then
+d(">mouse is over cVal")
                 if sliderCtrl ~= nil then
-                    sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    valueSlider_CancelThrottled(sliderCtrl, 50)
                 end
+d(">valueEditStart")
                 self:valueEditStart(self.editBox, row, data)
+d(">build context menu")
                 tbug_buildRowContextMenuData(self, row, data, false)
             elseif MouseIsOver(row.cVal2) then
                 if sliderCtrl ~= nil then
-                    sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    valueSlider_CancelThrottled(sliderCtrl, 50)
                 end
                 self:valueEditStart(self.editBox, row, data)
             elseif MouseIsOver(row.cKeyLeft) or MouseIsOver(row.cKeyRight) then
                 if sliderCtrl ~= nil then
-                    sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    valueSlider_CancelThrottled(sliderCtrl, 50)
                 end
                 self.editBox:LoseFocus()
                 tbug_buildRowContextMenuData(self, row, data, true)
             end
         elseif MouseIsOver(row.cKeyLeft) or MouseIsOver(row.cKeyRight) then
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
             self.editBox:LoseFocus()
             tbug_buildRowContextMenuData(self, row, data, true)
         elseif MouseIsOver(row.cVal1)  then
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
             self.editBox:LoseFocus()
             tbug_buildRowContextMenuData(self, row, data, false)
         else
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
+d(">loosing focus of editbox")
             self.editBox:LoseFocus()
         end
     end
@@ -723,7 +736,8 @@ function TableInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, al
         local typeValue = type(value)
         if MouseIsOver(row.cVal) then
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
             if self:canEditValue(data) then
                 if typeValue == "boolean" then
