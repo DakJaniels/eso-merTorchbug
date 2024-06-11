@@ -1159,7 +1159,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 local searchSubmenu = {}
                 local keyStr = key
                 if keyType == "number" then
-                    keyStr = p_data.keyText or (p_data.value ~= nil and (valueIsTable == true and p_data.value.name) or p_data.value) or tos(key)
+                    keyStr = p_data.keyText or ((p_data.value ~= nil and ((valueIsTable == true and p_data.value.name) or p_data.value)) or tos(key))
                 end
                 tins(searchSubmenu,
                         {
@@ -1737,7 +1737,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 local searchSubmenu = {}
                 local keyStr = key
                 if keyType == "number" then
-                    keyStr = p_data.keyText or (p_data.value ~= nil and (valueIsTable == true and p_data.value.name) or p_data.value) or tos(key)
+                    keyStr = p_data.keyText or ((p_data.value ~= nil and ((valueIsTable == true and p_data.value.name) or p_data.value)) or tos(key))
                 end
                 tins(searchSubmenu,
                         {
