@@ -449,67 +449,29 @@ local function doRefresh()
     makeEnum(g_tmpGroups["TRADING_"],       "TRADING_HOUSE_SORT_LISTING_")
 
 
-    function tbug.runCoroutineFinishedCallback(coRoutineName)
-        if coRoutineName == nil then return end
-        if coRoutineName == "TmpGroupsToEnums" then
-            d("[TBug] >> ENUMs have been created <<")
-        end
-    end
-
-    -- Test using coroutine instead of libasync.
-    --> lua threaded calls to unstress the client's "lag" while we build these ENUM lookup tables
-    local doesIsYieldableExist = (coroutine ~= nil and coroutine.isyieldable ~= nil and true) or false
-    function tbug.safeYieldCoroutine() --Must be global func! Else client crash
-        if not doesIsYieldableExist or (doesIsYieldableExist and coroutine.isyieldable()) then --> Function does not exist in ESO lua corroutines!
-            coroutine.yield()
-            --d("<<< [TBug]Co routine ENUMs yielded")
-        end
-    end
-
-    local coTmpGroupsToEnums = coroutine.create(function()
-        d("[TBug]Executing coroutine ENUM - #tmpGroups")
-        --Transfer the tmpGroups of constants to the enumerations table, using the tmpGroups prefix e.g. SPECIALIZED_ and
-        --checking for + creating subTables like SPECIALIZED_ITEMTYPE etc.
-        --Enum entries at least need 2 constants entries in the g_tmpKeys or it will fail to create a new subTable
-        for prefix, group in zo_insecureNext, g_tmpGroups do
-            repeat
-                local final = true
-                for k, _ in zo_insecureNext, group do
-                    --Create a new "thread" for the inner loops to unstress the tbug UI and show it quicker!
-                    -->Threads need time to execute all so the UI should show a "loading" spinner or similar during this!
-                    tbug.safeYieldCoroutine() --Must be global func!
-
-                    -- find the shortest prefix that yields distinct values
-                    local p, f = prefix, false
-                    --Make the enum entry now and remove g_tmpGroups constant entry (set = nil) -> to prevent endless loop!
-                    while not makeEnum(group, p, 2, true) do
-                        --Creates subTables at "_", e.g. SPECIALIZED_ITEMTYPE, SPECIALIZED_ITEMTYP_ARMOR, ...
-                        local _, me = strfind(k, "[^_]_", #p + 1)
-                        if not me then
-                            f = final
-                            break
-                        end
-                        p = strsub(k, 1, me)
+    --Transfer the tmpGroups of constants to the enumerations table, using the tmpGroups prefix e.g. SPECIALIZED_ and
+    --checking for + creating subTables like SPECIALIZED_ITEMTYPE etc.
+    --Enum entries at least need 2 constants entries in the g_tmpKeys or it will fail to create a new subTable
+    for prefix, group in zo_insecureNext , g_tmpGroups do
+        repeat
+            local final = true
+            for k, _ in zo_insecureNext , group do
+                -- find the shortest prefix that yields distinct values
+                local p, f = prefix, false
+                --Make the enum entry now and remove g_tmpGroups constant entry (set = nil) -> to prevent endless loop!
+                while not makeEnum(group, p, 2, true) do
+                    --Creates subTables at "_", e.g. SPECIALIZED_ITEMTYPE, SPECIALIZED_ITEMTYP_ARMOR, ...
+                    local _, me = strfind(k, "[^_]_", #p + 1)
+                    if not me then
+                        f = final
+                        break
                     end
-                    final = f
+                    p = strsub(k, 1, me)
                 end
-            until final
-        end
-    end)
-    -- Start the coroutine now and resume it as long the inner for ... loops are active.
-    local coTmpGroupsToEnumsStatus
-    local securityCounter = 0
-    repeat
-        coTmpGroupsToEnumsStatus = coroutine.status(coTmpGroupsToEnums)
-        --d("[TBug]Coroutine ENUMs - status: "..tostring(coTmpGroupsToEnumsStatus))
-        coroutine.resume(coTmpGroupsToEnums)
-        if coTmpGroupsToEnumsStatus == "dead" then
-            tbug.runCoroutineFinishedCallback("TmpGroupsToEnums")
-        elseif securityCounter == 999999 then
-            d("[TBug] ERROR - Coroutine \'TmpGroupsToEnums\' never finished! Looped 999999 times meanwhile")
-            tbug.runCoroutineFinishedCallback("TmpGroupsToEnums")
-        end
-    until ( coTmpGroupsToEnumsStatus == "dead" or securityCounter == 999999 )
+                final = f
+            end
+        until final
+    end
 
     --Create the 1table for splitUp sbtables like SPECIALIZED_ITEMTYPE_ again now, from all of the relevant subTables
     if specialEnumNoSubtables_subTables and not ZO_IsTableEmpty(specialEnumNoSubtables_subTables) then
