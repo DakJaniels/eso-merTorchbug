@@ -1,5 +1,7 @@
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
+local libAS = LibAsync
+
 local autovivify = tbug.autovivify
 
 local tos = tostring
@@ -147,13 +149,18 @@ local function makeEnum(group, prefix, minKeys, calledFromTmpGroupsLoop)
 
     --Is the while not makeEnum(group, p, 2, true) do run on tmpGroups actually active?
     if calledFromTmpGroupsLoop then
-        --Is the current prefix a speical one which could be split into multiple subTables at g_enums?
-        --And should these split subTables be combined again to one in the end, afer tthe while ... do loop was finished?
+        --Is the current prefix a specical one which could be split into multiple subTables at g_enums?
+        --And should these split subTables be combined again to one in the end, afer the while ... do loop was finished?
         for prefixRecordAllSubtables, isActivated in pairs(keyToSpecialEnumNoSubtablesInEnum) do
             if isActivated and strfind(prefix, prefixRecordAllSubtables, 1) == 1 then
                 --d(">anti-split into subtables found: " ..tos(prefix))
-                specialEnumNoSubtables_subTables[prefixRecordAllSubtables] = specialEnumNoSubtables_subTables[prefixRecordAllSubtables] or {}
-                table.insert(specialEnumNoSubtables_subTables[prefixRecordAllSubtables], prefixWithoutLastUnderscore)
+                local ref = specialEnumNoSubtables_subTables[prefixRecordAllSubtables]
+                if ref == nil then
+                    specialEnumNoSubtables_subTables[prefixRecordAllSubtables] = {}
+                    ref = specialEnumNoSubtables_subTables[prefixRecordAllSubtables]
+                end
+                specialEnumNoSubtables_subTables[prefixRecordAllSubtables][#ref+1] = prefixWithoutLastUnderscore
+                --table.insert(specialEnumNoSubtables_subTables[prefixRecordAllSubtables], prefixWithoutLastUnderscore)
             end
         end
     end
@@ -449,71 +456,131 @@ local function doRefresh()
     makeEnum(g_tmpGroups["TRADING_"],       "TRADING_HOUSE_SORT_LISTING_")
 
 
-    --Transfer the tmpGroups of constants to the enumerations table, using the tmpGroups prefix e.g. SPECIALIZED_ and
-    --checking for + creating subTables like SPECIALIZED_ITEMTYPE etc.
-    --Enum entries at least need 2 constants entries in the g_tmpKeys or it will fail to create a new subTable
-    for prefix, group in zo_insecureNext , g_tmpGroups do
-        repeat
-            local final = true
-            for k, _ in zo_insecureNext , group do
-                -- find the shortest prefix that yields distinct values
-                local p, f = prefix, false
-                --Make the enum entry now and remove g_tmpGroups constant entry (set = nil) -> to prevent endless loop!
-                while not makeEnum(group, p, 2, true) do
-                    --Creates subTables at "_", e.g. SPECIALIZED_ITEMTYPE, SPECIALIZED_ITEMTYP_ARMOR, ...
-                    local _, me = strfind(k, "[^_]_", #p + 1)
-                    if not me then
-                        f = final
-                        break
+    --LibAsync is not provided?
+    if libAS == nil then
+        --Transfer the tmpGroups of constants to the enumerations table, using the tmpGroups prefix e.g. SPECIALIZED_ and
+        --checking for + creating subTables like SPECIALIZED_ITEMTYPE etc.
+        --Enum entries at least need 2 constants entries in the g_tmpKeys or it will fail to create a new subTable
+        for prefix, group in zo_insecureNext , g_tmpGroups do
+            repeat
+                local final = true
+                for k, _ in zo_insecureNext , group do
+                    -- find the shortest prefix that yields distinct values
+                    local p, f = prefix, false
+                    --Make the enum entry now and remove g_tmpGroups constant entry (set = nil) -> to prevent endless loop!
+                    while not makeEnum(group, p, 2, true) do
+                        --Creates subTables at "_", e.g. SPECIALIZED_ITEMTYPE, SPECIALIZED_ITEMTYP_ARMOR, ...
+                        local _, me = strfind(k, "[^_]_", #p + 1)
+                        if not me then
+                            f = final
+                            break
+                        end
+                        p = strsub(k, 1, me)
                     end
-                    p = strsub(k, 1, me)
+                    final = f
                 end
-                final = f
-            end
-        until final
-    end
+            until final
+        end
 
-    --Create the 1table for splitUp sbtables like SPECIALIZED_ITEMTYPE_ again now, from all of the relevant subTables
-    if specialEnumNoSubtables_subTables and not ZO_IsTableEmpty(specialEnumNoSubtables_subTables) then
-        for prefixWhichGotSubtables, subtableNames in pairs(specialEnumNoSubtables_subTables) do
-            local prefixWithoutLastUnderscore = strsub(prefixWhichGotSubtables, 1, -2)
-            --d(">>combining subtables to 1 table: " ..tos(prefixWithoutLastUnderscore))
-            g_enums[prefixWithoutLastUnderscore] = g_enums[prefixWithoutLastUnderscore] or {}
-            for _, subTablePrefixWithoutUnderscore in ipairs(subtableNames) do
-                --d(">>>subtable name: " ..tos(subTablePrefixWithoutUnderscore))
-                local subTableData = g_enums[subTablePrefixWithoutUnderscore]
-                if subTableData ~= nil then
-                    for constantValue, constantName in pairs(subTableData) do
-                        --d(">>>>copied constant from subtable: " ..tos(constantName) .. " (" .. tos(constantValue) ..")")
-                        if type(constantName) == "string" then
-                            g_enums[prefixWithoutLastUnderscore][constantValue] = constantName
+    else
+        --LibAsync IS provided?
+        --Examples
+
+        local task = libAS:Create("TBug_task-_G_ENUMs_Parse")
+        local start = GetGameTimeMilliseconds()
+        local start2
+
+        task:For(zo_insecureNext, g_tmpGroups):Do(function(prefix, group)
+--d("prefix: " .. tos(prefix).. "; group: " ..tos(group))
+            --Transfer the tmpGroups of constants to the enumerations table, using the tmpGroups prefix e.g. SPECIALIZED_ and
+            --checking for + creating subTables like SPECIALIZED_ITEMTYPE etc.
+            --Enum entries at least need 2 constants entries in the g_tmpKeys or it will fail to create a new subTable
+            --for prefix, group in zo_insecureNext , g_tmpGroups do
+            local final = true
+            local i = 0
+            task:While(function() return final == true and i < 9999 end):Do(function() --repeat until final is changed to false
+            --repeat
+                i = i + 1 --security varibale to prevent an endless while loop
+                --local final = true
+                --for k, _ in zo_insecureNext , group do
+                task:For(zo_insecureNext, group):Do(function(k, v)
+                    -- find the shortest prefix that yields distinct values
+                    local p, f = prefix, false
+                    --Make the enum entry now and remove g_tmpGroups constant entry (set = nil) -> to prevent endless loop!
+                    while not makeEnum(group, p, 2, true) do
+                        --Creates subTables at "_", e.g. SPECIALIZED_ITEMTYPE, SPECIALIZED_ITEMTYP_ARMOR, ...
+                        local _, me = strfind(k, "[^_]_", #p + 1)
+                        if not me then
+                            f = final
+                            break --break inner while loop
+                        end
+                        p = strsub(k, 1, me)
+                    end
+                    final = f
+                    --end
+                end)
+            --until final
+            --end
+            end)
+        end):Then(function(p_task)
+
+            start2 = GetGameTimeMilliseconds()
+            df("[Tbug]Global ENUM generation took %ims", start2 - start) --Dauert ca 10+ Sekunden
+
+        end)
+        --Transfer the special ENUM subtables back to 1
+        --Create special enmus
+        --Add the SI string value enums
+        :Then(function(p_task)
+            --Create the 1table for the before split subtables -> like SPECIALIZED_ITEMTYPE_ again now
+            -->Loop all eh relevant subtables
+            if specialEnumNoSubtables_subTables and not ZO_IsTableEmpty(specialEnumNoSubtables_subTables) then
+                for prefixWhichGotSubtables, subtableNames in pairs(specialEnumNoSubtables_subTables) do
+                    local prefixWithoutLastUnderscore = strsub(prefixWhichGotSubtables, 1, -2)
+                    --d(">>combining subtables to 1 table: " ..tos(prefixWithoutLastUnderscore))
+                    g_enums[prefixWithoutLastUnderscore] = g_enums[prefixWithoutLastUnderscore] or {}
+                    for _, subTablePrefixWithoutUnderscore in ipairs(subtableNames) do
+                        --d(">>>subtable name: " ..tos(subTablePrefixWithoutUnderscore))
+                        local subTableData = g_enums[subTablePrefixWithoutUnderscore]
+                        if subTableData ~= nil then
+                            for constantValue, constantName in pairs(subTableData) do
+                                --d(">>>>copied constant from subtable: " ..tos(constantName) .. " (" .. tos(constantValue) ..")")
+                                if type(constantName) == "string" then
+                                    g_enums[prefixWithoutLastUnderscore][constantValue] = constantName
+                                end
+                            end
                         end
                     end
                 end
             end
-        end
-    end
 
-    --For the Special cRightKey entries at tableInspector
-    local alreadyCheckedValues = {}
-    for k, v in pairs(keyToSpecialEnum) do
-        if not alreadyCheckedValues[v] then
-            alreadyCheckedValues[v] = true
-            local tmpGroupEntry = keyToSpecialEnumTmpGroupKey[k]
-            local selectedTmpGroupTable = g_tmpGroups[tmpGroupEntry]
-            if selectedTmpGroupTable ~= nil then
-                makeEnumWithMinMaxAndIterationExclusion(selectedTmpGroupTable, v, k)
+            --For the Special cRightKey entries at tableInspector
+            local alreadyCheckedValues = {}
+            for k, v in pairs(keyToSpecialEnum) do
+                if not alreadyCheckedValues[v] then
+                    alreadyCheckedValues[v] = true
+                    local tmpGroupEntry = keyToSpecialEnumTmpGroupKey[k]
+                    local selectedTmpGroupTable = g_tmpGroups[tmpGroupEntry]
+                    if selectedTmpGroupTable ~= nil then
+                        makeEnumWithMinMaxAndIterationExclusion(selectedTmpGroupTable, v, k)
+                    end
+                end
             end
-        end
+
+            --Strings in _G.EsoStrings
+            local enumStringId = g_enums["SI"]
+            for v, k in zo_insecureNext, g_tmpStringIds do
+                if k then
+                    enumStringId[v] = k
+                end
+            end
+        end)
+        :Then(function(p_task)
+            df("[Tbug]ENUM special and StringId generation took %ims", GetGameTimeMilliseconds() - start2)
+        end)
     end
 
-    --Strings in _G.EsoStrings
-    local enumStringId = g_enums["SI"]
-    for v, k in zo_insecureNext, g_tmpStringIds do
-        if k then
-            enumStringId[v] = k
-        end
-    end
+
 
 
     --Prepare the entries for the filterCombobox at the global inspector
