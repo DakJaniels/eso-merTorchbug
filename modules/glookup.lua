@@ -451,18 +451,20 @@ local function doRefresh()
     -- Test using coroutine instead of libasync.
     --> lua threaded calls to unstress the client's "lag" while we build these ENUM lookup tables
     function tbug.safeYieldCoroutine() --Must be global func! Else client crash
-        if coroutine.isyieldable() then
+        --if coroutine.isyieldable() then --> Function does not exist in ESO lua corroutines!
             coroutine.yield()
             d("<<< [TBug]Co routine ENUMs yielded")
-        end
+        --end
     end
     local co = coroutine.create(function()
+        d("[TBug]Executing coroutine ENUM - #tmpGroups: " .. tostring(NonContiguousCount(g_tmpGroups)))
         --Transfer the tmpGroups of constants to the enumerations table, using the tmpGroups prefix e.g. SPECIALIZED_ and
         --checking for + creating subTables like SPECIALIZED_ITEMTYPE etc.
         --Enum entries at least need 2 constants entries in the g_tmpKeys or it will fail to create a new subTable
         for prefix, group in zo_insecureNext, g_tmpGroups do
             repeat
                 local final = true
+                d("> #group: " .. tostring(NonContiguousCount(group)))
                 for k, _ in zo_insecureNext, group do
                     --Create a new "thread" for the inner loops to unstress the tbug UI and show it quicker!
                     tbug.safeYieldCoroutine() --Must be global func!
@@ -487,7 +489,7 @@ local function doRefresh()
     while coroutine.status(co) ~= "dead" do
         coroutine.resume(co)
         local status = coroutine.status(co)
-        d("[TBug]Coroutine ENUMs - status: "..tos(status))
+        d("[TBug]Coroutine ENUMs - status: "..tostring(status))
     end
 
     --Create the 1table for splitUp sbtables like SPECIALIZED_ITEMTYPE_ again now, from all of the relevant subTables
