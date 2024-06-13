@@ -40,6 +40,8 @@ local keyToSpecialEnumNoSubtablesInEnum = tbug.keyToSpecialEnumNoSubtablesInEnum
 local keyToSpecialEnumExclude = tbug.keyToSpecialEnumExclude
 local keyToSpecialEnumTmpGroupKey = tbug.keyToSpecialEnumTmpGroupKey
 local keyToEnums = tbug.keyToEnums
+local checkIfItemLinkFunc = tbug.checkIfItemLinkFunc
+local sortItemLinkFunctions = tbug.sortItemLinkFunctions
 
 local specialEnumNoSubtables_subTables = {}
 
@@ -279,29 +281,41 @@ local function doRefreshLib(lname, ltab)
     end
 end
 
+local stringType = "string"
+local numberType = "number"
+local functionType = "function"
 local isObjectType = {
-    ["table"] = true;
-    ["userdata"] = true;
-    ["function"] = true;
+    ["table"] = true,
+    ["userdata"] = true,
+    [functionType] = true,
 }
 
 local function doRefresh()
     --d("[TBUG]doRefresh")
     ZO_ClearTable(g_objects)
     ZO_ClearTable(g_tmpStringIds)
+    ZO_ClearTable(tbug.functionsItemLink)
+    ZO_ClearTable(tbug.functionsItemLinkSorted)
+
     tbug.foreachValue(g_enums, ZO_ClearTable)
     tbug.foreachValue(g_tmpGroups, ZO_ClearTable)
 
     for k, v in zo_insecureNext, _G do
         local valueType = type(v)
         if isObjectType[valueType] then
-            if type(k) == "string" then mapObject(k, v) end
-        elseif valueType == "number" and type(k) == "string" then
+            if type(k) == stringType then mapObject(k, v) end
+            --Add *itemlink* functions to lookup table
+            if valueType == functionType then
+                checkIfItemLinkFunc(k, v)
+            end
+        elseif valueType == numberType and type(k) == stringType then
             local firstLetter = strbyte(k, 1)
             if not (firstLetter < 65 or firstLetter > 90) then mapEnum(k, v) end
         end
         --TODO: Libraries without LibStub: Check for global variables starting with "Lib" or "LIB"
     end
+
+    sortItemLinkFunctions()
 
     --Libraries: With deprecated LibStub
     if LibStub and LibStub.libs then

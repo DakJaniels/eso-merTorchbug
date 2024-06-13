@@ -199,7 +199,7 @@ function BasicInspectorPanel:filterScrollList()
     if filterFunc ~= nil or dropdownFilterFunc ~= nil then
         local filterFuncIsFunc = (filterFunc ~= nil and type(filterFunc) == "function" and true) or false
         local dropdownFilterFuncIsFunc = (dropdownFilterFunc ~= nil and type(dropdownFilterFunc) == "function" and true) or false
---d(">dropdownFilterFuncIsFunc: " ..tos(dropdownFilterFuncIsFunc))
+--d(">filterFuncIsFunc: " .. tos(filterFuncIsFunc) .. ", dropdownFilterFuncIsFunc: " ..tos(dropdownFilterFuncIsFunc))
         local j = 1
 --[[
 if TBUG._debugNow then
@@ -501,12 +501,12 @@ function BasicInspectorPanel:onRowMouseDoubleClick(row, data, mouseButton, upIns
 end
 
 function BasicInspectorPanel:readyForUpdate(pendingUpdate)
---d("[TBUG]BasicInspectorPanel:readyForUpdate-pendingUpdateNew: " ..tos(pendingUpdate) .. ", lockedForUpd: " ..tos(self._lockedForUpdates))
+d("[TBUG]BasicInspectorPanel:readyForUpdate-pendingUpdateNew: " ..tos(pendingUpdate) .. ", lockedForUpd: " ..tos(self._lockedForUpdates))
     if not self._lockedForUpdates then
         return true
     end
     if self._pendingUpdate < pendingUpdate then
---d(">pendingUpdate changed from: " .. tos(self._pendingUpdate) .. " to: " ..tos(pendingUpdate))
+d(">pendingUpdate changed from: " .. tos(self._pendingUpdate) .. " to: " ..tos(pendingUpdate))
         self._pendingUpdate = pendingUpdate
     end
     return false
@@ -514,18 +514,18 @@ end
 
 
 function BasicInspectorPanel:refreshData()
-    local dropdownFilterFunc = self.dropdownFilterFunc
+    --local dropdownFilterFunc = self.dropdownFilterFunc
 --d("BasicInspectorPanel:refreshData-dropdownFilterFunc: " ..tos(dropdownFilterFunc))
 
 
     if self:readyForUpdate(UPDATE_MASTER) then
---d(">MasterList")
+d(">MasterList")
         self:buildMasterList()
---d(">>FilterScrollList")
+d(">>FilterScrollList")
         self:filterScrollList()
---d(">>SortScrollList")
+d(">>SortScrollList")
         self:sortScrollList()
---d(">>CommitScrollList")
+d(">>CommitScrollList")
         self:commitScrollList()
     end
 end

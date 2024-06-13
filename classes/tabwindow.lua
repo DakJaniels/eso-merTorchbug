@@ -1006,7 +1006,6 @@ function TabWindow:_initTab(tabControl)
         function(control, mouseButton, upInside)
             if upInside then
                 if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
-                    ZO_Tooltips_HideTextTooltip()
                     self:selectTab(control)
                 elseif mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
                     ZO_Tooltips_HideTextTooltip()
@@ -1494,14 +1493,14 @@ function TabWindow:selectTab(key, isMOC)
     isMOC = isMOC or false
     local tabIndex = self:getTabIndex(key)
     if tbug.doDebug then d("[TabWindow:selectTab]tabIndex: " ..tos(tabIndex) .. ", key: " ..tos(key) ..", isMOC: " ..tos(isMOC)) end
-    hideContextMenus()
     ZO_Tooltips_HideTextTooltip()
-    hideEditAndSliderControls(self, nil)
+    hideContextMenus()
     local tabControl = self:getTabControl(key)
     if self.activeTab == tabControl then
         if tbug.doDebug then d("< ABORT: active tab = current tab") end
         return
     end
+    hideEditAndSliderControls(self, nil)
     local activeTab = self.activeTab
     if activeTab then
         activeTab.label:SetColor(self.inactiveColor:UnpackRGBA())

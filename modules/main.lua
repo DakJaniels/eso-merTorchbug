@@ -3,9 +3,6 @@ local myNAME = TBUG.name
 
 local EM = EVENT_MANAGER
 
-local strlow = string.lower
-local zo_strf = zo_strformat
-
 local sessionStartTime = tbug.sessionStartTime
 local ADDON_MANAGER
 
@@ -43,6 +40,8 @@ local zo_ls = zo_loadstring
 local tins = table.insert
 local trem = table.remove
 local tcon = table.concat
+local zo_strf = zo_strformat
+
 local firstToUpper = tbug.firstToUpper
 local startsWith = tbug.startsWith
 local endsWith = tbug.endsWith
@@ -166,20 +165,6 @@ local function showFunctionReturnValue(object, tabTitle, winTitle, objectParent)
     end
 end
 
---Check if the key/value is any itemLink API function like GetItemLink*. or IsItemLink* or CheckItemLink*
-local functionsItemLink = tbug.functionsItemLink
-local function checkIfItemLinkFunc(key, value)
---d("[tbug]checkIfItemLinkFunc-k: " ..tos(key) ..", value: " .. tos(value))
-    --Already in the table?
-    if functionsItemLink[key] == nil then
-        --Does the function name contain any itemlink?
-        if string.find(strlow(key), "itemlink", 1, true) then
-            functionsItemLink[key] = value
-        end
-    end
-end
-tbug.checkIfItemLinkFunc = checkIfItemLinkFunc
-
 local function valueEdit_CancelThrottled(editBox, delay)
     if not editBox or not editBox.panel or not editBox.panel.valueEditCancel then return end
     delay = delay or 0
@@ -206,8 +191,8 @@ tbug.valueSlider_CancelThrottled = valueSlider_CancelThrottled
 local function cleanTitle(titleText)
     --Remove leading [MOC_<numbers>] prefix
     --[[
-    if string.find(titleText, titleMocTemplate) ~= nil then
-        local mocEndPosInTitle = string.find(titleText, "]", 5, true)
+    if strfind(titleText, titleMocTemplate) ~= nil then
+        local mocEndPosInTitle = strfind(titleText, "]", 5, true)
         if mocEndPosInTitle ~= nil then
             titleText = string.sub(titleText, mocEndPosInTitle + 2) --+2 to skip ] and space afterwards
         end

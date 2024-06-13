@@ -1,5 +1,9 @@
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
+local strfind = string.find
+local strlower = string.lower
+local strlen = string.len
+
 --Mouse over control (MOC) - Number of opened tabs
 tbug.numMOCTabs = 0
 
@@ -22,6 +26,7 @@ local tostring = tostring
 local strupper = string.upper
 local strgmatch = string.gmatch
 local tins = table.insert
+local tsort = table.sort
 
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
 local excludeTypes = { [CT_INVALID_TYPE] = true }
@@ -29,6 +34,8 @@ local getControlType
 local doNotGetParentInvokerNameAttributes = tbug.doNotGetParentInvokerNameAttributes
 local tbug_glookup = tbug.glookup
 local tbug_glookupEnum = tbug.glookupEnum
+local functionsItemLink = tbug.functionsItemLink
+local functionsItemLinkSorted = tbug.functionsItemLinkSorted
 
 ------------------------------------------------------------------------------------------------------------------------
 local function throttledCall(callbackName, timer, callback, ...)
@@ -81,11 +88,11 @@ local function findUpperCaseCharsAndReturnOffsetsTab(str)
     local counter = 20
 
     local foundPos = 1
-    local strLen = string.len(str)
+    local strLen = strlen(str)
 
     while counter >= 1 do
         local startPos, endPos
-        startPos, endPos = string.find(str, "%u+", foundPos)
+        startPos, endPos = strfind(str, "%u+", foundPos)
         --d("startPos: " ..tostring(startPos) .. ", endPos: " ..tostring(endPos))
         if startPos ~= nil and endPos  ~= nil then
             --Check if the offsets of any uppercase found characters are directly after the before one
@@ -557,6 +564,36 @@ function tbug.getRelevantNameForCall(refVar)
     return relevantNameForCallOfRefVar
 end
 
+
+--Check if the key/value is any itemLink API function like GetItemLink*. or IsItemLink* or CheckItemLink*
+local function checkIfItemLinkFunc(key, value)
+--d("[tbug]checkIfItemLinkFunc-k: " ..tos(key) ..", value: " .. tos(value))
+    --Already in the table?
+    if functionsItemLink[key] == nil then
+        --Does the function name contain any itemlink?
+        if strfind(strlower(key), "itemlink", 1, true) then
+            functionsItemLink[key] = value
+            return true
+        end
+    end
+    return false
+end
+tbug.checkIfItemLinkFunc = checkIfItemLinkFunc
+
+local function sortItemLinkFunctions()
+    --functions panel: ItemLink functions were found? Sort them by name now
+    if not ZO_IsTableEmpty(functionsItemLink) then
+--d("[tbug]found itemLink functions: " ..tostring(NonContiguousCount(functionsItemLink)))
+        local entryCount = 0
+        for k, _ in pairs(functionsItemLink) do
+            entryCount = entryCount + 1
+--d(">entryCount added: " ..tostring(entryCount) .. " - name: " ..tostring(k))
+            functionsItemLinkSorted[entryCount] = k
+        end
+        tsort(functionsItemLinkSorted)
+    end
+end
+tbug.sortItemLinkFunctions = sortItemLinkFunctions
 
 ------------------------------------------------------------------------------------------------------------------------
 

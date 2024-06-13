@@ -93,13 +93,14 @@ end
 
 
 function TableInspectorPanel:bindMasterList(editTable, specialMasterListID)
+d("[tbug]TableInspectorPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
     self.subject = editTable
     self.specialMasterListID = specialMasterListID
 end
 
 
 function TableInspectorPanel:buildMasterList()
---d("[tbug]TableInspectorPanel:buildMasterList")
+d("[tbug]TableInspectorPanel:buildMasterList")
 
     if self:buildMasterListSpecial() then
 --d("<building special!")
@@ -123,7 +124,7 @@ function TableInspectorPanel:buildMasterList()
         --end
     end
 
-    for k, v in zo_insecureNext , self.subject do
+    for k, v in zo_insecureNext , self.subject do --self.subject often is _G
         local tv = type(v)
         local rt = RT.GENERIC
 
@@ -165,7 +166,7 @@ function TableInspectorPanel:buildMasterListSpecial()
     local tbEvents = tbug.Events
     local isScenes = ((specialMasterListID and specialMasterListID == RT.SCENES_TABLE) or rawequal(editTable, tbug.ScenesOutput)) or false
     local isFragments = ((specialMasterListID and specialMasterListID == RT.FRAGMENTS_TABLE) or rawequal(editTable, tbug.FragmentsOutput)) or false
---d(string.format("[tbug]TableInspectorPanel:buildMasterListSpecial - specialMasterListID: %s, scenes: %s, fragments: %s", tos(specialMasterListID), tos(isScenes), tos(isFragments)))
+d(string.format("[tbug]TableInspectorPanel:buildMasterListSpecial - specialMasterListID: %s, scenes: %s, fragments: %s", tos(specialMasterListID), tos(isScenes), tos(isFragments)))
 
     if rawequal(editTable, nil) then
         return true
