@@ -462,7 +462,7 @@ local function doRefresh()
     function tbug.safeYieldCoroutine() --Must be global func! Else client crash
         if not doesIsYieldableExist or (doesIsYieldableExist and coroutine.isyieldable()) then --> Function does not exist in ESO lua corroutines!
             coroutine.yield()
-            d("<<< [TBug]Co routine ENUMs yielded")
+            --d("<<< [TBug]Co routine ENUMs yielded")
         end
     end
 
@@ -501,7 +501,7 @@ local function doRefresh()
     local securityCounter = 0
     repeat
         coTmpGroupsToEnumsStatus = coroutine.status(coTmpGroupsToEnums)
-        d("[TBug]Coroutine ENUMs - status: "..tostring(coTmpGroupsToEnumsStatus))
+        --d("[TBug]Coroutine ENUMs - status: "..tostring(coTmpGroupsToEnumsStatus))
         coroutine.resume(coTmpGroupsToEnums)
         if coTmpGroupsToEnumsStatus == "dead" then
             tbug.runCoroutineFinishedCallback("TmpGroupsToEnums")
