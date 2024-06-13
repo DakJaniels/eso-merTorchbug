@@ -584,8 +584,8 @@ end
 
 function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shift)
     local isGlobalInspector = (self.inspector and self.inspector.control and self.inspector.control.isGlobalInspector) or false
+d("[tbug]TableInspectorPanel:onRowClicked - isGlobalInspector: " ..tos(isGlobalInspector))
     if tbug.doDebug then
-        d("[tbug]TableInspectorPanel:onRowClicked - isGlobalInspector: " ..tos(isGlobalInspector))
         tbug._debugTableInspectorRowClicked = {
             row = row,
             data = data,
@@ -727,7 +727,7 @@ d(">loosing focus of editbox")
 end
 
 function TableInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, alt, shift)
---df("tbug:TableInspectorPanel:onRowDoubleClicked")
+df("tbug:TableInspectorPanel:onRowDoubleClicked")
     hideContextMenus()
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         local sliderCtrl = self.sliderControl

@@ -125,20 +125,20 @@ local function valueEdit_OnTextChanged(editBox)
 end
 
 local function valueSlider_OnEnter(sliderCtrl)
---d("valueSlider_OnEnter")
+d("valueSlider_OnEnter")
     return sliderCtrl.panel:valueSliderConfirm(sliderCtrl)
 end
 
 
 local function valueSlider_OnFocusLost(sliderCtrl)
---d("valueSlider_OnFocusLost")
+d("valueSlider_OnFocusLost")
     valueSlider_CancelThrottled(sliderCtrl, 75)
     --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
 end
 
 
 local function valueSlider_OnValueChanged(sliderCtrl)
---d("valueSlider_OnValueChanged")
+d("valueSlider_OnValueChanged")
     sliderCtrl.panel:valueSliderUpdate(sliderCtrl)
 end
 
@@ -182,7 +182,7 @@ end
 
 function ObjectInspectorPanel:valueEditCancel(editBox)
 d("[tbug]ObjectInspectorPanel:valueEditCancel - editBox: " ..tos(editBox:GetText()))
-    hideContextMenus()
+    --hideContextMenus()
     local editData = self.editData
     if editData then
         self.editData = nil
@@ -197,7 +197,7 @@ end
 function ObjectInspectorPanel:valueEditConfirm(editBox)
     hideContextMenus()
     local expr = editBox:GetText()
---df("tbug: edit confirm: %s", expr)
+df("tbug: edit confirm: %s", expr)
     if editBox.updatedColumn ~= nil and editBox.updatedColumnIndex ~= nil then
         if self.editData and self.editData.dataEntry and editConfirmAllowedTypes[self.editData.dataEntry.typeId] then
             self:valueEditConfirmed(editBox, expr)
@@ -315,6 +315,7 @@ end
 
 
 function ObjectInspectorPanel:valueEditUpdate(editBox)
+d("[tbug]ObjectInspectorPanel:valueEditUpdate - editBox: " ..tos(editBox:GetText()))
     hideContextMenus()
 
     local expr = editBox:GetText()
@@ -355,7 +356,7 @@ function ObjectInspectorPanel:createValueSliderControl(parent)
         end
     end)
     self.sliderCancelButton = GetControl(sliderControl, "CancelButton")
-    self.sliderCancelButton:SetHandler("OnMouseUp", function(sliderSaveButtonControl, mouseButton, upInside, shift, ctrl, alt, command)
+    self.sliderCancelButton:SetHandler("OnMouseUp", function(sliderCancelButtonCtrl, mouseButton, upInside, shift, ctrl, alt, command)
         --Cancel teh value slider update
         if mouseButton == MOUSE_BUTTON_INDEX_LEFT and upInside then
             valueSlider_OnFocusLost(sliderControl)
@@ -379,6 +380,7 @@ function ObjectInspectorPanel:anchorSliderControlToListCell(sliderControl, listC
 end
 
 function ObjectInspectorPanel:valueSliderConfirm(sliderCtrl)
+d("[tbug]ObjectInspectorPanel:valueSliderConfirm")
     if not self.sliderCtrlActive then return end
     hideContextMenus()
     local expr = tos(sliderCtrl:GetValue())
@@ -417,6 +419,7 @@ end
 
 
 function ObjectInspectorPanel:valueSliderUpdate(sliderCtrl)
+d("[tbug]ObjectInspectorPanel:valueSliderUpdate")
     if not self.sliderCtrlActive then return end
     hideContextMenus()
     ZO_Tooltips_HideTextTooltip()
@@ -451,13 +454,14 @@ function ObjectInspectorPanel:valueSliderConfirmed(sliderControl, evalResult)
 end
 
 function ObjectInspectorPanel:valueSliderCancel(sliderCtrl)
+d("[tbug]ObjectInspectorPanel:valueSliderCancel")
     if not self.sliderCtrlActive then return end
 --d("tbug: slider cancel")
-    hideContextMenus()
     local sliderData = self.sliderData
     if sliderData then
         self.sliderData = nil
         ZO_ScrollList_RefreshVisible(self.list, sliderData)
+        --hideContextMenus()
     end
     sliderCtrl:SetHidden(true)
     sliderCtrl.updatedColumn = nil

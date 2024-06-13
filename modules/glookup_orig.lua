@@ -3,15 +3,12 @@ local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 local autovivify = tbug.autovivify
 
 local tos = tostring
-local strbyte = string.byte
 local strfind = string.find
 local strmatch = string.match
 local strsub = string.sub
 local strup = string.upper
 
 local strsplit = tbug.strSplit
-local zo_strsplit = zo_strsplit
-local tconcat = table.concat
 
 local EsoStrings = EsoStrings
 
@@ -20,7 +17,7 @@ local SI_LAST = SI_NONSTR_PUBLICALLINGAMESGAMEPADSTRINGS_LAST_ENTRY --10944, old
 
 local g_nonEnumPrefixes = tbug.nonEnumPrefixes
 
-local mtEnum = { __index = function (_, v) return v end }
+local mtEnum = {__index = function(_, v) return v end}
 local g_enums = setmetatable({}, autovivify(mtEnum))
 tbug.enums = g_enums
 local g_needRefresh = true
@@ -45,10 +42,10 @@ local specialEnumNoSubtables_subTables = {}
 
 local function isIterationOrMinMaxConstant(stringToSearch)
     local stringsToFind = {
-        ["_MIN_VALUE"] = -11,
-        ["_MAX_VALUE"] = -11,
-        ["_ITERATION_BEGIN"] = -17,
-        ["_ITERATION_END"] = -15,
+        ["_MIN_VALUE"]          = -11,
+        ["_MAX_VALUE"]          = -11,
+        ["_ITERATION_BEGIN"]    = -17,
+        ["_ITERATION_END"]      = -15,
     }
     for searchStr, offsetFromEnd in pairs(stringsToFind) do
         if strfind(stringToSearch, searchStr, offsetFromEnd, true) ~= nil then
@@ -59,7 +56,7 @@ local function isIterationOrMinMaxConstant(stringToSearch)
 end
 
 local function longestCommonPrefix(tab, pat)
-    local key, val = zo_insecureNext(tab)
+    local key, val = zo_insecureNext (tab)
     local lcp = val and strmatch(val, pat)
 
     if not lcp then
@@ -70,7 +67,7 @@ local function longestCommonPrefix(tab, pat)
         df("... lcp start %q => %q", val, lcp)
     end
 
-    for key, val in zo_insecureNext, tab, key do
+    for key, val in zo_insecureNext , tab, key do
         while strfind(val, lcp, 1, true) ~= 1 do
             lcp = strmatch(lcp, pat)
             if not lcp then
@@ -87,25 +84,23 @@ end
 local function getPrefix(str, sepparator, prefixDepth)
     sepparator = sepparator or "_"
     prefixDepth = prefixDepth or 1 --find the 1st sepparator, or which "depth"?
-    --local retVar
+    local retVar
 
-    --if prefixDepth == 1 then
-    --    retVar = strmatch(str, "^([A-Z][A-Z0-9]*%"..sepparator..")[%"..sepparator.."A-Z0-9]*$") --2023--12-04 Does not find PCHAT_lowerCasHere
-    --    if retVar == nil then
-    --        retVar = strmatch(str, "^([A-Z][A-Z0-9]*%"..sepparator..")[%"..sepparator.."%w]*$")
-    --    end
-    --else
-    --Split the string at the sepparator into a table
-    --    local splitAtSepparatorTab = strsplit(str, sepparator)
-    --    if not ZO_IsTableEmpty(splitAtSepparatorTab) then
-    --        retVar = ""
-    --        for i=1, prefixDepth, 1 do
-    --            retVar = retVar .. splitAtSepparatorTab[i] .. sepparator
-    --        end
-    --    end
-    --end
-    local parts = { zo_strsplit(sepparator, str) }
-    local retVar = tconcat(parts, sepparator, 1, prefixDepth) .. sepparator
+    if prefixDepth == 1 then
+        retVar = strmatch(str, "^([A-Z][A-Z0-9]*%"..sepparator..")[%"..sepparator.."A-Z0-9]*$") --2023--12-04 Does not find PCHAT_lowerCasHere
+        if retVar == nil then
+            retVar = strmatch(str, "^([A-Z][A-Z0-9]*%"..sepparator..")[%"..sepparator.."%w]*$")
+        end
+    else
+        --Split the string at the sepparator into a table
+        local splitAtSepparatorTab = strsplit(str, sepparator)
+        if not ZO_IsTableEmpty(splitAtSepparatorTab) then
+            retVar = ""
+            for i=1, prefixDepth, 1 do
+                retVar = retVar .. splitAtSepparatorTab[i] .. sepparator
+            end
+        end
+    end
     return retVar
 end
 tbug.getPrefix = getPrefix
@@ -114,7 +109,7 @@ local function makeEnum(group, prefix, minKeys, calledFromTmpGroupsLoop)
     ZO_ClearTable(g_tmpKeys)
 
     local numKeys = 0
-    for k2, v2 in zo_insecureNext, group do
+    for k2, v2 in zo_insecureNext , group do
         if strfind(k2, prefix, 1, true) == 1 then
             if g_tmpKeys[v2] == nil then
                 g_tmpKeys[v2] = k2
@@ -138,7 +133,7 @@ local function makeEnum(group, prefix, minKeys, calledFromTmpGroupsLoop)
 
     local prefixWithoutLastUnderscore = strsub(prefix, 1, -2)
     local enum = g_enums[prefixWithoutLastUnderscore]
-    for v2, k2 in zo_insecureNext, g_tmpKeys do
+    for v2, k2 in zo_insecureNext , g_tmpKeys do
         enum[v2] = k2
         g_tmpKeys[v2] = nil
         --IMPORTANT: remove g_tmpGroups constant entry (set = nil) here -> to prevent endless loop in calling while . do
@@ -151,7 +146,7 @@ local function makeEnum(group, prefix, minKeys, calledFromTmpGroupsLoop)
         --And should these split subTables be combined again to one in the end, afer tthe while ... do loop was finished?
         for prefixRecordAllSubtables, isActivated in pairs(keyToSpecialEnumNoSubtablesInEnum) do
             if isActivated and strfind(prefix, prefixRecordAllSubtables, 1) == 1 then
-                --d(">anti-split into subtables found: " ..tos(prefix))
+--d(">anti-split into subtables found: " ..tos(prefix))
                 specialEnumNoSubtables_subTables[prefixRecordAllSubtables] = specialEnumNoSubtables_subTables[prefixRecordAllSubtables] or {}
                 table.insert(specialEnumNoSubtables_subTables[prefixRecordAllSubtables], prefixWithoutLastUnderscore)
             end
@@ -162,23 +157,23 @@ local function makeEnum(group, prefix, minKeys, calledFromTmpGroupsLoop)
 end
 
 local function makeEnumWithMinMaxAndIterationExclusion(group, prefix, key)
-    --d("==========================================")
-    --d("[TBUG]makeEnumWithMinMaxAndIterationExclusion - prefix: " ..tos(prefix) .. ", group: " ..tos(group) .. ", key: " ..tos(key))
+--d("==========================================")
+--d("[TBUG]makeEnumWithMinMaxAndIterationExclusion - prefix: " ..tos(prefix) .. ", group: " ..tos(group) .. ", key: " ..tos(key))
     ZO_ClearTable(g_tmpKeys)
 
     local keyToSpecialEnumExcludeEntries = keyToSpecialEnumExclude[key]
 
     local goOn = true
-    for k2, v2 in zo_insecureNext, group do
+    for k2, v2 in zo_insecureNext , group do
         local strFoundPos = strfind(k2, prefix, 1, true)
-        --d(">k: " ..tos(k2) .. ", v: " ..tos(v2) .. ", pos: " ..tos(strFoundPos))
+--d(">k: " ..tos(k2) .. ", v: " ..tos(v2) .. ", pos: " ..tos(strFoundPos))
         if strFoundPos ~= nil then
             --Exclude _MIN_VALUE and _MAX_VALUE
             if isIterationOrMinMaxConstant(k2) == false then
                 if keyToSpecialEnumExcludeEntries ~= nil then
                     for _, vExclude in ipairs(keyToSpecialEnumExcludeEntries) do
                         if strfind(k2, vExclude, 1, true) == 1 then
-                            --d("<<excluded: " ..tos(k2))
+--d("<<excluded: " ..tos(k2))
                             goOn = false
                             break
                         end
@@ -186,28 +181,28 @@ local function makeEnumWithMinMaxAndIterationExclusion(group, prefix, key)
                 end
                 if goOn then
                     if g_tmpKeys[v2] == nil then
-                        --d(">added value: " ..tos(v2) .. ", key: " ..tos(k2))
+--d(">added value: " ..tos(v2) .. ", key: " ..tos(k2))
                         g_tmpKeys[v2] = k2
                     else
-                        --d("<<<<<<<<<duplicate value: " ..tos(v2))
+--d("<<<<<<<<<duplicate value: " ..tos(v2))
                         -- duplicate value
                         return nil
                     end
                 end
-                --else
-                --d("<<<<<--------------------------")
-                --d("<<iterationOrMinMax")
+            --else
+--d("<<<<<--------------------------")
+--d("<<iterationOrMinMax")
             end
         end
     end
 
     if goOn then
-        --d("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+--d("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         local prefixWithoutLastUnderscore = strsub(prefix, 1, -2)
         local enum = g_enums[prefixWithoutLastUnderscore]
-        for v2, k2 in zo_insecureNext, g_tmpKeys do
-            --d(">prefix w/o last _: " .. tos(prefixWithoutLastUnderscore)  ..", added v2: " .. tos(v2) .. " with key: " ..tos(k2) .." to enum"  )
+        for v2, k2 in zo_insecureNext , g_tmpKeys do
+--d(">prefix w/o last _: " .. tos(prefixWithoutLastUnderscore)  ..", added v2: " .. tos(v2) .. " with key: " ..tos(k2) .." to enum"  )
             enum[v2] = k2
             group[k2] = nil
             g_tmpKeys[v2] = nil
@@ -222,8 +217,7 @@ local function mapEnum(k, v)
 
     if skip ~= nil then
         if skip == true then
-            --prefix = strmatch(k, "^([A-Z][A-Z0-9]*_[A-Z0-9]+_)")
-            prefix = getPrefix(k, "_", 2)
+            prefix = strmatch(k, "^([A-Z][A-Z0-9]*_[A-Z0-9]+_)")
         elseif strfind(k, skip) then
             return
         end
@@ -254,15 +248,15 @@ end
 
 
 local typeMappings = {
-    ["number"] = mapEnum;
-    ["table"] = mapObject;
-    ["userdata"] = mapObject;
-    ["function"] = mapObject;
+    ["number"]      = mapEnum,
+    ["table"]       = mapObject,
+    ["userdata"]    = mapObject,
+    ["function"]    = mapObject,
 }
 
 
 local function doRefreshLib(lname, ltab)
-    for k, v in zo_insecureNext, ltab do
+    for k, v in zo_insecureNext , ltab do
         if type(k) == "string" then
             local mapFunc = typeMappings[type(v)]
             if mapFunc then
@@ -272,34 +266,27 @@ local function doRefreshLib(lname, ltab)
     end
 end
 
-local isObjectType = {
-    ["table"] = true;
-    ["userdata"] = true;
-    ["function"] = true;
-}
-
 local function doRefresh()
-    --d("[TBUG]doRefresh")
+--d("[TBUG]doRefresh")
     ZO_ClearTable(g_objects)
     ZO_ClearTable(g_tmpStringIds)
     tbug.foreachValue(g_enums, ZO_ClearTable)
     tbug.foreachValue(g_tmpGroups, ZO_ClearTable)
 
     for k, v in zo_insecureNext, _G do
-        local valueType = type(v)
-        if isObjectType[valueType] then
-            if type(k) == "string" then mapObject(k, v) end
-        elseif valueType == "number" and type(k) == "string" then
-            local firstLetter = strbyte(k, 1)
-            if not (firstLetter < 65 or firstLetter > 90) then mapEnum(k, v) end
+        if type(k) == "string" then
+            --TODO: Libraries without LibStub: Check for global variables starting with "Lib" or "LIB"
+            local mapFunc = typeMappings[type(v)]
+            if mapFunc then
+                mapFunc(k, v)
+            end
         end
-        --TODO: Libraries without LibStub: Check for global variables starting with "Lib" or "LIB"
     end
 
     --Libraries: With deprecated LibStub
     if LibStub and LibStub.libs then
         doRefreshLib("LibStub", LibStub)
-        for libName, lib in zo_insecureNext, LibStub.libs do
+        for libName, lib in zo_insecureNext , LibStub.libs do
             doRefreshLib(libName, lib)
         end
     end
@@ -344,7 +331,9 @@ local function doRefresh()
     enumControlTypes[CT_COMPASS] = "CT_COMPASS"
     enumControlTypes[CT_TEXTURECOMPOSITE] = "CT_TEXTURECOMPOSITE"
     enumControlTypes[CT_POLYGON] = "CT_POLYGON"
-    enumControlTypes[CT_VECTOR] = "CT_VECTOR"
+    if CT_VECTOR ~= nil then
+        enumControlTypes[CT_VECTOR] = "CT_VECTOR"
+    end
 
     local enumDrawLayer = g_enums[keyToEnums["layer"]]
     enumDrawLayer[DL_BACKGROUND]    = "DL_BACKGROUND"
@@ -448,60 +437,43 @@ local function doRefresh()
     makeEnum(g_tmpGroups["STAT_"],          "STAT_VALUE_COLOR_")
     makeEnum(g_tmpGroups["TRADING_"],       "TRADING_HOUSE_SORT_LISTING_")
 
-    -- Test using coroutine instead of libasync.
-    --> lua threaded calls to unstress the client's "lag" while we build these ENUM lookup tables
-    function tbug.safeYieldCoroutine() --Must be global func! Else client crash
-        if coroutine.isyieldable() then
-            coroutine.yield()
-            d("<<< [TBug]Co routine ENUMs yielded")
-        end
-    end
-    local co = coroutine.create(function()
-        --Transfer the tmpGroups of constants to the enumerations table, using the tmpGroups prefix e.g. SPECIALIZED_ and
-        --checking for + creating subTables like SPECIALIZED_ITEMTYPE etc.
-        --Enum entries at least need 2 constants entries in the g_tmpKeys or it will fail to create a new subTable
-        for prefix, group in zo_insecureNext, g_tmpGroups do
-            repeat
-                local final = true
-                for k, _ in zo_insecureNext, group do
-                    --Create a new "thread" for the inner loops to unstress the tbug UI and show it quicker!
-                    tbug.safeYieldCoroutine() --Must be global func!
-                    -- find the shortest prefix that yields distinct values
-                    local p, f = prefix, false
-                    --Make the enum entry now and remove g_tmpGroups constant entry (set = nil) -> to prevent endless loop!
-                    while not makeEnum(group, p, 2, true) do
-                        --Creates subTables at "_", e.g. SPECIALIZED_ITEMTYPE, SPECIALIZED_ITEMTYP_ARMOR, ...
-                        local _, me = strfind(k, "[^_]_", #p + 1)
-                        if not me then
-                            f = final
-                            break
-                        end
-                        p = strsub(k, 1, me)
+
+    --Transfer the tmpGroups of constants to the enumerations table, using the tmpGroups prefix e.g. SPECIALIZED_ and
+    --checking for + creating subTables like SPECIALIZED_ITEMTYPE etc.
+    --Enum entries at least need 2 constants entries in the g_tmpKeys or it will fail to create a new subTable
+    for prefix, group in zo_insecureNext , g_tmpGroups do
+        repeat
+            local final = true
+            for k, _ in zo_insecureNext , group do
+                -- find the shortest prefix that yields distinct values
+                local p, f = prefix, false
+                --Make the enum entry now and remove g_tmpGroups constant entry (set = nil) -> to prevent endless loop!
+                while not makeEnum(group, p, 2, true) do
+                    --Creates subTables at "_", e.g. SPECIALIZED_ITEMTYPE, SPECIALIZED_ITEMTYP_ARMOR, ...
+                    local _, me = strfind(k, "[^_]_", #p + 1)
+                    if not me then
+                        f = final
+                        break
                     end
-                    final = f
+                    p = strsub(k, 1, me)
                 end
-            until final
-        end
-    end)
-    -- Start the coroutine now and resume it as long the inner for ... loops are active.
-    while coroutine.status(co) ~= "dead" do
-        coroutine.resume(co)
-        local status = coroutine.status(co)
-        d("[TBug]Coroutine ENUMs - status: "..tos(status))
+                final = f
+            end
+        until final
     end
 
     --Create the 1table for splitUp sbtables like SPECIALIZED_ITEMTYPE_ again now, from all of the relevant subTables
     if specialEnumNoSubtables_subTables and not ZO_IsTableEmpty(specialEnumNoSubtables_subTables) then
         for prefixWhichGotSubtables, subtableNames in pairs(specialEnumNoSubtables_subTables) do
             local prefixWithoutLastUnderscore = strsub(prefixWhichGotSubtables, 1, -2)
-            --d(">>combining subtables to 1 table: " ..tos(prefixWithoutLastUnderscore))
+--d(">>combining subtables to 1 table: " ..tos(prefixWithoutLastUnderscore))
             g_enums[prefixWithoutLastUnderscore] = g_enums[prefixWithoutLastUnderscore] or {}
             for _, subTablePrefixWithoutUnderscore in ipairs(subtableNames) do
-                --d(">>>subtable name: " ..tos(subTablePrefixWithoutUnderscore))
+--d(">>>subtable name: " ..tos(subTablePrefixWithoutUnderscore))
                 local subTableData = g_enums[subTablePrefixWithoutUnderscore]
                 if subTableData ~= nil then
                     for constantValue, constantName in pairs(subTableData) do
-                        --d(">>>>copied constant from subtable: " ..tos(constantName) .. " (" .. tos(constantValue) ..")")
+--d(">>>>copied constant from subtable: " ..tos(constantName) .. " (" .. tos(constantValue) ..")")
                         if type(constantName) == "string" then
                             g_enums[prefixWithoutLastUnderscore][constantValue] = constantName
                         end
@@ -526,7 +498,7 @@ local function doRefresh()
 
     --Strings in _G.EsoStrings
     local enumStringId = g_enums["SI"]
-    for v, k in zo_insecureNext, g_tmpStringIds do
+    for v, k in zo_insecureNext , g_tmpStringIds do
         if k then
             enumStringId[v] = k
         end
@@ -556,12 +528,14 @@ function tbug.glookup(obj)
     return g_objects[obj]
 end
 
+
 function tbug.glookupEnum(prefix)
     if g_needRefresh then
         doRefresh()
     end
     return g_enums[prefix]
 end
+
 
 function tbug.glookupRefresh(now)
     if now then

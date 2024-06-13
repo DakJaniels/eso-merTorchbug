@@ -23,7 +23,7 @@
 						mouseOver="/esoui/art/buttons/edit_save_over.dds"
 					/>
 					<OnMouseEnter>
-						InitializeTooltip(InformationTooltip, self, TOP, 0, -15)
+						InitializeTooltip(InformationTooltip, self, TOP, 0, -10, BOTTOM)
 						SetTooltipText(InformationTooltip, "Save value")
 					</OnMouseEnter>
 					<OnMouseExit>
@@ -39,7 +39,7 @@
 						mouseOver="/esoui/art/buttons/cancel_over.dds"
 					/>
 					<OnMouseEnter>
-						InitializeTooltip(InformationTooltip, self, TOP, 0, -15)
+						InitializeTooltip(InformationTooltip, self, TOP, 0, -10, BOTTOM)
 						SetTooltipText(InformationTooltip, "Cancel")
 					</OnMouseEnter>
 					<OnMouseExit>

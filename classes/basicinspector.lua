@@ -22,6 +22,7 @@ local possibleTranslationTextKeys = tbug.possibleTranslationTextKeys
 local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
 local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 
+local hideContextMenus = tbug.HideContextMenus
 
 local function createPanelFunc(inspector, panelClass)
     local function createPanel(pool)
@@ -275,6 +276,19 @@ function BasicInspectorPanel:initScrollList(control)
     else
         scrollBar:SetHandler("OnMouseUp", onScrollBarMouseUp)
     end
+
+    local function onScrollBarMouseDown(selfScrollbarVar, mouseButton)
+--d("[tbug]onScrollBarMouseDown")
+        valueEdit_CancelThrottled(self.editBox, 100)
+        valueSlider_CancelThrottled(self.sliderControl, 100)
+        hideContextMenus()
+    end
+    local scrollBarOnMouseDownHandler = scrollBar:GetHandler("OnMouseDown")
+    if scrollBarOnMouseDownHandler ~= nil then
+        ZO_PostHookHandler(scrollBar, "OnMouseDown", onScrollBarMouseDown)
+    else
+        scrollBar:SetHandler("OnMouseDown", onScrollBarMouseDown)
+    end
 end
 
 
@@ -437,14 +451,23 @@ tbug._BasicInspectorPanel_onRowMouseEnter = {
                 row._isTimeStamp = true
                 --Show formated timestamp text tooltip
                 local noError, resultStr = pcall(function() return os.date("%c", value) end)
-                if noError == true then
-
+                if noError == true and resultStr ~= nil then
+                    ZO_Tooltips_ShowTextTooltip(row, RIGHT, resultStr)
                 end
                 --Add a translation text to descriptor or other relevant SI* constants
             elseif isTranslationTextRow(row, data, value) then
                 local translatedText = GetString(value)
                 if translatedText and translatedText ~= "" then
                     ZO_Tooltips_ShowTextTooltip(row, RIGHT, translatedText)
+                end
+            else
+                --Show table's # of entries as tooltip
+                if type(value) == "table" and value ~= _G then
+                    local tableEntries = NonContiguousCount(value)
+                    if tableEntries ~= nil then
+                        InitializeTooltip(InformationTooltip, row, LEFT, 20, 0, RIGHT)
+                        InformationTooltip:AddLine("#" .. tos(tableEntries) .." entries", "", ZO_TOOLTIP_DEFAULT_COLOR:UnpackRGB())
+                    end
                 end
             end
         end

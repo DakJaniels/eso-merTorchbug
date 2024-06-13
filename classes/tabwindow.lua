@@ -39,6 +39,7 @@ local FilterFactory = tbug.FilterFactory
 local showTabWindowContextMenu = tbug.ShowTabWindowContextMenu
 local hideContextMenus = tbug.HideContextMenus
 
+local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
 local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 
 local characterIdToName
@@ -497,7 +498,8 @@ local function hideEditAndSliderControls(selfVar, activeTabPanel)
 --tbug._activeTabPanelResizeStart = activeTabPanel
         local editBox = activeTabPanel.editBox
         if editBox then
-            editBox:LoseFocus()
+            --editBox:LoseFocus()
+            valueEdit_CancelThrottled(editBox, 50)
         end
         local sliderCtrl = activeTabPanel.sliderControl
         if sliderCtrl then
@@ -508,7 +510,7 @@ local function hideEditAndSliderControls(selfVar, activeTabPanel)
     end
 end
 
-
+--[[
 local function getTabWindowPanelScrollBar(selfVar, activeTabPanel)
     activeTabPanel = activeTabPanel or getActiveTabPanel(selfVar)
     if activeTabPanel then
@@ -521,6 +523,7 @@ local function getTabWindowPanelScrollBar(selfVar, activeTabPanel)
     end
     return
 end
+]]
 
 
 
@@ -838,6 +841,8 @@ function TabWindow:__init__(control, id)
             end
         end
         onMouseExitHideTooltip(toggleSizeButton.control)
+        local activeTabPanel = getActiveTabPanel(self)
+        hideEditAndSliderControls(self, activeTabPanel)
         tbug.updateTitleSizeInfo(selfVar)
     end
 
@@ -1652,6 +1657,7 @@ end
 --- Filter function
 
 function TabWindow:updateFilter(filterEdit, mode, filterModeStr, searchTextDelay)
+d("[tbug]TabWindow:updateFilter")
     searchTextDelay = searchTextDelay or 500
     hideContextMenus()
     if tbug.doDebug then d("[tbug]TabWindow:updateFilter-mode: " ..tos(mode) .. ", filterModeStr: " ..tos(filterModeStr) .. ", searchTextDelay: " ..tos(searchTextDelay)) end
@@ -1786,7 +1792,7 @@ end
 function TabWindow:updateFilterEdit(searchText, searchMode, searchDelay)
     hideContextMenus()
     searchMode = searchMode or getFilterMode(self)
-    --d("[TB]updateFilterEdit -searchText: " ..tos(searchText) .. ", searchMode: " ..tos(searchMode))
+d("[TB]updateFilterEdit -searchText: " ..tos(searchText) .. ", searchMode: " ..tos(searchMode) .. ", searchDelay: " .. tos(searchDelay))
     if searchText == nil then return end
 
     local activePanel = getActiveTabPanel(self)
@@ -1843,7 +1849,7 @@ function TabWindow:GetSelectedFilters()
 end
 
 function TabWindow:OnFilterComboBoxChanged()
---d("[TBUG]TabWindow:OnFilterComboBoxChanged")
+d("[TBUG]TabWindow:OnFilterComboBoxChanged")
     hideContextMenus()
     self:SetSelectedFilterText()
 

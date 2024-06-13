@@ -45,10 +45,10 @@ local specialEnumNoSubtables_subTables = {}
 
 local function isIterationOrMinMaxConstant(stringToSearch)
     local stringsToFind = {
-        ["_MIN_VALUE"] = -11,
-        ["_MAX_VALUE"] = -11,
-        ["_ITERATION_BEGIN"] = -17,
-        ["_ITERATION_END"] = -15,
+        ["_MIN_VALUE"] = -11;
+        ["_MAX_VALUE"] = -11;
+        ["_ITERATION_BEGIN"] = -17;
+        ["_ITERATION_END"] = -15;
     }
     for searchStr, offsetFromEnd in pairs(stringsToFind) do
         if strfind(stringToSearch, searchStr, offsetFromEnd, true) ~= nil then
@@ -347,37 +347,37 @@ local function doRefresh()
     enumControlTypes[CT_VECTOR] = "CT_VECTOR"
 
     local enumDrawLayer = g_enums[keyToEnums["layer"]]
-    enumDrawLayer[DL_BACKGROUND]    = "DL_BACKGROUND"
-    enumDrawLayer[DL_CONTROLS]      = "DL_CONTROLS"
-    enumDrawLayer[DL_OVERLAY]       = "DL_OVERLAY"
-    enumDrawLayer[DL_TEXT]          = "DL_TEXT"
+    enumDrawLayer[DL_BACKGROUND] = "DL_BACKGROUND"
+    enumDrawLayer[DL_CONTROLS] = "DL_CONTROLS"
+    enumDrawLayer[DL_OVERLAY] = "DL_OVERLAY"
+    enumDrawLayer[DL_TEXT] = "DL_TEXT"
 
     local enumDrawTier = g_enums[keyToEnums["tier"]]
-    enumDrawTier[DT_LOW]    = "DT_LOW"
+    enumDrawTier[DT_LOW] = "DT_LOW"
     enumDrawTier[DT_MEDIUM] = "DT_MEDIUM"
-    enumDrawTier[DT_HIGH]   = "DT_HIGH"
+    enumDrawTier[DT_HIGH] = "DT_HIGH"
     enumDrawTier[DT_PARENT] = "DT_PARENT"
 
     local enumTradeParticipant = g_enums["TradeParticipant"]
-    enumTradeParticipant[TRADE_ME]      = "TRADE_ME"
-    enumTradeParticipant[TRADE_THEM]    = "TRADE_THEM"
+    enumTradeParticipant[TRADE_ME] = "TRADE_ME"
+    enumTradeParticipant[TRADE_THEM] = "TRADE_THEM"
 
     local enumTextAlignHor = g_enums[keyToEnums["horizontalAlignment"]]
-    enumTextAlignHor[TEXT_ALIGN_LEFT] =    "TEXT_ALIGN_LEFT"
-    enumTextAlignHor[TEXT_ALIGN_CENTER] =  "TEXT_ALIGN_CENTER"
-    enumTextAlignHor[TEXT_ALIGN_RIGHT] =   "TEXT_ALIGN_RIGHT"
+    enumTextAlignHor[TEXT_ALIGN_LEFT] = "TEXT_ALIGN_LEFT"
+    enumTextAlignHor[TEXT_ALIGN_CENTER] = "TEXT_ALIGN_CENTER"
+    enumTextAlignHor[TEXT_ALIGN_RIGHT] = "TEXT_ALIGN_RIGHT"
 
     local enumTextAlignVer = g_enums[keyToEnums["verticalAlignment"]]
-    enumTextAlignVer[TEXT_ALIGN_CENTER] =  "TEXT_ALIGN_CENTER"
-    enumTextAlignVer[TEXT_ALIGN_TOP] =     "TEXT_ALIGN_TOP"
-    enumTextAlignVer[TEXT_ALIGN_BOTTOM] =  "TEXT_ALIGN_BOTTOM"
+    enumTextAlignVer[TEXT_ALIGN_CENTER] = "TEXT_ALIGN_CENTER"
+    enumTextAlignVer[TEXT_ALIGN_TOP] = "TEXT_ALIGN_TOP"
+    enumTextAlignVer[TEXT_ALIGN_BOTTOM] = "TEXT_ALIGN_BOTTOM"
 
     local enumTextType = g_enums[keyToEnums["modifyTextType"]]
-    enumTextType[TEXT_TYPE_ALL] =                           "TEXT_TYPE_ALL"
-    enumTextType[TEXT_TYPE_PASSWORD] =                      "TEXT_TYPE_PASSWORD"
-    enumTextType[TEXT_TYPE_NUMERIC] =                       "TEXT_TYPE_NUMERIC"
-    enumTextType[TEXT_TYPE_NUMERIC_UNSIGNED_INT] =          "TEXT_TYPE_NUMERIC_UNSIGNED_INT"
-    enumTextType[TEXT_TYPE_ALPHABETIC] =                    "TEXT_TYPE_ALPHABETIC"
+    enumTextType[TEXT_TYPE_ALL] = "TEXT_TYPE_ALL"
+    enumTextType[TEXT_TYPE_PASSWORD] = "TEXT_TYPE_PASSWORD"
+    enumTextType[TEXT_TYPE_NUMERIC] = "TEXT_TYPE_NUMERIC"
+    enumTextType[TEXT_TYPE_NUMERIC_UNSIGNED_INT] = "TEXT_TYPE_NUMERIC_UNSIGNED_INT"
+    enumTextType[TEXT_TYPE_ALPHABETIC] = "TEXT_TYPE_ALPHABETIC"
     enumTextType[TEXT_TYPE_ALPHABETIC_NO_FULLWIDTH_LATIN] = "TEXT_TYPE_ALPHABETIC_NO_FULLWIDTH_LATIN"
 
     --local enumTextWrapMode = g_enums[keyToEnums["wrapMode"]]
@@ -400,72 +400,65 @@ local function doRefresh()
     enumButtonState[BSTATE_DISABLED_PRESSED] = "BSTATE_DISABLED_PRESSED"
 
     local enumBags = g_enums[keyToEnums["bagId"]]
-    enumBags[BAG_WORN]              = "BAG_WORN"
-    enumBags[BAG_BACKPACK]          = "BAG_BACKPACK"
-    enumBags[BAG_BANK]              = "BAG_BANK"
-    enumBags[BAG_GUILDBANK]         = "BAG_GUILDBANK"
-    enumBags[BAG_BUYBACK]           = "BAG_BUYBACK"
-    enumBags[BAG_VIRTUAL]           = "BAG_VIRTUAL"
-    enumBags[BAG_SUBSCRIBER_BANK]   = "BAG_SUBSCRIBER_BANK"
-    enumBags[BAG_HOUSE_BANK_ONE]    = "BAG_HOUSE_BANK_ONE"
-    enumBags[BAG_HOUSE_BANK_TWO]    = "BAG_HOUSE_BANK_TWO"
-    enumBags[BAG_HOUSE_BANK_THREE]  = "BAG_HOUSE_BANK_THREE"
-    enumBags[BAG_HOUSE_BANK_FOUR]   = "BAG_HOUSE_BANK_FOUR"
-    enumBags[BAG_HOUSE_BANK_FIVE]   = "BAG_HOUSE_BANK_FIVE"
-    enumBags[BAG_HOUSE_BANK_SIX]    = "BAG_HOUSE_BANK_SIX"
-    enumBags[BAG_HOUSE_BANK_SEVEN]  = "BAG_HOUSE_BANK_SEVEN"
-    enumBags[BAG_HOUSE_BANK_EIGHT]  = "BAG_HOUSE_BANK_EIGHT"
-    enumBags[BAG_HOUSE_BANK_NINE]   = "BAG_HOUSE_BANK_NINE"
-    enumBags[BAG_HOUSE_BANK_TEN]    = "BAG_HOUSE_BANK_TEN"
-    enumBags[BAG_COMPANION_WORN]    = "BAG_COMPANION_WORN"
+    enumBags[BAG_WORN] = "BAG_WORN"
+    enumBags[BAG_BACKPACK] = "BAG_BACKPACK"
+    enumBags[BAG_BANK] = "BAG_BANK"
+    enumBags[BAG_GUILDBANK] = "BAG_GUILDBANK"
+    enumBags[BAG_BUYBACK] = "BAG_BUYBACK"
+    enumBags[BAG_VIRTUAL] = "BAG_VIRTUAL"
+    enumBags[BAG_SUBSCRIBER_BANK] = "BAG_SUBSCRIBER_BANK"
+    enumBags[BAG_HOUSE_BANK_ONE] = "BAG_HOUSE_BANK_ONE"
+    enumBags[BAG_HOUSE_BANK_TWO] = "BAG_HOUSE_BANK_TWO"
+    enumBags[BAG_HOUSE_BANK_THREE] = "BAG_HOUSE_BANK_THREE"
+    enumBags[BAG_HOUSE_BANK_FOUR] = "BAG_HOUSE_BANK_FOUR"
+    enumBags[BAG_HOUSE_BANK_FIVE] = "BAG_HOUSE_BANK_FIVE"
+    enumBags[BAG_HOUSE_BANK_SIX] = "BAG_HOUSE_BANK_SIX"
+    enumBags[BAG_HOUSE_BANK_SEVEN] = "BAG_HOUSE_BANK_SEVEN"
+    enumBags[BAG_HOUSE_BANK_EIGHT] = "BAG_HOUSE_BANK_EIGHT"
+    enumBags[BAG_HOUSE_BANK_NINE] = "BAG_HOUSE_BANK_NINE"
+    enumBags[BAG_HOUSE_BANK_TEN] = "BAG_HOUSE_BANK_TEN"
+    enumBags[BAG_COMPANION_WORN] = "BAG_COMPANION_WORN"
 
 
     -- some enumerations share prefix with other unrelated constants,
     -- making them difficult to isolate;
     -- extract these known trouble-makers explicitly
-    makeEnum(g_tmpGroups["ANIMATION_"],     "ANIMATION_PLAYBACK_")
-    makeEnum(g_tmpGroups["ATTRIBUTE_"],     "ATTRIBUTE_BAR_STATE_")
-    makeEnum(g_tmpGroups["ATTRIBUTE_"],     "ATTRIBUTE_TOOLTIP_COLOR_")
-    makeEnum(g_tmpGroups["ATTRIBUTE_"],     "ATTRIBUTE_VISUAL_")
-    makeEnum(g_tmpGroups["BUFF_"],          "BUFF_TYPE_COLOR_")
-    makeEnum(g_tmpGroups["CD_"],            "CD_TIME_TYPE_")
-    makeEnum(g_tmpGroups["CHAT_"],          "CHAT_CATEGORY_HEADER_")
-    makeEnum(g_tmpGroups["EVENT_"],         "EVENT_REASON_")
-    makeEnum(g_tmpGroups["GAME_"],          "GAME_CREDITS_ENTRY_TYPE_")
-    makeEnum(g_tmpGroups["GAME_"],          "GAME_NAVIGATION_TYPE_")
-    makeEnum(g_tmpGroups["GUILD_"],         "GUILD_HISTORY_ALLIANCE_WAR_")
-    makeEnum(g_tmpGroups["INVENTORY_"],     "INVENTORY_UPDATE_REASON_")
-    makeEnum(g_tmpGroups["JUSTICE_"],       "JUSTICE_SKILL_")
-    makeEnum(g_tmpGroups["MOVEMENT_"],      "MOVEMENT_CONTROLLER_DIRECTION_")
+    makeEnum(g_tmpGroups["ANIMATION_"], "ANIMATION_PLAYBACK_")
+    makeEnum(g_tmpGroups["ATTRIBUTE_"], "ATTRIBUTE_BAR_STATE_")
+    makeEnum(g_tmpGroups["ATTRIBUTE_"], "ATTRIBUTE_TOOLTIP_COLOR_")
+    makeEnum(g_tmpGroups["ATTRIBUTE_"], "ATTRIBUTE_VISUAL_")
+    makeEnum(g_tmpGroups["BUFF_"], "BUFF_TYPE_COLOR_")
+    makeEnum(g_tmpGroups["CD_"], "CD_TIME_TYPE_")
+    makeEnum(g_tmpGroups["CHAT_"], "CHAT_CATEGORY_HEADER_")
+    makeEnum(g_tmpGroups["EVENT_"], "EVENT_REASON_")
+    makeEnum(g_tmpGroups["GAME_"], "GAME_CREDITS_ENTRY_TYPE_")
+    makeEnum(g_tmpGroups["GAME_"], "GAME_NAVIGATION_TYPE_")
+    makeEnum(g_tmpGroups["GUILD_"], "GUILD_HISTORY_ALLIANCE_WAR_")
+    makeEnum(g_tmpGroups["INVENTORY_"], "INVENTORY_UPDATE_REASON_")
+    makeEnum(g_tmpGroups["JUSTICE_"], "JUSTICE_SKILL_")
+    makeEnum(g_tmpGroups["MOVEMENT_"], "MOVEMENT_CONTROLLER_DIRECTION_")
     makeEnum(g_tmpGroups["NOTIFICATIONS_"], "NOTIFICATIONS_MENU_OPENED_FROM_")
-    makeEnum(g_tmpGroups["OBJECTIVE_"],     "OBJECTIVE_CONTROL_EVENT_")
-    makeEnum(g_tmpGroups["OBJECTIVE_"],     "OBJECTIVE_CONTROL_STATE_")
-    makeEnum(g_tmpGroups["OPTIONS_"],       "OPTIONS_CUSTOM_SETTING_")
-    makeEnum(g_tmpGroups["PPB_"],           "PPB_CLASS_")
-    makeEnum(g_tmpGroups["RIDING_"],        "RIDING_TRAIN_SOURCE_")
-    makeEnum(g_tmpGroups["STAT_"],          "STAT_BONUS_OPTION_")
-    makeEnum(g_tmpGroups["STAT_"],          "STAT_SOFT_CAP_OPTION_")
-    makeEnum(g_tmpGroups["STAT_"],          "STAT_VALUE_COLOR_")
-    makeEnum(g_tmpGroups["TRADING_"],       "TRADING_HOUSE_SORT_LISTING_")
+    makeEnum(g_tmpGroups["OBJECTIVE_"], "OBJECTIVE_CONTROL_EVENT_")
+    makeEnum(g_tmpGroups["OBJECTIVE_"], "OBJECTIVE_CONTROL_STATE_")
+    makeEnum(g_tmpGroups["OPTIONS_"], "OPTIONS_CUSTOM_SETTING_")
+    makeEnum(g_tmpGroups["PPB_"], "PPB_CLASS_")
+    makeEnum(g_tmpGroups["RIDING_"], "RIDING_TRAIN_SOURCE_")
+    makeEnum(g_tmpGroups["STAT_"], "STAT_BONUS_OPTION_")
+    makeEnum(g_tmpGroups["STAT_"], "STAT_SOFT_CAP_OPTION_")
+    makeEnum(g_tmpGroups["STAT_"], "STAT_VALUE_COLOR_")
+    makeEnum(g_tmpGroups["TRADING_"], "TRADING_HOUSE_SORT_LISTING_")
 
     -- Test using coroutine instead of libasync.
-    --> lua threaded calls to unstress the client's "lag" while we build these ENUM lookup tables
-    function tbug.safeYieldCoroutine() --Must be global func! Else client crash
-        if coroutine.isyieldable() then
-            coroutine.yield()
-            d("<<< [TBug]Co routine ENUMs yielded")
-        end
-    end
-    local co = coroutine.create(function()
+    local co = coroutine.create(function ()
         --Transfer the tmpGroups of constants to the enumerations table, using the tmpGroups prefix e.g. SPECIALIZED_ and
         --checking for + creating subTables like SPECIALIZED_ITEMTYPE etc.
         --Enum entries at least need 2 constants entries in the g_tmpKeys or it will fail to create a new subTable
         for prefix, group in zo_insecureNext, g_tmpGroups do
+            coroutine.yield()
             repeat
                 local final = true
                 for k, _ in zo_insecureNext, group do
-                    --Create a new "thread" for the inner loops to unstress the tbug UI and show it quicker!
-                    tbug.safeYieldCoroutine() --Must be global func!
+                    coroutine.yield()
                     -- find the shortest prefix that yields distinct values
                     local p, f = prefix, false
                     --Make the enum entry now and remove g_tmpGroups constant entry (set = nil) -> to prevent endless loop!
@@ -483,11 +476,10 @@ local function doRefresh()
             until final
         end
     end)
-    -- Start the coroutine now and resume it as long the inner for ... loops are active.
+
+    -- Resume the coroutine in a loop until it completes.
     while coroutine.status(co) ~= "dead" do
         coroutine.resume(co)
-        local status = coroutine.status(co)
-        d("[TBug]Coroutine ENUMs - status: "..tos(status))
     end
 
     --Create the 1table for splitUp sbtables like SPECIALIZED_ITEMTYPE_ again now, from all of the relevant subTables

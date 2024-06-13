@@ -192,11 +192,12 @@ tbug.valueEdit_CancelThrottled = valueEdit_CancelThrottled
 
 
 local function valueSlider_CancelThrottled(sliderCtrl, delay)
-    if not sliderCtrl or not sliderCtrl.panel or not sliderCtrl.panel.valueSliderCancel then return end
+    local sliderPanel = sliderCtrl ~= nil and sliderCtrl.panel
+    if not sliderPanel or not sliderPanel.valueSliderCancel or not sliderPanel.sliderCtrlActive then return end
     delay = delay or 0
 --d("[tbug]valueSlider_CancelThrottled-value: " .. tos(sliderCtrl:GetValue()) .. ", delay: " ..tos(delay))
     throttledCall("merTorchbugPanelValueSliderCancel", delay,
-            sliderCtrl.panel.valueSliderCancel, sliderCtrl.panel, sliderCtrl
+            sliderPanel.valueSliderCancel, sliderPanel, sliderCtrl
     )
 end
 tbug.valueSlider_CancelThrottled = valueSlider_CancelThrottled
@@ -1963,6 +1964,7 @@ local function onAddOnLoaded(event, addOnName)
     local function checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
         local panelOfInspector = tbug_inspectorScrollLists[selfScrollList]
         if panelOfInspector ~= nil then
+--d(">found panelOfInspector")
             --Hide the editBox and sliderControl at the inspector panel rows, if shown
             --panelOfInspector:valueEditCancel(panelOfInspector.editBox)
             valueEdit_CancelThrottled(panelOfInspector.editBox, 100)
@@ -1970,18 +1972,22 @@ local function onAddOnLoaded(event, addOnName)
             valueSlider_CancelThrottled(panelOfInspector.sliderControl, 100)
         end
     end
+
     --For the mouse wheel and up/down button press
     SecurePostHook("ZO_ScrollList_ScrollRelative", function(selfScrollList, delta, onScrollCompleteCallback, animateInstantly)
 --tbug._selfScrollList = selfScrollList
+        --d("[tbug]ZO_ScrollList_ScrollRelative")
         checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
     end)
     --For the click on the scroll bar control
     SecurePostHook("ZO_Scroll_ScrollAbsoluteInstantly", function(selfScrollList, value)
 --tbug._selfScrollList = selfScrollList
+        --d("[tbug]ZO_Scroll_ScrollAbsoluteInstantly")
         checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
     end)
     SecurePostHook("ZO_ScrollList_ScrollAbsolute", function(selfScrollList, value)
 --tbug._selfScrollList = selfScrollList
+        --d("[tbug]ZO_ScrollList_ScrollAbsolute")
         checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
     end)
 
