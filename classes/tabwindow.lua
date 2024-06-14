@@ -430,14 +430,14 @@ local function updateSearchHistoryContextMenu(editControl, inspectorObject, isGl
     if searchHistoryForPanelAndMode ~= nil and #searchHistoryForPanelAndMode > 0 then
         --Search history
         local filterModeStr = filterModes[filterMode]
-        if MENU_ADD_OPTION_HEADER ~= nil then
-            AddCustomMenuItem(strformat("- Search history \'%s\' -", tos(filterModeStr)), function() end, MENU_ADD_OPTION_HEADER)
+        if LSM_ENTRY_TYPE_HEADER ~= nil then
+            AddCustomScrollableMenuEntry(strformat("- Search history \'%s\' -", tos(filterModeStr)), function() end, LSM_ENTRY_TYPE_HEADER)
         else
-            AddCustomMenuItem("-", function() end)
+            AddCustomScrollableMenuEntry("-", function() end)
         end
         for _, searchTerm in ipairs(searchHistoryForPanelAndMode) do
             if searchTerm ~= nil and searchTerm ~= "" then
-                AddCustomMenuItem(searchTerm, function()
+                AddCustomScrollableMenuEntry(searchTerm, function()
                     editControl.doNotRunOnChangeFunc = true
                     editControl:SetText(searchTerm)
                     inspectorObject:updateFilter(editControl, filterMode, nil, 0)
@@ -445,9 +445,9 @@ local function updateSearchHistoryContextMenu(editControl, inspectorObject, isGl
             end
         end
         --Actions
-        AddCustomMenuItem("-", function() end)
-        if MENU_ADD_OPTION_HEADER ~= nil then
-            AddCustomMenuItem(strformat("Actions", tos(filterModeStr)), function() end, MENU_ADD_OPTION_HEADER)
+        AddCustomScrollableMenuEntry("-", function() end)
+        if LSM_ENTRY_TYPE_HEADER ~= nil then
+            AddCustomScrollableMenuEntry(strformat("Actions", tos(filterModeStr)), function() end, LSM_ENTRY_TYPE_HEADER)
         end
         --Delete entry
         local subMenuEntriesForDeletion = {}
@@ -461,11 +461,11 @@ local function updateSearchHistoryContextMenu(editControl, inspectorObject, isGl
             }
             table.insert(subMenuEntriesForDeletion, entryForDeletion)
         end
-        AddCustomSubMenuItem("Delete entry", subMenuEntriesForDeletion)
+        AddCustomScrollableSubMenuEntry("Delete entry", subMenuEntriesForDeletion)
         --Clear whole search history
-        AddCustomMenuItem("Clear whole history", function() tbug.clearSearchHistory(activeTabName, filterMode) end)
+        AddCustomScrollableMenuEntry("Clear whole history", function() tbug.clearSearchHistory(activeTabName, filterMode) end)
         --Show the context menu
-        ShowMenu(editControl)
+        ShowCustomScrollableMenu(editControl)
         return true
     end
     return false
@@ -609,18 +609,18 @@ function TabWindow:__init__(control, id)
             hideContextMenus()
             local showMenuNow = false
             if editControl:GetText() ~= "" then
-                AddCustomMenuItem("Clear search", function()
+                AddCustomScrollableMenuEntry("Clear search", function()
                     editControl.doNotRunOnChangeFunc = true
                     editControl:SetText("")
                     self:updateFilter(editControl, getFilterMode(self), nil, 0)
-                end, MENU_ADD_OPTION_LABEL)
+                end, LSM_ENTRY_TYPE_NORMAL)
                 showMenuNow = true
             end
 
             --Show context menu with the last saved searches (search history)
             if not updateSearchHistoryContextMenu(editControl, self, self.control.isGlobalInspector, showMenuNow) then
                 if showMenuNow then
-                    ShowMenu(editControl)
+                    ShowCustomScrollableMenu(editControl)
                 end
             end
         end
@@ -878,7 +878,7 @@ function TabWindow:__init__(control, id)
         eventsButton.tooltipText = "Enable EVENT tracking"
         eventsButton.onMouseUp = function(buttonCtrl, mouseButton, upInside, ctrl, alt, shift, command)
             if upInside then
-                if LibCustomMenu and mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
+                if LibScrollableMenu and mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
                     tbug.ShowEventsContextMenu(buttonCtrl, nil, nil, true)
 
                 elseif mouseButton == MOUSE_BUTTON_INDEX_LEFT then

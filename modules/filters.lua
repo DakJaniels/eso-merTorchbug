@@ -191,7 +191,7 @@ function FilterFactory.str(expr)
                         key = value._eventName
                     end
                     ]]
-                    key = checkForSpecialDataEntryAsKey(data)
+                    key = checkForSpecialDataEntryAsKey(data, nil)
 --if keyOrig ~= key then
 --    tbug_DEBUG[keyOrig].isKeySpecialDataEntry = true
 --    tbug_DEBUG[keyOrig].key = key

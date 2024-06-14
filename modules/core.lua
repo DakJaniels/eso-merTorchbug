@@ -76,6 +76,7 @@ end
 tbug.strSplit = strsplit
 
 local function isSplittableString(str, sepparator)
+    if type(str) ~= "string" then return false, nil end
     local splitTab = strsplit(str, sepparator)
     local isSplittable = (splitTab ~= nil and #splitTab > 1 and true) or false
     return isSplittable, splitTab
@@ -470,23 +471,36 @@ function tbug.getZoneInfo(mapTileTextureName, patternToUse)
 end
 
 --Check if not the normal data.key should be returned (and used for e.g. a string search or the RAW string copy context
--- menu) but any other of the data entries (e.g. data.value._eventName for the "Events" tab)
-local function checkForSpecialDataEntryAsKey(data)
+-- menu), but any other of the data entries (e.g. data.value._eventName for the "Events" tab)
+local function checkForSpecialDataEntryAsKey(data, isRightKey)
+    --Use the left key's text
     local key = data.key
+d("[TBub]checkForSpecialDataEntryAsKey - key: " ..tostring(key) .. ", isRightKey: " ..tostring(isRightKey))
     local dataEntry = data.dataEntry
-    local typeId = dataEntry.typeId
-    local specialPlaceWhereTheStringsIsFound = rtSpecialReturnValues[typeId]
-    if specialPlaceWhereTheStringsIsFound ~= nil then
-        local funcToGetStr, err = zo_loadstring("return data." .. specialPlaceWhereTheStringsIsFound)
-        if err ~= nil or not funcToGetStr then
-            return key
-        else
-            local filterEnv = setmetatable({}, {__index = tbug.env})
-            setfenv(funcToGetStr, filterEnv)
-            filterEnv.data = data
-            local isOkay
-            isOkay, key = pcall(funcToGetStr)
-            if not isOkay then return key end
+    if isRightKey == nil then
+        local typeId = dataEntry.typeId
+        local specialPlaceWhereTheStringsIsFound = rtSpecialReturnValues[typeId]
+        if specialPlaceWhereTheStringsIsFound ~= nil then
+            local funcToGetStr, err = zo_loadstring("return data." .. specialPlaceWhereTheStringsIsFound)
+            if err ~= nil or not funcToGetStr then
+                return key
+            else
+                local filterEnv = setmetatable({}, {__index = tbug.env})
+                setfenv(funcToGetStr, filterEnv)
+                filterEnv.data = data
+                local isOkay
+                isOkay, key = pcall(funcToGetStr)
+                if not isOkay then return key end
+            end
+        end
+    else
+        --Copy the right's key text
+        if isRightKey == true then
+            local rowCtrl = dataEntry.control
+            local cKeyRight = rowCtrl and rowCtrl.cKeyRight
+            if cKeyRight and cKeyRight.GetText then
+                key = cKeyRight:GetText()
+            end
         end
     end
     return key

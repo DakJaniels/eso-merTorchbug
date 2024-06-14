@@ -313,6 +313,7 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
             end
         end
     elseif mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
+        local mouseIsOverRightKey = MouseIsOver(row.cKeyRight)
         if MouseIsOver(row.cVal) then
             if sliderCtrl ~= nil then
                 --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
@@ -321,14 +322,14 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
             if self:canEditValue(data) then
                 self:valueEditStart(self.editBox, row, data)
             end
-            tbug_buildRowContextMenuData(self, row, data, false)
-        elseif MouseIsOver(row.cKeyLeft) or MouseIsOver(row.cKeyRight) then
+            tbug_buildRowContextMenuData(self, row, data, false, nil)
+        elseif mouseIsOverRightKey or MouseIsOver(row.cKeyLeft) then
             self.editBox:LoseFocus()
             if sliderCtrl ~= nil then
                 --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
                 valueSlider_CancelThrottled(sliderCtrl, 50)
             end
-            tbug_buildRowContextMenuData(self, row, data, true)
+            tbug_buildRowContextMenuData(self, row, data, true, mouseIsOverRightKey)
         else
             self.editBox:LoseFocus()
             if sliderCtrl ~= nil then
