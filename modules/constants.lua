@@ -6,6 +6,7 @@ tbug.version =  "1.71"
 tbug.name =     "merTorchbug"
 tbug.author =   "merlight, current: Baertram"
 
+
 ------------------------------------------------------------------------------------------------------------------------
 -- TODOs, planned features and known bugs
 ------------------------------------------------------------------------------------------------------------------------
@@ -57,6 +58,9 @@ tbug.author =   "merlight, current: Baertram"
 
 --
 ------------------------------------------------------------------------------------------------------------------------
+
+local osdate = os.date
+
 
 --Global inspector default and min/max width/height values
 tbug.defaultInspectorWindowWidth        = 760
@@ -286,9 +290,9 @@ tbug.RT = rt
 --The rowTypes that need to return another value than the key via "raw copy" context menu, and which need to use another
 --dataEntry or value attribute for the string search
 local rtSpecialReturnValues = {}
-rtSpecialReturnValues[rt.ADDONS_TABLE] = "value.name"
-rtSpecialReturnValues[rt.EVENTS_TABLE] = "value._eventName"
-rtSpecialReturnValues[rt.LOCAL_STRING] = "keyText"
+rtSpecialReturnValues[rt.ADDONS_TABLE] = {replaceName="value.name"}
+rtSpecialReturnValues[rt.EVENTS_TABLE] = {replaceName="value._timeStamp", replaceFunc=function() return tbug.formatTimestamp end} --"value._eventName"
+rtSpecialReturnValues[rt.LOCAL_STRING] = {replaceName="keyText"}
 tbug.RTSpecialReturnValues = rtSpecialReturnValues
 
 --The enumeration prefixes which should be skipped

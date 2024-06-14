@@ -15,7 +15,7 @@ local checkForSpecialDataEntryAsKey = tbug.checkForSpecialDataEntryAsKey
 local isAControlOfTypes = tbug.isAControlOfTypes
 
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
-local localizationStringKeyText = rtSpecialReturnValues[RT_local_string]
+local localizationStringKeyText = rtSpecialReturnValues[RT_local_string].replaceName
 
 ------------------------------------------------------------------------------------------------------------------------
 -- Filter and search

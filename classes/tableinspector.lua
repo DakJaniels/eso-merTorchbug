@@ -8,7 +8,7 @@ local osdate = os.date
 
 local RT = tbug.RT
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
-local localizationStringKeyText = rtSpecialReturnValues[RT.LOCAL_STRING]
+local localizationStringKeyText = rtSpecialReturnValues[RT.LOCAL_STRING].replaceName
 
 local typeColors = tbug.cache.typeColors
 local typeSafeLess = tbug.typeSafeLess

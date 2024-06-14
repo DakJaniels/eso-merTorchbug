@@ -7,6 +7,8 @@ local strformat = string.format
 local strlow = string.lower
 local tos = tostring
 
+local osdate = os.date
+
 local UPDATE_NONE = 0
 local UPDATE_SCROLL = 1
 local UPDATE_SORT = 2
@@ -450,7 +452,7 @@ tbug._BasicInspectorPanel_onRowMouseEnter = {
             elseif isTimeStampRow(row, data, value) then
                 row._isTimeStamp = true
                 --Show formated timestamp text tooltip
-                local noError, resultStr = pcall(function() return os.date("%c", value) end)
+                local noError, resultStr = pcall(function() return osdate("%c", value) end)
                 if noError == true and resultStr ~= nil then
                     ZO_Tooltips_ShowTextTooltip(row, RIGHT, resultStr)
                 end

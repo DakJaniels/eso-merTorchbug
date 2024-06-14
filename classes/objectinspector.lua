@@ -381,7 +381,7 @@ function ObjectInspectorPanel:anchorSliderControlToListCell(sliderControl, listC
 end
 
 function ObjectInspectorPanel:valueSliderConfirm(sliderCtrl)
-d("[tbug]ObjectInspectorPanel:valueSliderConfirm")
+--d("[tbug]ObjectInspectorPanel:valueSliderConfirm")
     if not self.sliderCtrlActive then return end
     hideContextMenus()
     local expr = tos(sliderCtrl:GetValue())
@@ -420,7 +420,7 @@ end
 
 
 function ObjectInspectorPanel:valueSliderUpdate(sliderCtrl)
-d("[tbug]ObjectInspectorPanel:valueSliderUpdate")
+--d("[tbug]ObjectInspectorPanel:valueSliderUpdate")
     if not self.sliderCtrlActive then return end
     hideContextMenus()
     ZO_Tooltips_HideTextTooltip()
@@ -455,7 +455,7 @@ function ObjectInspectorPanel:valueSliderConfirmed(sliderControl, evalResult)
 end
 
 function ObjectInspectorPanel:valueSliderCancel(sliderCtrl)
-d("[tbug]ObjectInspectorPanel:valueSliderCancel")
+--d("[tbug]ObjectInspectorPanel:valueSliderCancel")
     if not self.sliderCtrlActive then return end
 --d("tbug: slider cancel")
     local sliderData = self.sliderData

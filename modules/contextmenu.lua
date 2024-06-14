@@ -70,7 +70,7 @@ local customKey__Object = customKeysForInspectorRows.object
 
 local RT = tbug.RT
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
-local localizationStringKeyText = rtSpecialReturnValues[RT.LOCAL_STRING]
+local localizationStringKeyText = rtSpecialReturnValues[RT.LOCAL_STRING].replaceName
 local globalInspector
 
 local hideContextMenus = tbug.HideContextMenus
@@ -95,7 +95,7 @@ end
 --CONTEXT MENU -> INSPECTOR ROW edit FIELD VALUE
 --Custom context menu "OnClick" handling function for inspector row context menu entries
 function tbug.setEditValueFromContextMenu(p_self, p_row, p_data, p_oldValue)
-df("tbug:setEditValueFromContextMenu - newValue: " ..tos(p_data.value) .. ", oldValue: " ..tos(p_oldValue))
+--df("tbug:setEditValueFromContextMenu - newValue: " ..tos(p_data.value) .. ", oldValue: " ..tos(p_oldValue))
     if p_self then
         local editBox = p_self.editBox
         if editBox then
@@ -175,7 +175,7 @@ tbug._debug.setChatEditTextFromContextMenu = {
         --Copy only raw data?
         if copyRawData == true then
             local valueToCopy = value
-d(">>copyRawData-valueToCopy: " ..tos(valueToCopy))
+--d(">>copyRawData-valueToCopy: " ..tos(valueToCopy))
             --Copy raw value?
             if not isKey then
                 local valueType = type(value)
@@ -193,7 +193,7 @@ d(">>copyRawData-valueToCopy: " ..tos(valueToCopy))
                 end
             end
             chatMessageText = (isKey == true and tos(checkForSpecialDataEntryAsKey(p_data, isRightKey))) or tos(valueToCopy)
-d(">chatMessageText: " .. tos(chatMessageText))
+--d(">chatMessageText: " .. tos(chatMessageText))
         else
             --Check the row's key value (prop.name)
             if dataPropOrKey ~= nil then
@@ -1112,7 +1112,7 @@ function tbug.buildRowContextMenuData(p_self, p_row, p_data, p_contextMenuForKey
     p_contextMenuForKey = p_contextMenuForKey or false
     local useLibScrollableMenu = (LibScrollableMenu ~= nil and AddCustomScrollableMenuEntry ~= nil and true) or false
 
-d("[tbug.buildRowContextMenuData]isKey: " ..tos(p_contextMenuForKey) .. ", mouseIsOverRightKey: " .. tos(mouseIsOverRightKey) ..", useLibScrollableMenu: " ..tos(useLibScrollableMenu))
+--d("[tbug.buildRowContextMenuData]isKey: " ..tos(p_contextMenuForKey) .. ", mouseIsOverRightKey: " .. tos(mouseIsOverRightKey) ..", useLibScrollableMenu: " ..tos(useLibScrollableMenu))
     if useLibScrollableMenu == false or (p_self == nil or p_row == nil or p_data == nil) then return end
 
     --TODO: for debugging
@@ -1150,6 +1150,7 @@ d("[tbug.buildRowContextMenuData]isKey: " ..tos(p_contextMenuForKey) .. ", mouse
     local isEventsDataType = dataTypeId == RT.EVENTS_TABLE
 
     --for debugging
+    --[[
 tbug._contextMenuLast = {}
 tbug._contextMenuLast.self   =  p_self
 tbug._contextMenuLast.row    =  p_row
@@ -1160,7 +1161,7 @@ tbug._contextMenuLast.dataTypeId =  dataTypeId
 tbug._contextMenuLast.propName =  propName
 tbug._contextMenuLast.activeTab =  activeTab
 tbug._contextMenuLast.canEditValue =  canEditValue
-
+    ]]
     ------------------------------------------------------------------------------------------------------------------------
     ------------------------------------------------------------------------------------------------------------------------
     ------------------------------------------------------------------------------------------------------------------------

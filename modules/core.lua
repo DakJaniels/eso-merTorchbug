@@ -28,6 +28,8 @@ local strgmatch = string.gmatch
 local tins = table.insert
 local tsort = table.sort
 
+local osdate = os.date
+
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
 local excludeTypes = { [CT_INVALID_TYPE] = true }
 local getControlType
@@ -438,7 +440,13 @@ function tbug.isSupportedInventoryRowPattern(controlName)
 end
 
 function tbug.formatTime(timeStamp)
-    return os.date("%F %T.%%03.0f %z", timeStamp / 1000):format(timeStamp % 1000)
+    if type(timeStamp) ~= "number" then return end
+    return osdate("%F %T.%%03.0f %z", timeStamp / 1000):format(timeStamp % 1000)
+end
+
+function tbug.formatTimestamp(timeStamp)
+    if type(timeStamp) ~= "number" then return end
+    return osdate("%c", timeStamp)
 end
 
 --Get the zone and subZone string from the given map's tile texture (or the current's map's tile texture name)
@@ -475,14 +483,16 @@ end
 local function checkForSpecialDataEntryAsKey(data, isRightKey)
     --Use the left key's text
     local key = data.key
-d("[TBub]checkForSpecialDataEntryAsKey - key: " ..tostring(key) .. ", isRightKey: " ..tostring(isRightKey))
+--d("[TBub]checkForSpecialDataEntryAsKey - key: " ..tostring(key) .. ", isRightKey: " ..tostring(isRightKey))
     local dataEntry = data.dataEntry
     if isRightKey == nil then
         local typeId = dataEntry.typeId
-        local specialPlaceWhereTheStringsIsFound = rtSpecialReturnValues[typeId]
+        local specialReturnValue = rtSpecialReturnValues[typeId]
+        local specialPlaceWhereTheStringsIsFound = specialReturnValue ~= nil and specialReturnValue.replaceName
         if specialPlaceWhereTheStringsIsFound ~= nil then
             local funcToGetStr, err = zo_loadstring("return data." .. specialPlaceWhereTheStringsIsFound)
             if err ~= nil or not funcToGetStr then
+--d(">err or funcToGetStr is nil")
                 return key
             else
                 local filterEnv = setmetatable({}, {__index = tbug.env})
@@ -490,7 +500,15 @@ d("[TBub]checkForSpecialDataEntryAsKey - key: " ..tostring(key) .. ", isRightKey
                 filterEnv.data = data
                 local isOkay
                 isOkay, key = pcall(funcToGetStr)
+--d(">isOkay: " ..tostring(isOkay) .. ", key: " ..tostring(key))
                 if not isOkay then return key end
+
+                local typeReplaceFunc = type(specialReturnValue.replaceFunc)
+                if typeReplaceFunc == "function" then
+                    local replaceFunc = specialReturnValue.replaceFunc() --get tbug.formatTime
+--d(">specialReturnValue.replaceFunc CALL")
+                    key = replaceFunc(key)
+                end
             end
         end
     else
