@@ -304,6 +304,7 @@ tbug._clickedRow = {
 --d(">cValRow:GetText(): " ..tos(cValRow:GetText()))
                 editBox:SetText(cValRow:GetText())
                 editBox:SetHidden(false)
+--d(">editBox:TakeFocus()")
                 editBox:TakeFocus()
                 self:anchorEditBoxToListCell(editBox, cValRow)
                 self.editData = data

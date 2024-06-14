@@ -129,8 +129,6 @@ function tbug.setChatEditTextFromContextMenu(p_self, p_row, p_data, copyRawData,
     isItemLinkSpecialFunc = isItemLinkSpecialFunc or false
     isKey = isKey or false
     if p_self and p_row and p_data then
---d(">got all, self, row, data")
-
         local controlOfInspectorRow = p_self.subject
         local key = p_data.key
         local value = p_data.value
@@ -149,10 +147,35 @@ function tbug.setChatEditTextFromContextMenu(p_self, p_row, p_data, copyRawData,
         --For the editBox text
         local chatMessageText
 
+--d(">got all, self, row, data - dataPropOrKey: " ..tos(dataPropOrKey) .. ", getterName: " ..tos(getterName) ..", setterName: " ..tos(setterName) .. ", dataTypeId: " ..tos(dataTypeId))
+
+--[[
+tbug._debug = tbug._debug or {}
+tbug._debug.setChatEditTextFromContextMenu = {
+    p_self = p_self,
+    p_row = p_row,
+    p_data = p_data,
+    copyRawData = copyRawData,
+    copySpecialFuncStr = copySpecialFuncStr,
+    isKey = isKey,
+    isItemLinkSpecialFunc = isItemLinkSpecialFunc,
+    key = key,
+    value = value,
+    prop = prop,
+    dataPropOrKey = dataPropOrKey,
+    getterName = getterName,
+    getterName = getterName,
+    setterName = setterName,
+    dataEntry = dataEntry,
+    dataTypeId = dataTypeId,
+}
+]]
+
+
         --Copy only raw data?
         if copyRawData == true then
             local valueToCopy = value
---d(">>copyRawData-valueToCopy: " ..tos(valueToCopy))
+d(">>copyRawData-valueToCopy: " ..tos(valueToCopy))
             --Copy raw value?
             if not isKey then
                 local valueType = type(value)
@@ -173,7 +196,8 @@ function tbug.setChatEditTextFromContextMenu(p_self, p_row, p_data, copyRawData,
 --d(">chatMessageText: " .. tos(chatMessageText))
         else
             --Check the row's key value (prop.name)
-            if dataPropOrKey then
+            if dataPropOrKey ~= nil then
+--d(">dataOrPropKey found")
                 --Do not use the masterlist as it is not sorted for the non-control insepctor (e.g. table inspector)
                 if dataPropOrKey == "bagId" then
                     isBagOrSlotIndex = true
@@ -191,15 +215,21 @@ function tbug.setChatEditTextFromContextMenu(p_self, p_row, p_data, copyRawData,
                     itemLink = value:gsub("%s+", "") --remove spaces in the possible plain text itemLink
                 end
             end
+--[[
+tbug._debug.setChatEditTextFromContextMenu.isBagOrSlotIndex = isBagOrSlotIndex
+tbug._debug.setChatEditTextFromContextMenu.bagId = bagId
+tbug._debug.setChatEditTextFromContextMenu.slotIndex = slotIndex
+tbug._debug.setChatEditTextFromContextMenu.itemLink = itemLink
+]]
 
---d(">isBagOrSlotIndex: " ..tostring(isBagOrSlotIndex))
+--d(">isBagOrSlotIndex: " ..tostring(isBagOrSlotIndex) .. "; isItemLinkSpecialFunc: " ..tos(isItemLinkSpecialFunc))
             --Copy special strings
             if copySpecialFuncStr ~= nil and copySpecialFuncStr ~= "" then
---d(">>copySpecialFuncStr")
+--d(">>copySpecialFuncStr: " ..tos(copySpecialFuncStr))
                 if isItemLinkSpecialFunc == true then
-                    if isBagOrSlotIndex == true then
-                        if bagId and slotIndex then
-                            local itemLink = GetItemLink(bagId, slotIndex)
+                    if isBagOrSlotIndex == true or itemLink ~= nil then
+                        if (bagId and slotIndex) or itemLink then
+                            itemLink = itemLink or (bagId and slotIndex and GetItemLink(bagId, slotIndex))
                             chatMessageText = "/tb " .. tos(copySpecialFuncStr) .. "('"..itemLink.."')"
                         end
                     end
@@ -923,8 +953,10 @@ local function getPrefixOfItemLinkFunctionNames(functionNamesTab, prefixDepth, p
                                 submenuName = subStrName,
                                 submenuEntries = {
                                     [1] = {
+                                        name = itemLinkFuncName,
                                         label = itemLinkFuncName,
                                         callback = function() --start chat input with that func name and an itemLink of the bagId and slotIndex of the context menu
+d(">callback itemlink func: " ..tos(itemLinkFuncName))
                                             setChatEditTextFromContextMenu(p_self, p_row, p_data, false, itemLinkFuncName, false, true)
                                         end,
                                     }
@@ -936,8 +968,10 @@ local function getPrefixOfItemLinkFunctionNames(functionNamesTab, prefixDepth, p
                             local currentSubmenuEntries = upperCaseFunctionNameSubmenuEntries[indexOfSubmenuEntry].submenuEntries
                             local newEntryCount = #currentSubmenuEntries + 1
                             currentSubmenuEntries[newEntryCount] = {
+                                name = itemLinkFuncName,
                                 label = itemLinkFuncName,
                                 callback = function() --start chat input with that func name and an itemLink of the bagId and slotIndex of the context menu
+d(">callback2 itemlink func: " ..tos(itemLinkFuncName))
                                     setChatEditTextFromContextMenu(p_self, p_row, p_data, false, itemLinkFuncName, false, true)
                                 end,
                             }
@@ -954,8 +988,10 @@ local function getPrefixOfItemLinkFunctionNames(functionNamesTab, prefixDepth, p
 --d("!!!! >No Uppercase function name!")
             --No uppercase characters in the function name? Directly add it
             noUpperCaseFunctionNameSubmenuEntries[#noUpperCaseFunctionNameSubmenuEntries + 1] = {
+                name = itemLinkFuncName,
                 label = itemLinkFuncName,
                 callback = function() --start chat input with that func name and an itemLink of the bagId and slotIndex of the context menu
+d(">callback3 itemlink func: " ..tos(itemLinkFuncName))
                     setChatEditTextFromContextMenu(p_self, p_row, p_data, false, itemLinkFuncName, false, true)
                 end,
             }
@@ -999,7 +1035,7 @@ local function buildItemLinkContextMenuEntries(p_self, p_row, p_data, prefixDept
                             upperCaseFunctionNamePrefixes[prefixNameOld] = nil
                             upperCaseFunctionNameSubmenuEntriesIndex = #upperCaseFunctionNameSubmenuEntries
 
-                            --Get function nams with the prefix
+                            --Get function names with the prefix
                             local functionNamesTab = {}
                             for _, submenuEntryData in ipairs(currentSubmenuPrefixData.submenuEntries) do
                                 functionNamesTab[#functionNamesTab + 1] = submenuEntryData.label
@@ -1059,6 +1095,14 @@ local function buildItemLinkContextMenuEntries(p_self, p_row, p_data, prefixDept
             end
         end
     end
+--[[
+tbug._debug = tbug._debug or {}
+tbug._debug.itemLinkContextMenu = {
+    itemLinkPrefixesSubmenuTab = itemLinkPrefixesSubmenuTab,
+    upperCaseFunctionNameSubmenuEntries = upperCaseFunctionNameSubmenuEntries,
+    noUpperCaseFunctionNameSubmenuEntries = noUpperCaseFunctionNameSubmenuEntries,
+}
+]]
 end
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -1688,11 +1732,11 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         AddCustomScrollableMenuEntry("Copy NAME to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "itemname", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     end
                     --d(">dataPropOrKey: " ..tos(dataPropOrKey) .. ", isSpecialEntry: " ..tos(isSpecialEntry))
-                    if dataPropOrKey and (dataPropOrKey == "itemLink") or isSpecialEntry then
-                        buildItemLinkContextMenuEntries(p_self, p_row, p_data, 5)
-                    end
                     if enumsWereAdded and not canEditValue then
                         insertEnumsToContextMenu(canEditValue)
+                    end
+                    if dataPropOrKey and (dataPropOrKey == "itemLink") or isSpecialEntry then
+                        buildItemLinkContextMenuEntries(p_self, p_row, p_data, 5)
                     end
                     doShowMenu = true
                 end
@@ -2249,11 +2293,11 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         AddCustomMenuItem("Copy ITEMLINK to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "itemlink", nil) end, MENU_ADD_OPTION_LABEL, nil, nil, nil, nil, nil)
                         AddCustomMenuItem("Copy NAME to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "itemname", nil) end, MENU_ADD_OPTION_LABEL, nil, nil, nil, nil, nil)
                     end
-                    if dataPropOrKey and (dataPropOrKey == "itemLink") or isSpecialEntry then
-                        buildItemLinkContextMenuEntries(p_self, p_row, p_data)
-                    end
                     if enumsWereAdded and not canEditValue then
                         insertEnumsToContextMenu(canEditValue)
+                    end
+                    if dataPropOrKey and (dataPropOrKey == "itemLink") or isSpecialEntry then
+                        buildItemLinkContextMenuEntries(p_self, p_row, p_data)
                     end
                     doShowMenu = true
                 end
@@ -2509,3 +2553,14 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
 
     end --if LibCustomMenu then
 end
+
+
+ZO_PreHook("ClearMenu", function()
+    d("[ClearMenu]PreHook called")
+end)
+
+ZO_PreHook("ClearCustomScrollableMenu", function()
+    d("[ClearCustomScrollableMenu]PreHook called")
+end)
+
+
