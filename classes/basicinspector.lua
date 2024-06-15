@@ -440,7 +440,7 @@ tbug._BasicInspectorPanel_onRowMouseEnter = {
                 if height > tbug.maxInspectorTexturePreviewHeight then
                     height = tbug.maxInspectorTexturePreviewHeight
                 end
-                local textureText = zo_iconTextFormatNoSpace(tostring(value, width, height, "", nil))
+                local textureText = zo_iconTextFormatNoSpace(tostring(value), width, height, "", nil)
                 if textureText and textureText ~= "" then
                     ZO_Tooltips_ShowTextTooltip(row, RIGHT, textureText)
                 end
