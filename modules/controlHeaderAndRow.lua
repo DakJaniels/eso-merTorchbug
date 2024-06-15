@@ -20,6 +20,17 @@ local customKeysForInspectorRows = tbug.customKeysForInspectorRows
 local customKey__Object = customKeysForInspectorRows.object
 
 
+
+
+------------------------------------------------------------------------------------------------------------------------
+-- Class locals for later usage below
+-------------------------------------------------------------------------------------------------------------------------
+local ColorProperty = {}
+local AnchorAttribute = {}
+local DimensionConstraint = {}
+local ResizeToFitPadding = {}
+
+
 ------------------------------------------------------------------------------------------------------------------------
 -- The different setupFunctions for the row types: e.g. td = normal row, th = header row
 -------------------------------------------------------------------------------------------------------------------------
@@ -122,7 +133,6 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 --- Special lua object classes used at the row types (via "cls" identifier in the setup definition) to read or set some values
 ------------------------------------------------------------------------------------------------------------------------
-local ColorProperty = {}
 ColorProperty.__index = ColorProperty
 
 
@@ -165,7 +175,6 @@ function ColorProperty.set(data, control, value)
 end
 
 ------------------------------------------------------------------------------------------------------------------------
-local AnchorAttribute = {}
 AnchorAttribute.__index = AnchorAttribute
 
 
@@ -198,7 +207,6 @@ function AnchorAttribute.set(data, control, value)
 end
 
 ------------------------------------------------------------------------------------------------------------------------
-local DimensionConstraint = {}
 DimensionConstraint.__index = DimensionConstraint
 
 
@@ -215,7 +223,6 @@ end
 
 
 ------------------------------------------------------------------------------------------------------------------------
-local ResizeToFitPadding = {}
 ResizeToFitPadding.__index = ResizeToFitPadding
 
 function ResizeToFitPadding.get(data, control)

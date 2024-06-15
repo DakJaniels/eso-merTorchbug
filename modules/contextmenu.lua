@@ -1979,6 +1979,15 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
             AddCustomScrollableMenuEntry("[ ] STOP playing sound \'" ..tos(endlessPlaySoundName) .. "\'", function() playSoundNow(nil, nil, nil, nil, false, nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
         end
 
+        local function checkIfCheckboxEnabledStateNeedsToUpdate(LSM_comboBox, selectedContextMenuItem, openingMenusEntries, customParam1, customParam2)
+            d("[Tbug]checkIfCheckboxEnabledStateNeedsToUpdate")
+            for k, v in ipairs(openingMenusEntries) do
+                local name = v.label or v.name
+                d(">name of entry: " .. tostring(name).. ", checked: " .. tostring(v.checked) .. ", enabled: " ..tostring(v.enabled))
+            end
+
+        end
+
         if isGlobalInspectorWindow then
             if GetDisplayName() == "@Baertram" then
                 AddCustomScrollableMenuEntry("-", noCallbackFunc, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
@@ -1988,16 +1997,22 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
             local settingsSubmenu = {
                 {
                     label = keyShiftAndLMBRMB .." Inspect control below cursor",
-                    callback = function(state) tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspector = state end,
+                    callback = function(control, checkedData, checked) tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspector = checked
+                        --Check if the checkbox below needs to update it's enabled state!
+                        RunCustomScrollableMenuItemsCallback(comboBox, item, checkIfCheckboxEnabledStateNeedsToUpdate, { LSM_ENTRY_TYPE_CHECKBOX }, false)
+                    end,
                     entryType = LSM_ENTRY_TYPE_CHECKBOX,
                     checked = function() return tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspector end,
                 },
                 {
                     label = "Allow " .. keyShiftAndLMBRMB .. " during Combat/Dungeon/Raid/AvA",
-                    callback = function(state) tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat = state end,
+                    callback = function(control, checkedData, checked)
+                        tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat = checked
+                        d("[TBug]settings inspect conrol below mouse cursor in dungeons: " .. tostring(tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat))
+                    end,
                     entryType = LSM_ENTRY_TYPE_CHECKBOX,
                     checked = function() return tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat end,
-                    disabled = function() return not tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspector end,
+                    enabled = function() return tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspector end,
                 },
             }
             AddCustomScrollableSubMenuEntry("Mouse", settingsSubmenu)
