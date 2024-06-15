@@ -130,7 +130,7 @@ local function checkIfAlreadyInTable(table, key, value, checkKeyOrValue)
     return false
 end
 
-local function checkNotInCombatDungeonAvA()
+local function isPlayerInCombatDungeonRaidAvA()
     if IsUnitInCombat(unitPlayer) or IsUnitInDungeon(unitPlayer) or IsPlayerInRaid() or IsPlayerInRaidStagingArea() or IsPlayerInAvAWorld() then return true end
     return false
 end
@@ -793,16 +793,40 @@ end
 
 ------------------------------------------------------------------------------------------------------------------------
 
+local function isMouseRightAndLeftAndSHIFTClickEnabled(onlyBaseSetting)
+    onlyBaseSetting = onlyBaseSetting or false
+    local savedVars = tbug.savedVars
+--d("[Tbug]isMouseRightAndLeftAndSHIFTClickEnabled - onlyBaseSetting: " ..tos(onlyBaseSetting))
+    if savedVars.enableMouseRightAndLeftAndSHIFTInspector == true then
+        if onlyBaseSetting == true then return true end
+
+        if savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat == false then
+            return not isPlayerInCombatDungeonRaidAvA()
+        end
+        return true
+    end
+    return false
+end
+
+local onGlobalMouseUp
+local function updateTbugGlobalMouseUpHandler(isEnabled)
+d("[Tbug]updateTbugGlobalMouseUpHandler - isEnabled: " ..tos(isEnabled))
+    if isEnabled then
+        EM:RegisterForEvent(myNAME.."_OnGlobalMouseUp", EVENT_GLOBAL_MOUSE_UP, onGlobalMouseUp)
+    else
+        EM:UnregisterForEvent(myNAME.."_OnGlobalMouseUp", EVENT_GLOBAL_MOUSE_UP)
+    end
+end
+tbug.updateTbugGlobalMouseUpHandler = updateTbugGlobalMouseUpHandler
+
+
 function tbug.slashCommandMOC(comingFromEventGlobalMouseUp, searchValues)
     comingFromEventGlobalMouseUp = comingFromEventGlobalMouseUp or false
     --d("tbug.slashCommandMOC - comingFromEventGlobalMouseUp: " ..tos(comingFromEventGlobalMouseUp))
-    local savedVars = tbug.savedVars
-    if comingFromEventGlobalMouseUp == true then
-        if not savedVars.enableMouseRightAndLeftAndSHIFTInspector then return end
-        if not savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat then
-            if checkNotInCombatDungeonAvA() == true then return end
-        end
-    end
+    --Was already checked in event_global_mouse_up!
+    --if comingFromEventGlobalMouseUp == true then
+        --if not isMouseRightAndLeftAndSHIFTClickEnabled() then return end
+    --end
 
     local env = tbug.env
     local wm = env.wm
@@ -1882,21 +1906,15 @@ local function onAddOnLoaded(event, addOnName)
 
     --Add a global OnMouseDown handler so we can track mouse button left + right + shift key for the "inspection start"
     local mouseUpBefore = {}
-    local function onGlobalMouseUp(eventId, button, ctrl, alt, shift, command)
-        --d(string.format("[merTorchbug]onGlobalMouseUp-button %s, ctrl %s, alt %s, shift %s, command %s", tos(button), tos(ctrl), tos(alt), tos(shift), tos(command)))
+    function onGlobalMouseUp(eventId, button, ctrl, alt, shift, command)
+    --d(string.format("[merTorchbug]onGlobalMouseUp-button %s, ctrl %s, alt %s, shift %s, command %s", tos(button), tos(ctrl), tos(alt), tos(shift), tos(command)))
         if not shift == true then return end
-        local savedVars = tbug.savedVars
-        if not savedVars.enableMouseRightAndLeftAndSHIFTInspector then return end
-
-        --If we are currenty in combat do not execute this!
-        if not savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat then
-            if checkNotInCombatDungeonAvA() == true then return end
-        end
 
         local goOn = false
         if button == MOUSE_BUTTON_INDEX_LEFT_AND_RIGHT then
-            goOn = true
             mouseUpBefore = {}
+            if not isMouseRightAndLeftAndSHIFTClickEnabled() then return end
+            goOn = true
         else
             --The companion scenes do not send any MOUSE_BUTTON_INDEX_LEFT_AND_RIGHT :-( We need to try to detect it by other means
             --Get the active scene
@@ -1975,7 +1993,7 @@ local function onAddOnLoaded(event, addOnName)
         checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
     end)
 
-    EM:RegisterForEvent(myNAME.."_OnGlobalMouseUp", EVENT_GLOBAL_MOUSE_UP, onGlobalMouseUp)
+    updateTbugGlobalMouseUpHandler(isMouseRightAndLeftAndSHIFTClickEnabled(true))
 
     EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated)
 end

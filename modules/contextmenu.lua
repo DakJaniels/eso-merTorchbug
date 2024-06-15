@@ -79,7 +79,7 @@ local cleanTitle = tbug.CleanTitle
 local getRelevantNameForCall = tbug.getRelevantNameForCall
 
 local defaultScrollableContextMenuOptions = tbug.defaultScrollableContextMenuOptions
-
+local updateTbugGlobalMouseUpHandler = tbug.updateTbugGlobalMouseUpHandler
 
 --======================================================================================================================
 --= CONTEXT MENU FUNCTIONS                                                                                     -v-
@@ -1979,20 +1979,17 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
             AddCustomScrollableMenuEntry("[ ] STOP playing sound \'" ..tos(endlessPlaySoundName) .. "\'", function() playSoundNow(nil, nil, nil, nil, false, nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
         end
 
+        --Update the other checkboxes that are in the same checkboxUpdateGroup and set their enabled state = checked state of the clicked "main" checkbox
+        -->Then visually refresh the other checkbox
         local function checkIfCheckboxEnabledStateNeedsToUpdate(LSM_comboBox, selectedContextMenuItem, openingMenusEntries, customParam1, customParam2)
-            local selectedContextMenuItemData = GetCustomScrollableMenuRowData(selectedContextMenuItem)
+            local selectedContextMenuItemData = (GetCustomScrollableMenuRowData ~= nil and GetCustomScrollableMenuRowData(selectedContextMenuItem)) or selectedContextMenuItem.m_data.dataSource
+            if selectedContextMenuItemData == nil then return end
             local checkboxUpdateGroup = selectedContextMenuItemData.checkboxUpdateGroup
             local isSelectedContextMenuChecked = selectedContextMenuItemData.checked
-            d("[Tbug]checkIfCheckboxEnabledStateNeedsToUpdate - checkboxUpdateGroup: " .. tos(checkboxUpdateGroup))
-tbug._debug = tbug._debug or {}
-tbug._debug.openingMenusEntries = openingMenusEntries
-tbug._debug.LSM_comboBox = LSM_comboBox
-
             for k, v in ipairs(openingMenusEntries) do
                 if checkboxUpdateGroup == v.checkboxUpdateGroup and v ~= selectedContextMenuItemData then
                     local name = v.label or v.name
                     if v.enabled ~= isSelectedContextMenuChecked then
-                        d(">Enabled state needs a change - name: " .. tostring(name).. ", enabled: " ..tostring(v.enabled))
                         v.enabled = isSelectedContextMenuChecked
                         --Visually refresh the item now
                         LSM_comboBox.m_dropdownObject:Refresh(v.m_parentControl)
@@ -2013,6 +2010,9 @@ tbug._debug.LSM_comboBox = LSM_comboBox
                     label = keyShiftAndLMBRMB .." Inspect control below cursor",
                     callback = function(comboBox, itemName, item, checked)
                         tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspector = checked
+
+                        updateTbugGlobalMouseUpHandler(checked)
+
                         --Check if the checkbox(es) below need to update it's enabled state!
                         RunCustomScrollableMenuItemsCallback(comboBox, item, checkIfCheckboxEnabledStateNeedsToUpdate, { LSM_ENTRY_TYPE_CHECKBOX }, false)
                     end,
@@ -2024,7 +2024,6 @@ tbug._debug.LSM_comboBox = LSM_comboBox
                     label = "Allow " .. keyShiftAndLMBRMB .. " during Combat/Dungeon/Raid/AvA",
                     callback = function(comboBox, itemName, item, checked, checkedData)
                         tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat = checked
-                        d("[TBug]settings inspect conrol below mouse cursor in dungeons: " .. tostring(tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat))
                     end,
                     entryType = LSM_ENTRY_TYPE_CHECKBOX,
                     checked = function() return tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat end,
