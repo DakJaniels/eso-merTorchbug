@@ -310,7 +310,7 @@ function ScriptsInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, 
                 if typeValue == "string" then
                     if value ~= "" and data.dataEntry.typeId == RT.SCRIPTHISTORY_TABLE then
                         --CHAT_SYSTEM.textEntry.system:StartTextEntry("/script " .. data.value)
-                        StartChatInput("/tbug " .. value, CHAT_CHANNEL_SAY, nil, false)
+                        StartChatInput("/tbug " .. value, CHAT_CHANNEL_SAY, nil)
                     end
                 end
             end
