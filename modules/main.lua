@@ -143,25 +143,24 @@ local function showDoesNotExistError(object, winTitle, tabTitle)
 end
 
 local function showFunctionReturnValue(object, tabTitle, winTitle, objectParent)
---d("[tbug]showFunctionReturnValue")
     local wasRunWithoutErrors, resultsOfFunc = pcall(setfenv(object, tbug.env))
-    local title = (winTitle ~= nil and tos(winTitle)) or tos(tabTitle) or ""
-    title = (objectParent ~= nil and objectParent ~= "" and objectParent and ".") or "" .. title
---d(">wasRunWithoutErrors: " ..tos(wasRunWithoutErrors) .. ", resultsOfFunc: " ..tos(resultsOfFunc) .. ", title: " ..tos(title))
+    local title = (winTitle and tos(winTitle)) or tos(tabTitle) or ""
+    title = (objectParent and objectParent ~= "" and objectParent .. "." or "") .. title
 
-    if wasRunWithoutErrors == true then
-        d((resultsOfFunc == nil and "[TBUG]No results for function \'" .. tos(title) .. "\'") or "[TBUG]Results of function \'" .. tos(title) .. "\':")
+    if wasRunWithoutErrors then
+        d(resultsOfFunc and "[TBUG]Results of function '" .. tos(title) .. "':" or "[TBUG]No results for function '" .. tos(title) .. "'")
     else
-        d("[TBUG]<<<ERROR>>>Function \'" .. tos(title) .. "\' ended with errors:")
+        d("[TBUG]<<<ERROR>>>Function '" .. tos(title) .. "' ended with errors:")
     end
-    if resultsOfFunc == nil then return end
---tbug._resultsOfFunc = resultsOfFunc
-    if type(resultsOfFunc) == "table" then
-        for k, v in ipairs(resultsOfFunc) do
-            d("["..tos(k).."] "..v)
+
+    if resultsOfFunc then
+        if type(resultsOfFunc) == "table" then
+            for k, v in ipairs(resultsOfFunc) do
+                d("[" .. tos(k) .. "] " .. v)
+            end
+        else
+            d("[1] " .. tos(resultsOfFunc))
         end
-    else
-        d("[1] "..tos(resultsOfFunc))
     end
 end
 
