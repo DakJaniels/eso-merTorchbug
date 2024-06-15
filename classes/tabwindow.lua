@@ -44,6 +44,8 @@ local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 
 local characterIdToName
 
+local defaultScrollableContextMenuOptions = tbug.defaultScrollableContextMenuOptions
+
 ------------------------------------------------------------------------------------------------------------------------
 local function resetTabControlData(tabControl)
     tabControl.subject = nil
@@ -465,7 +467,7 @@ local function updateSearchHistoryContextMenu(editControl, inspectorObject, isGl
         --Clear whole search history
         AddCustomScrollableMenuEntry("Clear whole history", function() tbug.clearSearchHistory(activeTabName, filterMode) end)
         --Show the context menu
-        ShowCustomScrollableMenu(editControl)
+        ShowCustomScrollableMenu(editControl, defaultScrollableContextMenuOptions)
         return true
     end
     return false
@@ -620,7 +622,7 @@ function TabWindow:__init__(control, id)
             --Show context menu with the last saved searches (search history)
             if not updateSearchHistoryContextMenu(editControl, self, self.control.isGlobalInspector, showMenuNow) then
                 if showMenuNow then
-                    ShowCustomScrollableMenu(editControl)
+                    ShowCustomScrollableMenu(editControl, defaultScrollableContextMenuOptions)
                 end
             end
         end

@@ -488,7 +488,7 @@ local function checkForSpecialDataEntryAsKey(data, isRightKey)
     if isRightKey == nil then
         local typeId = dataEntry.typeId
         local specialReturnValue = rtSpecialReturnValues[typeId]
-        local specialPlaceWhereTheStringsIsFound = specialReturnValue ~= nil and specialReturnValue.replaceName
+        local specialPlaceWhereTheStringsIsFound = (specialReturnValue ~= nil and specialReturnValue.replaceName) or nil
         if specialPlaceWhereTheStringsIsFound ~= nil then
             local funcToGetStr, err = zo_loadstring("return data." .. specialPlaceWhereTheStringsIsFound)
             if err ~= nil or not funcToGetStr then

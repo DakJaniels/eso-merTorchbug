@@ -33,7 +33,6 @@ local globalInspectorFunctionsTabKey = getGlobalInspectorPanelTabName("functions
 --local throttledCall = tbug.throttledCall
 local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
 
-
 local DEFAULT_SCALE_PERCENT = 180
 local function GetKeyOrTexture(keyCode, textureOptions, scalePercent, useDisabledIcon)
     if textureOptions == KEYBIND_TEXTURE_OPTIONS_EMBED_MARKUP then
@@ -78,6 +77,9 @@ local hideContextMenus = tbug.HideContextMenus
 local setDrawLevel = tbug.SetDrawLevel
 local cleanTitle = tbug.CleanTitle
 local getRelevantNameForCall = tbug.getRelevantNameForCall
+
+local defaultScrollableContextMenuOptions = tbug.defaultScrollableContextMenuOptions
+
 
 --======================================================================================================================
 --= CONTEXT MENU FUNCTIONS                                                                                     -v-
@@ -797,7 +799,7 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
     end
 
     if isEventMainUIToggle == true then
-        ShowCustomScrollableMenu(p_self)
+        ShowCustomScrollableMenu(p_self, defaultScrollableContextMenuOptions)
     end
 end
 tbug.ShowEventsContextMenu = showEventsContextMenu
@@ -1133,7 +1135,7 @@ function tbug.buildRowContextMenuData(p_self, p_row, p_data, p_contextMenuForKey
     local propName = prop and prop.name
     local dataPropOrKey = (propName ~= nil and propName ~= "" and propName) or key
     local keyToEnums = tbug.keyToEnums
-    d(">canEditValue: " ..tos(canEditValue) .. ", forKey: " .. tos(p_contextMenuForKey) .. ", key: " ..tos(key) ..", keyType: "..tos(keyType) .. ", value: " ..tos(currentValue) .. ", valType: " ..tos(valType) .. ", propName: " .. tos(propName) ..", dataPropOrKey: " ..tos(dataPropOrKey))
+    --d(">canEditValue: " ..tos(canEditValue) .. ", forKey: " .. tos(p_contextMenuForKey) .. ", key: " ..tos(key) ..", keyType: "..tos(keyType) .. ", value: " ..tos(currentValue) .. ", valType: " ..tos(valType) .. ", propName: " .. tos(propName) ..", dataPropOrKey: " ..tos(dataPropOrKey))
 
     local activeTab = p_self.inspector and p_self.inspector.activeTab
 
@@ -1184,12 +1186,19 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     end
                 end
 
+
+            ------------------------------------------------------------------------------------------------------------------------
+            ------------------------------------------------------------------------------------------------------------------------
             elseif key ~= nil then
                 local rowActionsSuffix = ""
                 local keyNumber = ton(key)
                 if "number" == type(keyNumber) then
                     rowActionsSuffix = " - #" .. tos(key)
                 end
+
+                --Special dataTypes used (e.g. SavedInspectors where the key is a table!)
+                local isSpecialTableKeySoUseKeyNumber = (dataTypeId == RT.SAVEDINSPECTORS_TABLE and true) or false
+
 
                 --AddCustomScrollableMenuEntry(text, callback, entryType, entries, additionalData)
 
@@ -1221,10 +1230,10 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 local keyStr = key
                 if keyType == "number" then
                     keyStr = p_data.keyText
-                            or (
-                                (p_data.value ~= nil and ((valueIsTable == true and (p_data.value.name or (p_data.value._timeStamp ~= nil and tbug.formatTime(p_data.value._timeStamp)))) or p_data.value))
-                                or tos(key)
-                            )
+                        or (
+                                (isSpecialTableKeySoUseKeyNumber and valueIsTable == true and tos(key))
+                            or  (not isSpecialTableKeySoUseKeyNumber and ((p_data.value ~= nil and ((valueIsTable == true and (p_data.value.name or (p_data.value._timeStamp ~= nil and tbug.formatTimestamp(p_data.value._timeStamp)))) or p_data.value))))
+                    ) or tos(key)
                 end
 
                 tins(searchSubmenu,
@@ -1573,7 +1582,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 elseif isEventsDataType then
 
                     showEventsContextMenu(p_self, p_row, p_data, false)
-                    ShowCustomScrollableMenu(p_row)
+                    ShowCustomScrollableMenu(p_row, defaultScrollableContextMenuOptions)
                     doShowMenu = false --do not show the LibScrollableMenu context menu now!
                 end
 
@@ -1768,11 +1777,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
     if doShowMenu == true then
         if useLibScrollableMenu == true then
             --controlToAnchorTo, options
-            local options = {
-                sortEntries = false,
-                --headerColor = headerEntryColor,
-            }
-            ShowCustomScrollableMenu(p_row, options)
+            ShowCustomScrollableMenu(p_row, defaultScrollableContextMenuOptions)
         end
     end
 end
@@ -2002,7 +2007,7 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
         if dLayer == DL_OVERLAY then
             setDrawLevel(owner, DL_CONTROLS)
         end
-        ShowCustomScrollableMenu(selfCtrl, { visibleRowsDropdown = 15 }) --owner
+        ShowCustomScrollableMenu(selfCtrl, defaultScrollableContextMenuOptions) --owner
 
     end --if LibScrollableMenu then
 end

@@ -678,14 +678,14 @@ d("[tbug]TableInspectorPanel:onRowClicked - isGlobalInspector: " ..tos(isGlobalI
     elseif mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
         local mouseIsOverRightKey = MouseIsOver(row.cKeyRight)
         if self:canEditValue(data) then
-d(">can edit value!")
+--d(">can edit value!")
             if MouseIsOver(row.cVal) then
 --d(">mouse is over cVal")
                 if sliderCtrl ~= nil then
                     --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
                     valueSlider_CancelThrottled(sliderCtrl, 50)
                 end
-d(">valueEditStart")
+--d(">valueEditStart")
                 self:valueEditStart(self.editBox, row, data)
 --d(">build context menu")
                 tbug_buildRowContextMenuData(self, row, data, false, nil)

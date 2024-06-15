@@ -181,7 +181,7 @@ function ObjectInspectorPanel:anchorEditBoxToListCell(editBox, listCell)
 end
 
 function ObjectInspectorPanel:valueEditCancel(editBox)
-d("[tbug]ObjectInspectorPanel:valueEditCancel - editBox: " ..tos(editBox:GetText()))
+--d("[tbug]ObjectInspectorPanel:valueEditCancel - editBox: " ..tos(editBox:GetText()))
     --hideContextMenus()
     local editData = self.editData
     if editData then

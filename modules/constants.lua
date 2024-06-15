@@ -429,3 +429,12 @@ local possibleTranslationTextKeys = {
     ["descriptor"] = true,
 }
 tbug.possibleTranslationTextKeys = possibleTranslationTextKeys
+
+--LibScrollableMenu context menu default options
+tbug.defaultScrollableContextMenuOptions = {
+    visibleRowsDropdown =   10,
+    visibleRowsSubmenu =    10,
+    sortEntries =           false,
+    enableFilter =          true,
+    headerCollapsible =     true,
+}
