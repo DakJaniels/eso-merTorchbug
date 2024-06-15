@@ -1980,10 +1980,24 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
         end
 
         local function checkIfCheckboxEnabledStateNeedsToUpdate(LSM_comboBox, selectedContextMenuItem, openingMenusEntries, customParam1, customParam2)
-            d("[Tbug]checkIfCheckboxEnabledStateNeedsToUpdate")
+            local selectedContextMenuItemData = GetCustomScrollableMenuRowData(selectedContextMenuItem)
+            local checkboxUpdateGroup = selectedContextMenuItemData.checkboxUpdateGroup
+            local isSelectedContextMenuChecked = selectedContextMenuItemData.checked
+            d("[Tbug]checkIfCheckboxEnabledStateNeedsToUpdate - checkboxUpdateGroup: " .. tos(checkboxUpdateGroup))
+tbug._debug = tbug._debug or {}
+tbug._debug.openingMenusEntries = openingMenusEntries
+tbug._debug.LSM_comboBox = LSM_comboBox
+
             for k, v in ipairs(openingMenusEntries) do
-                local name = v.label or v.name
-                d(">name of entry: " .. tostring(name).. ", checked: " .. tostring(v.checked) .. ", enabled: " ..tostring(v.enabled))
+                if checkboxUpdateGroup == v.checkboxUpdateGroup and v ~= selectedContextMenuItemData then
+                    local name = v.label or v.name
+                    if v.enabled ~= isSelectedContextMenuChecked then
+                        d(">Enabled state needs a change - name: " .. tostring(name).. ", enabled: " ..tostring(v.enabled))
+                        v.enabled = isSelectedContextMenuChecked
+                        --Visually refresh the item now
+                        LSM_comboBox.m_dropdownObject:Refresh(v.m_parentControl)
+                    end
+                end
             end
 
         end
@@ -1997,22 +2011,25 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
             local settingsSubmenu = {
                 {
                     label = keyShiftAndLMBRMB .." Inspect control below cursor",
-                    callback = function(control, checkedData, checked) tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspector = checked
-                        --Check if the checkbox below needs to update it's enabled state!
+                    callback = function(comboBox, itemName, item, checked)
+                        tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspector = checked
+                        --Check if the checkbox(es) below need to update it's enabled state!
                         RunCustomScrollableMenuItemsCallback(comboBox, item, checkIfCheckboxEnabledStateNeedsToUpdate, { LSM_ENTRY_TYPE_CHECKBOX }, false)
                     end,
                     entryType = LSM_ENTRY_TYPE_CHECKBOX,
                     checked = function() return tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspector end,
+                    checkboxUpdateGroup = 1,
                 },
                 {
                     label = "Allow " .. keyShiftAndLMBRMB .. " during Combat/Dungeon/Raid/AvA",
-                    callback = function(control, checkedData, checked)
+                    callback = function(comboBox, itemName, item, checked, checkedData)
                         tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat = checked
                         d("[TBug]settings inspect conrol below mouse cursor in dungeons: " .. tostring(tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat))
                     end,
                     entryType = LSM_ENTRY_TYPE_CHECKBOX,
                     checked = function() return tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat end,
                     enabled = function() return tbug.savedVars.enableMouseRightAndLeftAndSHIFTInspector end,
+                    checkboxUpdateGroup = 1,
                 },
             }
             AddCustomScrollableSubMenuEntry("Mouse", settingsSubmenu)

@@ -238,8 +238,9 @@ function tbug.StopEventTracking()
 end
 
 --Add the possible events of the game (from _G table) to the eventsList
+
 for k,v in l_globalprefixes("EVENT_") do
-	if type(v)=="number" and not blacklistedEventIds[v] then
+	if not blacklistedEventIds[v] and type(v)=="number" then
         --Lookup the real eventname
         local eventName = realESOEventNames[v] or k
         tbEvents.eventList[v]=eventName
