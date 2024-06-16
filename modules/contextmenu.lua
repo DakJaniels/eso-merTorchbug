@@ -1684,9 +1684,10 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             prop = {}
                             prop.enum = keyToEnums[key] or keyToSpecialEnums[key]
 --d(">no props found, used key: " ..tos(key) .. " to get: " ..tos(prop.enum))
-                            if prop.enum == nil then prop = nil end
-                            if strsub(prop.enum, -1) == "_" then
-                                prop.enum = strsub(prop.enum, 1, -2) --remove _ at the end
+                            if prop.enum == nil then prop = nil else
+                                if strsub(prop.enum, -1) == "_" then
+                                    prop.enum = strsub(prop.enum, 1, -2) --remove _ at the end
+                                end
                             end
                         end
                     end

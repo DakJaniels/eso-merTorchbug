@@ -28,7 +28,7 @@ tbug.enums = g_enums
 local g_needRefresh = true
 local g_objects = {}
 local g_tmpGroups = setmetatable({}, autovivify(nil))
---tbug.enumTmpGroups = g_tmpGroups
+tbug.enumTmpGroups = g_tmpGroups
 local g_tmpKeys = {}
 local g_tmpStringIds = {}
 --tbug.tmpStringIds = g_tmpStringIds
@@ -155,6 +155,7 @@ local function makeEnum(group, prefix, minKeys, calledFromTmpGroupsLoop)
     if calledFromTmpGroupsLoop then
         --Is the current prefix a specical one which could be split into multiple subTables at g_enums?
         --And should these split subTables be combined again to one in the end, afer the while ... do loop was finished?
+        -->e.g. SPECIALIZED_ITEMTYPE_*
         for prefixRecordAllSubtables, isActivated in pairs(keyToSpecialEnumNoSubtablesInEnum) do
             if isActivated and strfind(prefix, prefixRecordAllSubtables, 1) == 1 then
                 --d(">anti-split into subtables found: " ..tos(prefix))
@@ -173,8 +174,15 @@ local function makeEnum(group, prefix, minKeys, calledFromTmpGroupsLoop)
 end
 
 local function makeEnumWithMinMaxAndIterationExclusion(group, prefix, key)
-    --d("==========================================")
-    --d("[TBUG]makeEnumWithMinMaxAndIterationExclusion - prefix: " ..tos(prefix) .. ", group: " ..tos(group) .. ", key: " ..tos(key))
+    local doDebug = false
+    if group == "ITEM_" then
+        doDebug = true
+    end
+
+    if doDebug then
+        d("==========================================")
+        d("[TBUG]makeEnumWithMinMaxAndIterationExclusion - prefix: " ..tos(prefix) .. ", group: " ..tos(group) .. ", key: " ..tos(key))
+    end
     ZO_ClearTable(g_tmpKeys)
 
     local keyToSpecialEnumExcludeEntries = keyToSpecialEnumExclude[key]
@@ -182,14 +190,18 @@ local function makeEnumWithMinMaxAndIterationExclusion(group, prefix, key)
     local goOn = true
     for k2, v2 in zo_insecureNext, group do
         local strFoundPos = strfind(k2, prefix, 1, true)
-        --d(">k: " ..tos(k2) .. ", v: " ..tos(v2) .. ", pos: " ..tos(strFoundPos))
+        if doDebug then
+            d(">k: " ..tos(k2) .. ", v: " ..tos(v2) .. ", pos: " ..tos(strFoundPos))
+        end
         if strFoundPos ~= nil then
             --Exclude _MIN_VALUE and _MAX_VALUE
             if isIterationOrMinMaxConstant(k2) == false then
                 if keyToSpecialEnumExcludeEntries ~= nil then
                     for _, vExclude in ipairs(keyToSpecialEnumExcludeEntries) do
                         if strfind(k2, vExclude, 1, true) == 1 then
-                            --d("<<excluded: " ..tos(k2))
+        if doDebug then
+            d("<<excluded: " ..tos(k2))
+        end
                             goOn = false
                             break
                         end
@@ -197,10 +209,14 @@ local function makeEnumWithMinMaxAndIterationExclusion(group, prefix, key)
                 end
                 if goOn then
                     if g_tmpKeys[v2] == nil then
-                        --d(">added value: " ..tos(v2) .. ", key: " ..tos(k2))
+        if doDebug then
+            d(">added value: " ..tos(v2) .. ", key: " ..tos(k2))
+        end
                         g_tmpKeys[v2] = k2
                     else
-                        --d("<<<<<<<<<duplicate value: " ..tos(v2))
+        if doDebug then
+            d("<<<<<<<<<duplicate value: " ..tos(v2))
+        end
                         -- duplicate value
                         return nil
                     end
@@ -213,12 +229,16 @@ local function makeEnumWithMinMaxAndIterationExclusion(group, prefix, key)
     end
 
     if goOn then
-        --d("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        if doDebug then
+            d("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        end
 
         local prefixWithoutLastUnderscore = strsub(prefix, 1, -2)
         local enum = g_enums[prefixWithoutLastUnderscore]
         for v2, k2 in zo_insecureNext, g_tmpKeys do
-            --d(">prefix w/o last _: " .. tos(prefixWithoutLastUnderscore)  ..", added v2: " .. tos(v2) .. " with key: " ..tos(k2) .." to enum"  )
+            if doDebug then
+                d(">prefix w/o last _: " .. tos(prefixWithoutLastUnderscore)  ..", added v2: " .. tos(v2) .. " with key: " ..tos(k2) .." to enum"  )
+            end
             enum[v2] = k2
             group[k2] = nil
             g_tmpKeys[v2] = nil
@@ -241,6 +261,9 @@ local function mapEnum(k, v)
     end
 
     if prefix ~= nil then
+        if strfind(prefix, "ITEM_", 1, true) == 1 then
+d(">Adding tmpGroup: " ..tos(prefix .. ", k: " .. tos(k) .. " = " .. tos(v)))
+        end
         g_tmpGroups[prefix][k] = v
         --For ESOStrings comparison, start with number after last vanilla game's SI_ string constant
         -->Addon added ones
@@ -532,6 +555,8 @@ local function doRefresh()
                 local tmpGroupEntry = keyToSpecialEnumTmpGroupKey[k]
                 local selectedTmpGroupTable = tmpGroupEntry ~= nil and g_tmpGroups[tmpGroupEntry] or nil
                 if selectedTmpGroupTable ~= nil then
+d("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+d(">>group: " ..tos(selectedTmpGroupTable))
                     makeEnumWithMinMaxAndIterationExclusion(selectedTmpGroupTable, v, k)
                 end
             end
