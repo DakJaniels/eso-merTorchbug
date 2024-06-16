@@ -97,7 +97,7 @@ end
 --CONTEXT MENU -> INSPECTOR ROW edit FIELD VALUE
 --Custom context menu "OnClick" handling function for inspector row context menu entries
 function tbug.setEditValueFromContextMenu(p_self, p_row, p_data, p_oldValue)
---df("tbug:setEditValueFromContextMenu - newValue: " ..tos(p_data.value) .. ", oldValue: " ..tos(p_oldValue))
+df("tbug:setEditValueFromContextMenu - newValue: " ..tos(p_data.value) .. ", oldValue: " ..tos(p_oldValue))
     if p_self then
         local editBox = p_self.editBox
         if editBox then

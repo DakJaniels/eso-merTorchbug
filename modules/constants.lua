@@ -391,6 +391,7 @@ local keyToSpecialEnumTmpGroupKey = {
     ["quality"]                 = "ITEM_",
     ["specializedItemType"]     = "SPECIALIZED_",
     ["traitInformation"]        = "ITEM_",
+    ["traitType"]               = "ITEM_",
 }
 tbug.keyToSpecialEnumTmpGroupKey = keyToSpecialEnumTmpGroupKey
 
@@ -416,7 +417,8 @@ local keyToSpecialEnum = {
     ["itemType"]                = "ITEMTYPE_",
     ["quality"]                 = "ITEM_QUALITY_",
     ["specializedItemType"]     = "SPECIALIZED_ITEMTYPE_",
-    ["traitInformation"]        = "ITEM_TRAIT_TYPE_",
+    ["traitInformation"]        = "ITEM_TRAIT_INFORMATION_",
+    ["traitType"]               = "ITEM_TRAIT_TYPE_",
 }
 tbug.keyToSpecialEnum = keyToSpecialEnum
 

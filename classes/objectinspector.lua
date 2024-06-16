@@ -230,7 +230,7 @@ end
 
 
 function ObjectInspectorPanel:valueEditStart(editBox, row, data, cValRow, columnIndex)
---d("[tbug]]ObjectInspectorPanel:valueEditStart - editBoxActive: " ..tos(self.editBoxActive))
+d("[tbug]]ObjectInspectorPanel:valueEditStart - editBoxActive: " ..tos(self.editBoxActive))
 --[[
 tbug._clickedRow = {
     self = self,
@@ -301,10 +301,10 @@ tbug._clickedRow = {
                 self.editBoxActive = true
                 editBox.updatedColumn = cValRow
                 editBox.updatedColumnIndex = columnIndex
---d(">cValRow:GetText(): " ..tos(cValRow:GetText()))
+d(">cValRow:GetText(): " ..tos(cValRow:GetText()))
                 editBox:SetText(cValRow:GetText())
                 editBox:SetHidden(false)
---d(">editBox:TakeFocus()")
+d(">editBox:TakeFocus()")
                 editBox:TakeFocus()
                 self:anchorEditBoxToListCell(editBox, cValRow)
                 self.editData = data
