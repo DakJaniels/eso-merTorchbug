@@ -44,10 +44,10 @@ local function getSpecialInspectorKeyConstant(key, value, row, data)
     local enumNameForConstants = keyToSpecialEnum[key]
     if not enumNameForConstants then return end
     local enumNameForConstantsWithoutUnderscoreSuffix = enumNameForConstants
-    if string.sub(enumNameForConstants, -1) == "_" then
+    if strsub(enumNameForConstants, -1) == "_" then
         enumNameForConstantsWithoutUnderscoreSuffix = strsub(enumNameForConstants, 1, -2) --remove _ at the end
     end
-d(">enumNameForConstantsWithoutUnderscoreSuffix: " ..tos(enumNameForConstantsWithoutUnderscoreSuffix))
+--d(">enumNameForConstantsWithoutUnderscoreSuffix: " ..tos(enumNameForConstantsWithoutUnderscoreSuffix))
     local enumsForConstants = enums[enumNameForConstantsWithoutUnderscoreSuffix]
     if not enumsForConstants then return end
     --Get the prefix of the enum to check in table tbug.tmpGroups

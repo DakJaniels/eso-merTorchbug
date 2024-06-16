@@ -1135,6 +1135,7 @@ function tbug.buildRowContextMenuData(p_self, p_row, p_data, p_contextMenuForKey
     local propName = prop and prop.name
     local dataPropOrKey = (propName ~= nil and propName ~= "" and propName) or key
     local keyToEnums = tbug.keyToEnums
+    local keyToSpecialEnums = tbug.keyToSpecialEnum
     --d(">canEditValue: " ..tos(canEditValue) .. ", forKey: " .. tos(p_contextMenuForKey) .. ", key: " ..tos(key) ..", keyType: "..tos(keyType) .. ", value: " ..tos(currentValue) .. ", valType: " ..tos(valType) .. ", propName: " .. tos(propName) ..", dataPropOrKey: " ..tos(dataPropOrKey))
 
     local activeTab = p_self.inspector and p_self.inspector.activeTab
@@ -1677,17 +1678,20 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     local enumsWereAdded = false
                     local enumContextMenuEntries = {}
                     if prop == nil then
-                        if dataPropOrKey ~= nil then
+                        if key ~= nil then
                             --No prop given e.g. at a tableInspector of dataEntry of inventory item
                             --Check if dataPropOrKey == "bagId" e.g. and get the mapped enum for bagId
                             prop = {}
-                            prop.enum = keyToEnums[key]
-                            --d(">no props found, used key: " ..tos(key) .. " to get: " ..tos(prop.enum))
+                            prop.enum = keyToEnums[key] or keyToSpecialEnums[key]
+--d(">no props found, used key: " ..tos(key) .. " to get: " ..tos(prop.enum))
                             if prop.enum == nil then prop = nil end
+                            if strsub(prop.enum, -1) == "_" then
+                                prop.enum = strsub(prop.enum, 1, -2) --remove _ at the end
+                            end
                         end
                     end
                     if prop ~= nil then
-                        local enumProp = prop.enum
+                        local enumProp = prop.enum or key
                         --Check for enums
                         if enumProp ~= nil then
                             local enumsTab = tbug.enums[enumProp]
