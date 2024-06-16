@@ -28,7 +28,7 @@ tbug.enums = g_enums
 local g_needRefresh = true
 local g_objects = {}
 local g_tmpGroups = setmetatable({}, autovivify(nil))
-tbug.enumTmpGroups = g_tmpGroups
+--tbug.enumTmpGroups = g_tmpGroups
 local g_tmpKeys = {}
 local g_tmpStringIds = {}
 --tbug.tmpStringIds = g_tmpStringIds
@@ -530,7 +530,7 @@ local function doRefresh()
             if not alreadyCheckedValues[v] then
                 alreadyCheckedValues[v] = true
                 local tmpGroupEntry = keyToSpecialEnumTmpGroupKey[k]
-                local selectedTmpGroupTable = g_tmpGroups[tmpGroupEntry]
+                local selectedTmpGroupTable = tmpGroupEntry ~= nil and g_tmpGroups[tmpGroupEntry] or nil
                 if selectedTmpGroupTable ~= nil then
                     makeEnumWithMinMaxAndIterationExclusion(selectedTmpGroupTable, v, k)
                 end
@@ -624,7 +624,7 @@ local function doRefresh()
                 if not alreadyCheckedValues[v] then
                     alreadyCheckedValues[v] = true
                     local tmpGroupEntry = keyToSpecialEnumTmpGroupKey[k]
-                    local selectedTmpGroupTable = g_tmpGroups[tmpGroupEntry]
+                    local selectedTmpGroupTable = tmpGroupEntry ~= nil and g_tmpGroups[tmpGroupEntry] or nil
                     if selectedTmpGroupTable ~= nil then
                         makeEnumWithMinMaxAndIterationExclusion(selectedTmpGroupTable, v, k)
                     end
