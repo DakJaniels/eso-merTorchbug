@@ -8,6 +8,7 @@ local GlobalInspector = classes.GlobalInspector .. BasicInspector
 
 local panelClassName2panelClass = tbug.panelClassNames
 local panelNames = tbug.panelNames
+local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
 
 local checkIfItemLinkFunc = tbug.checkIfItemLinkFunc
 local sortItemLinkFunctions = tbug.sortItemLinkFunctions
@@ -64,7 +65,7 @@ end
 
 
 function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
---d("[TBUG]GlobalInspector:connectFilterComboboxToPanel-tabIndex:" ..tostring(tabIndex))
+--d("[TBUG]GlobalInspector:connectFilterComboboxToPanel-tabIndex: " ..tostring(tabIndex))
     --Prepare the combobox filters at the panel
     local comboBoxCtrl = self.filterComboBox
     local comboBox = ZO_ComboBox_ObjectFromContainer(comboBoxCtrl)
@@ -82,13 +83,8 @@ function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
     if tabIndexType == "number" then
         --All okay
     elseif tabIndexType == "string" then
-        --Get number
-        for k,v in ipairs(panelNames) do
-            if v.key == tabIndex or v.name == tabIndex then
-                tabIndex = k
-                break
-            end
-        end
+        --Get pael's tabIndex number
+        tabIndex = getTBUGGlobalInspectorPanelIdByName(tabIndex)
     else
         --Error
         return
@@ -99,7 +95,7 @@ function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
     if not panelData then return end
 
     if panelData.comboBoxFilters == true then
-        --Get the filter data to add to the combobox - TOOD: Different filtrs by panel!
+        --Get the filter data to add to the combobox - TOOD: Different filters, by panel!
         local filterDataToAdd = tbug.filterComboboxFilterTypesPerPanel[tabIndex]
 --TBUG._filterDataToAdd = filterDataToAdd
         --Add the filter data to the combobox's dropdown
@@ -108,6 +104,18 @@ function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
                 local entry = comboBox:CreateItemEntry(controlTypeName)
                 entry.filterType = controlType
                 comboBox:AddItem(entry)
+            end
+        end
+        --Update the (last) selected entries (if any filtered before)
+        local panelOfComboboxFilter = self.panels[panelData.key] --Get the panel of the tab with tabIndex
+        local dropdownFiltersSelected = panelOfComboboxFilter.dropdownFiltersSelected
+        local ignoreCallback = true
+        if not ZO_IsTableEmpty(dropdownFiltersSelected) then
+            for selectedFilterType, wasSelected in pairs(dropdownFiltersSelected) do
+                if wasSelected then
+--d(">selected comboboxFilter filterType before: " ..tostring(selectedFilterType))
+                    comboBox:SetSelectedItemByEval(function(item) return item.filterType == selectedFilterType end, ignoreCallback)
+                end
             end
         end
         comboBoxCtrl:SetHidden(false)

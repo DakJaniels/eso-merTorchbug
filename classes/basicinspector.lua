@@ -213,11 +213,12 @@ end
 
         for i = 1, #masterList do
             local dataEntry = masterList[i]
+            local data = dataEntry.data
 
-            local dropdownFilterResult = (dropdownFilterFuncIsFunc == true and dropdownFilterFunc(dataEntry.data, self)) or false --comboBox dropdown filter
+            local dropdownFilterResult = (dropdownFilterFuncIsFunc == true and dropdownFilterFunc(data, self)) or false --comboBox dropdown filter
             if dropdownFilterResult == false and dropdownFilterFunc == false then dropdownFilterResult = true end
 
-            local textFilterResult = (filterFuncIsFunc == true and filterFunc(dataEntry.data)) or false                   --text editbox filter
+            local textFilterResult = (filterFuncIsFunc == true and filterFunc(data)) or false                   --text editbox filter
             if textFilterResult == false and filterFunc == false then textFilterResult = true end
 
             if dropdownFilterResult == true and textFilterResult == true then
@@ -236,7 +237,7 @@ end
 
 
 function BasicInspectorPanel:initScrollList(control)
---d("BasicInspectorPanel:initScrollList")
+d("BasicInspectorPanel:initScrollList")
 
     local list = assert(control:GetNamedChild("List"))
     tbug.inspectorScrollLists[list] = self
@@ -245,6 +246,7 @@ function BasicInspectorPanel:initScrollList(control)
     self.compareFunc = false
     self.filterFunc = false
     self.dropdownFilterFunc = false
+    self.dropdownFiltersSelected = {}
     self.masterList = {}
 
     ZO_ScrollList_AddResizeOnScreenResize(list)
@@ -582,18 +584,24 @@ end
 function BasicInspectorPanel:setFilterFunc(filterFunc, forceRefresh)
     forceRefresh = forceRefresh or false
     if tbug.doDebug then d("[TBUG]BasicInspectorPanel:setFilterFunc: " ..tos(filterFunc) .. ", forceRefresh: " ..tos(forceRefresh)) end
+--d("[TBUG]BasicInspectorPanel:setFilterFunc: " ..tos(filterFunc) .. ", forceRefresh: " ..tos(forceRefresh))
     if forceRefresh == true or self.filterFunc ~= filterFunc then
+--d(">filterFunc change")
         self.filterFunc = filterFunc
         self:refreshFilter(true)
     end
 end
 
-function BasicInspectorPanel:setDropDownFilterFunc(dropdownFilterFunc)
+function BasicInspectorPanel:setDropDownFilterFunc(dropdownFilterFunc, selectedDropdownFilters)
     if tbug.doDebug then d("[TBUG]BasicInspectorPanel:setDropDownFilterFunc: " ..tos(dropdownFilterFunc)) end
 
---d("[TBUG]BasicInspectorPanel:setDropDownFilterFunc: " ..tos(dropdownFilterFunc))
+tbug._debug = tbug._debug or {}
+tbug._debug.dropdownFiltersSelected = selectedDropdownFilters
+
+d("[TBUG]BasicInspectorPanel:setDropDownFilterFunc: " ..tos(dropdownFilterFunc) .. ", #selectedDropdownFilters: " ..tos(selectedDropdownFilters))
     if self.dropdownFilterFunc ~= dropdownFilterFunc then
         self.dropdownFilterFunc = dropdownFilterFunc
+        self.dropdownFiltersSelected = selectedDropdownFilters
 --d(">refreshing the filters")
         self:refreshFilter(true)
     end

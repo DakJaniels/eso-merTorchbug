@@ -30,8 +30,11 @@ local tsort = table.sort
 
 local osdate = os.date
 
+
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
 local excludeTypes = { [CT_INVALID_TYPE] = true }
+local panelNames = tbug.panelNames
+
 local getControlType
 local doNotGetParentInvokerNameAttributes = tbug.doNotGetParentInvokerNameAttributes
 local tbug_glookup = tbug.glookup
@@ -193,6 +196,13 @@ function tbug.getControlType(control, enumType)
 end
 getControlType = tbug.getControlType
 
+local function getTBUGGlobalInspectorPanelIdByName(tabKeyOrName)
+    for panelId, panelData in ipairs(panelNames) do
+        if panelData.key == tabKeyOrName or panelData.name == tabKeyOrName then return panelId end
+    end
+    return
+end
+tbug.getTBUGGlobalInspectorPanelIdByName = getTBUGGlobalInspectorPanelIdByName
 
 function tbug.bind1(func, arg1)
     return function(...)

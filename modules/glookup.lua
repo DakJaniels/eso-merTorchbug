@@ -33,6 +33,8 @@ local g_tmpKeys = {}
 local g_tmpStringIds = {}
 --tbug.tmpStringIds = g_tmpStringIds
 
+local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
+
 
 local isSpecialInspectorKey = tbug.isSpecialInspectorKey
 local keyToSpecialEnum = tbug.keyToSpecialEnum
@@ -601,7 +603,7 @@ local function doRefresh()
     tbug.filterComboboxFilterTypesPerPanel = {}
     local filterComboboxFilterTypesPerPanel = tbug.filterComboboxFilterTypesPerPanel
     --"Controls" panel
-    filterComboboxFilterTypesPerPanel[4] = ZO_ShallowTableCopy(g_enums[keyToEnums["type"]]) --CT_CONTROL, at "controls" tab
+    filterComboboxFilterTypesPerPanel[getTBUGGlobalInspectorPanelIdByName("controls")] = g_enums[keyToEnums["type"]] --ZO_ShallowTableCopy(g_enums[keyToEnums["type"]]) --CT_CONTROL, at "controls" tab
 
     g_needRefresh = false
 end

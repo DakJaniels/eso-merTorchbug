@@ -1546,6 +1546,7 @@ function TabWindow:selectTab(key, isMOC)
     end
 
     --Hide the filter dropdown and show it only for allowed tabIndices at the global inspector
+    -->If shown update the last selected entries
     self:connectFilterComboboxToPanel(tabIndex)
 
 --d(">setting activeTab")
@@ -1658,7 +1659,7 @@ end
 --- Filter function
 
 function TabWindow:updateFilter(filterEdit, mode, filterModeStr, searchTextDelay)
-d("[tbug]TabWindow:updateFilter")
+--d("[tbug]TabWindow:updateFilter - searchTextDelay: " ..tos(searchTextDelay))
     searchTextDelay = searchTextDelay or 500
     hideContextMenus()
     if tbug.doDebug then d("[tbug]TabWindow:updateFilter-mode: " ..tos(mode) .. ", filterModeStr: " ..tos(filterModeStr) .. ", searchTextDelay: " ..tos(searchTextDelay)) end
@@ -1667,44 +1668,54 @@ d("[tbug]TabWindow:updateFilter")
         saveNewSearchHistoryContextMenuEntry(p_filterEdit, p_self, p_self.control.isGlobalInspector)
     end
 
-    local function filterEditBoxContentsNow(p_self, p_filterEdit, p_mode, p_filterModeStr)
+    local function filterEditBoxContentsNow(p_self, p_filterEdit, p_currentSearchText, p_mode, p_filterModeStr)
         if tbug.doDebug then d("[tbug]filterEditBoxContentsNow") end
 
---[[
-TBUG._debugFilterEditBoxContentsNow = {
-    self = self,
-    p_self = p_self,
-}
-]]
+        --[[
+        TBUG._debugFilterEditBoxContentsNow = {
+            self = self,
+            p_self = p_self,
+        }
+        ]]
+        --Filter by editBox contents (text)
+        local filterEditText = p_filterEdit:GetText()
+        --> This below should not happen as the function is called throttled (means if one types the last function call get's overwritten by EVENT_MANAGER:RegisterForUpdate)
+        --[[
+        --Compare current text in the editbox with old passed in text
+        --If they differ the user changed the text again, so do not start the search
+        if p_currentSearchText ~= nil and p_currentSearchText ~= filterEditText then
+--d("<ABORT search - Searchtext changed, old: " .. tos(p_currentSearchText) .. ", new: " ..tos(filterEditText))
+            return
+        end
+        ]]
+
+        local activePanel = getActiveTabPanel(p_self)
 
         --Filter by MultiSelect ComboBox dropdown selected entries
         local filterMode = p_self.filterComboBox.filterMode
---TBUG._filterComboboxMode = filterMode
+        --TBUG._filterComboboxMode = filterMode
         if filterMode and filterMode > 0 then
             --local panel = p_self.tabs[filterMode].panel --todo the activated panel is determined via the filterMode -> That would always relate to the 1st tab if filterMode is str (1) and makes no sense at all!
-            local activePanel = getActiveTabPanel(p_self)
             if activePanel then
---d(">filterEditBoxContentsNow dropDownFilterMode: " .. tostring(filterMode))
+                --d(">filterEditBoxContentsNow dropDownFilterMode: " .. tostring(filterMode))
                 local dropdownFilterFunc
                 local selectedDropdownFilters = p_self:GetSelectedFilters()
                 if ZO_IsTableEmpty(selectedDropdownFilters) then
---d("[TBUG]nothing filtered in dropdown")
+                    --d("[TBUG]nothing filtered in dropdown")
                     --Nothing filtered? Re-enable all entries again
                     dropdownFilterFunc = false
                 else
---d("[TBUG]" .. tos(NonContiguousCount(selectedDropdownFilters) .. " entries in dropdown filters"))
+                    --d("[TBUG]" .. tos(NonContiguousCount(selectedDropdownFilters) .. " entries in dropdown filters"))
                     --Apply a filter function for the dropdown box
                     FilterFactory.searchedData["ctrl"] = {}
                     dropdownFilterFunc = FilterFactory["ctrl"](selectedDropdownFilters) --calls filters.lua -> tbug.FilterFactory -> FilterFactory.ctrl function and passes in the selected dropdown entries table
                 end
                 --Set the filter function of the dropdown box
-                activePanel:setDropDownFilterFunc(dropdownFilterFunc)
+                activePanel:setDropDownFilterFunc(dropdownFilterFunc, selectedDropdownFilters)
             end
         end
 
 
-        --Filter by editBox contents (text)
-        local filterEditText = p_filterEdit:GetText()
         local activeTab = p_self:getActiveTab()
         if activeTab ~= nil then
             --d(">set activeTab " .. tos(activeTab.tabName) .. " filterEditLastText to: " ..tos(filterEditText))
@@ -1715,13 +1726,13 @@ TBUG._debugFilterEditBoxContentsNow = {
         if tbug.doDebug then d(">text: " ..tos(filterEditText)) end
 
         p_filterEdit.doNotRunOnChangeFunc = false
-        local expr = strmatch(filterEditText, "(%S+.-)%s*$")
+        local expr = strmatch(filterEditText, "(%S+.-)%s*$") --remove leading and trainling spaces
         local filterFunc
         p_filterModeStr = p_filterModeStr or filterModes[p_mode]
         --d(strformat("[filterEditBoxContentsNow]expr: %s, mode: %s, modeStr: %s", tos(expr), tos(p_mode), tos(p_filterModeStr)))
         if expr then
             FilterFactory.searchedData[p_filterModeStr] = {}
-            filterFunc = FilterFactory[p_filterModeStr](expr)
+            filterFunc = FilterFactory[p_filterModeStr](expr) --run the filter function here, e.g. FilterFactory["str"](expr) -> FilterFactory.str(expr)
         else
             filterFunc = false
         end
@@ -1738,12 +1749,18 @@ TBUG._debugFilterEditBoxContentsNow = {
         }
         ]]
         local gotPanels = (p_self.panels ~= nil and true) or false --at global inspector e.g.
-        local gotActiveTabPanel = (activeTab ~= nil and activeTab.panel ~= nil and true) or false --at other inspectors
+        local gotActiveTabPanel = (activeTab ~= nil and activePanel ~= nil and true) or false --at other inspectors
         local filterFuncValid = (filterFunc ~= nil and true) or false
 
         if tbug.doDebug then d(">gotPanels: " ..tos(gotPanels) ..", gotActiveTabPanel: " ..tos(gotActiveTabPanel) .. ", filterFuncValid: " ..tos(filterFuncValid)) end
 
+
+        --Update all panales now or only 1 activePanel -> via panel:setFilterFunc
+        --[[
         if gotPanels then
+d(">got panels")
+            -->!!!Massive delay on each search as ALL panels update?!!!
+            --> Why should the text search of currently active panel be set to all panels?
             --At the global inspector e.g.
             if filterFuncValid then
                 --Set the filterFunction to all panels -> BasicInspectorPanel:setFilterFunc
@@ -1753,15 +1770,19 @@ TBUG._debugFilterEditBoxContentsNow = {
                     panel:setFilterFunc(filterFunc, false)
                 end
                 p_filterEdit:SetColor(p_self.filterColorGood:UnpackRGBA())
+                -->Only set it to the currently active panel now below
             else
                 p_filterEdit:SetColor(p_self.filterColorBad:UnpackRGBA())
             end
-        elseif gotActiveTabPanel == true then
+        end
+        ]]
+
+        if gotActiveTabPanel == true then
             --No normal panels: But subjectToPanel lookup exists
             if filterFuncValid then
-                local panelToFilter = getActiveTabPanel(p_self)
-                if panelToFilter ~= nil and panelToFilter.setFilterFunc ~= nil then
-                    panelToFilter:setFilterFunc(filterFunc, nil)
+--d(">gotActiveTabPanel and filterFuncValid")
+                if activePanel ~= nil and activePanel.setFilterFunc ~= nil then
+                    activePanel:setFilterFunc(filterFunc, nil)
                     p_filterEdit:SetColor(p_self.filterColorGood:UnpackRGBA())
                     gotPanels = true
                 else
@@ -1770,13 +1791,12 @@ TBUG._debugFilterEditBoxContentsNow = {
             else
                 p_filterEdit:SetColor(p_self.filterColorBad:UnpackRGBA())
             end
-
         end
         return filterFuncValid and gotPanels
     end
 
     throttledCall("merTorchbugSearchEditChanged", searchTextDelay,
-        filterEditBoxContentsNow, self, filterEdit, mode, filterModeStr
+        filterEditBoxContentsNow, self, filterEdit, filterEdit:GetText(), mode, filterModeStr
     )
 
     if not filterEdit.doNotSaveToSearchHistory then
@@ -1789,7 +1809,7 @@ TBUG._debugFilterEditBoxContentsNow = {
 end
 
 --Update the current inspector's active tab's panel filterEdit with the search text, or the searchText table,
---set the search modem and optionally search now
+--set the search mode, and optionally search now
 function TabWindow:updateFilterEdit(searchText, searchMode, searchDelay)
     hideContextMenus()
     searchMode = searchMode or getFilterMode(self)

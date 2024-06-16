@@ -398,7 +398,7 @@ local function inspectResults(specialInspectionString, searchData, source, statu
                 if searchValues ~= nil then
                     local inspectStr = argsOptions[1]
                     --d(">>inspectStr: " ..tos(inspectStr))
-                    searchData = buildSearchData(searchValues, 10)
+                    searchData = buildSearchData(searchValues, 10) --10 milliseconds delay before search starts
 
                     preventEndlessLoop = true
                     inspectResults(nil, searchData, inspectStr, evalString(inspectStr)) --evalString uses pcall and returns boolean, table(nilable)
@@ -810,7 +810,7 @@ end
 
 local onGlobalMouseUp
 local function updateTbugGlobalMouseUpHandler(isEnabled)
-d("[Tbug]updateTbugGlobalMouseUpHandler - isEnabled: " ..tos(isEnabled))
+--d("[Tbug]updateTbugGlobalMouseUpHandler - isEnabled: " ..tos(isEnabled))
     if isEnabled then
         EM:RegisterForEvent(myNAME.."_OnGlobalMouseUp", EVENT_GLOBAL_MOUSE_UP, onGlobalMouseUp)
     else
