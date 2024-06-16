@@ -177,7 +177,7 @@ local function makeEnumWithMinMaxAndIterationExclusion(group, prefix, key)
     local doDebug = false
     --[[
     local firstEntryKey = next(group)
-    if string.find(firstEntryKey, "ITEM_", 1, true) then
+    if strfind(firstEntryKey, "ITEM_", 1, true) then
         doDebug = true
     end
     ]]

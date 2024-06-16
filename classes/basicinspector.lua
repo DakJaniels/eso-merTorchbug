@@ -336,21 +336,27 @@ end
 local blockedTimeStampKeys = {
     ["_frametime"] = true
 }
+local function isNotBlockedTimeStampKeyOrProp(keyOrProp)
+    if type(keyOrProp) == "string" then
+        local keyLow = strlow(keyOrProp)
+        if not blockedTimeStampKeys[keyLow] and keyLow ~= nil and ((keyLow:match('time') ~= nil or keyLow:match('date') ~= nil)) then
+            return true
+        end
+    end
+    return false
+end
+
 local function isTimeStampRow(row, data, value)
     if row._isTimeStamp then return true end
     local key = data.key
     local prop = data.prop
     local propName = prop and prop.name
 --d(">isTimeStampRow: " ..tos(value) .. ", key: " ..tos(key) .. ", propName: " ..tos(propName))
-    if value and type(value) == "number" and (value >= earliestTimeStamp and value <= latestTimeStamp) then
-        if key ~= nil and type(key) == "string" then
-            local keyLow = strlow(key)
-            if not blockedTimeStampKeys[keyLow] and keyLow ~= nil and ((keyLow:match('time') ~= nil or keyLow:match('date') ~= nil)) then
-                return true
-            end
-        elseif propName ~= nil and type(propName) == "string"  then
-            local propNameLow = strlow(propName)
-            if propNameLow ~= nil and ((propNameLow:match('time') ~= nil or propNameLow:match('date') ~= nil)) then
+    if type(value) == "number" and (value >= earliestTimeStamp and value <= latestTimeStamp) then
+        if isNotBlockedTimeStampKeyOrProp(key) then
+            return true
+        else
+            if isNotBlockedTimeStampKeyOrProp(propName) then
                 return true
             end
         end

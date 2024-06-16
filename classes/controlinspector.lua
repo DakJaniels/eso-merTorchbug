@@ -313,6 +313,7 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
             end
         end
     elseif mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
+        self.editBox:LoseFocus()
         local mouseIsOverRightKey = MouseIsOver(row.cKeyRight)
         if MouseIsOver(row.cVal) then
             if sliderCtrl ~= nil then

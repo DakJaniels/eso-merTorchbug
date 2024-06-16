@@ -125,20 +125,20 @@ local function valueEdit_OnTextChanged(editBox)
 end
 
 local function valueSlider_OnEnter(sliderCtrl)
-d("valueSlider_OnEnter")
+--d("valueSlider_OnEnter")
     return sliderCtrl.panel:valueSliderConfirm(sliderCtrl)
 end
 
 
 local function valueSlider_OnFocusLost(sliderCtrl)
-d("valueSlider_OnFocusLost")
+--d("valueSlider_OnFocusLost")
     valueSlider_CancelThrottled(sliderCtrl, 75)
     --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
 end
 
 
 local function valueSlider_OnValueChanged(sliderCtrl)
-d("valueSlider_OnValueChanged")
+--d("valueSlider_OnValueChanged")
     sliderCtrl.panel:valueSliderUpdate(sliderCtrl)
 end
 
@@ -182,7 +182,6 @@ end
 
 function ObjectInspectorPanel:valueEditCancel(editBox)
 --d("[tbug]ObjectInspectorPanel:valueEditCancel - editBox: " ..tos(editBox:GetText()))
-    --hideContextMenus()
     local editData = self.editData
     if editData then
         self.editData = nil
@@ -197,7 +196,7 @@ end
 function ObjectInspectorPanel:valueEditConfirm(editBox)
     hideContextMenus()
     local expr = editBox:GetText()
-df("tbug: edit confirm: %s", expr)
+--df("tbug: edit confirm: %s", expr)
     if editBox.updatedColumn ~= nil and editBox.updatedColumnIndex ~= nil then
         if self.editData and self.editData.dataEntry and editConfirmAllowedTypes[self.editData.dataEntry.typeId] then
             self:valueEditConfirmed(editBox, expr)
@@ -230,7 +229,7 @@ end
 
 
 function ObjectInspectorPanel:valueEditStart(editBox, row, data, cValRow, columnIndex)
-d("[tbug]]ObjectInspectorPanel:valueEditStart - editBoxActive: " ..tos(self.editBoxActive))
+--d("[tbug]]ObjectInspectorPanel:valueEditStart - editBoxActive: " ..tos(self.editBoxActive))
 --[[
 tbug._clickedRow = {
     self = self,
@@ -244,7 +243,8 @@ tbug._clickedRow = {
         --todo 20240603 - Why is the 2nd right clicked row's text hiding?
         if self.editBoxActive then
             --self:valueSliderCancel(sliderCtrl)
-            valueEdit_CancelThrottled(editBox, 0)
+            --valueEdit_CancelThrottled(editBox, 0)
+            self:valueEditCancel(editBox)
         end
 
         editBox.updatedColumn = nil

@@ -169,7 +169,7 @@ function TableInspectorPanel:buildMasterListSpecial()
     local tbEvents = tbug.Events
     local isScenes = ((specialMasterListID and specialMasterListID == RT.SCENES_TABLE) or rawequal(editTable, tbug.ScenesOutput)) or false
     local isFragments = ((specialMasterListID and specialMasterListID == RT.FRAGMENTS_TABLE) or rawequal(editTable, tbug.FragmentsOutput)) or false
-d(string.format("[tbug]TableInspectorPanel:buildMasterListSpecial - specialMasterListID: %s, scenes: %s, fragments: %s", tos(specialMasterListID), tos(isScenes), tos(isFragments)))
+--d(string.format("[tbug]TableInspectorPanel:buildMasterListSpecial - specialMasterListID: %s, scenes: %s, fragments: %s", tos(specialMasterListID), tos(isScenes), tos(isFragments)))
 
     if rawequal(editTable, nil) then
         return true
@@ -590,7 +590,7 @@ end
 
 function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shift)
     local isGlobalInspector = (self.inspector and self.inspector.control and self.inspector.control.isGlobalInspector) or false
-d("[tbug]TableInspectorPanel:onRowClicked - isGlobalInspector: " ..tos(isGlobalInspector))
+--d"[tbug]TableInspectorPanel:onRowClicked - isGlobalInspector: " ..tos(isGlobalInspector))
     if tbug.doDebug then
         tbug._debugTableInspectorRowClicked = {
             row = row,
@@ -681,6 +681,7 @@ d("[tbug]TableInspectorPanel:onRowClicked - isGlobalInspector: " ..tos(isGlobalI
             end
         end
     elseif mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
+        self.editBox:LoseFocus()
         local mouseIsOverRightKey = MouseIsOver(row.cKeyRight)
         if self:canEditValue(data) then
 --d(">can edit value!")
@@ -727,14 +728,14 @@ d("[tbug]TableInspectorPanel:onRowClicked - isGlobalInspector: " ..tos(isGlobalI
                 --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
                 valueSlider_CancelThrottled(sliderCtrl, 50)
             end
-d(">loosing focus of editbox")
+--d(">loosing focus of editbox")
             self.editBox:LoseFocus()
         end
     end
 end
 
 function TableInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, alt, shift)
-df("tbug:TableInspectorPanel:onRowDoubleClicked")
+--df("tbug:TableInspectorPanel:onRowDoubleClicked")
     hideContextMenus()
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         local sliderCtrl = self.sliderControl
