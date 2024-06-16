@@ -361,6 +361,7 @@ tbug.searchURLs = {
 --Enumerations setup for the glookup.lua which reads global table _G and prepares the tbug enumrations so that they
 --can show real strings like BAG_BACKPACK instead of value 1
 local keyToEnums = {
+    ["actorCategories"]         = "GameplayActorCategories",
     ["anchorConstrains"]        = "AnchorConstrains",
     ["addressMode"]             = "TEX_MODE",
     ["blendMode"]               = "TEX_BLEND_MODE",
@@ -407,7 +408,8 @@ tbug.keyToSpecialEnumNoSubtablesInEnum = keyToSpecialEnumNoSubtablesInEnum
 
 local keyToSpecialEnum = {
     --Special key entries at tableInspector
-    ["bagId"]                   = "BAG_",
+    ["actorCategory"]           = keyToEnums["actorCategories"],
+    ["bagId"]                   = keyToEnums["bagId"],
     ["functionalQuality"]       = "ITEM_FUNCTIONAL_QUALITY_",
     ["displayQuality"]          = "ITEM_DISPLAY_QUALITY_",
     ["equipType"]               = "EQUIP_TYPE_",

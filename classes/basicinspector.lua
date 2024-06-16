@@ -333,6 +333,9 @@ local function isMouseCursorRow(row, cursorConstant)
     return false
 end
 
+local blockedTimeStampKeys = {
+    ["_frametime"] = true
+}
 local function isTimeStampRow(row, data, value)
     if row._isTimeStamp then return true end
     local key = data.key
@@ -342,7 +345,7 @@ local function isTimeStampRow(row, data, value)
     if value and type(value) == "number" and (value >= earliestTimeStamp and value <= latestTimeStamp) then
         if key ~= nil and type(key) == "string" then
             local keyLow = strlow(key)
-            if keyLow ~= nil and ((keyLow:match('time') ~= nil or keyLow:match('date') ~= nil)) then
+            if not blockedTimeStampKeys[keyLow] and keyLow ~= nil and ((keyLow:match('time') ~= nil or keyLow:match('date') ~= nil)) then
                 return true
             end
         elseif propName ~= nil and type(propName) == "string"  then

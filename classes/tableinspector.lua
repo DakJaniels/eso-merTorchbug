@@ -43,8 +43,11 @@ local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 local function getSpecialInspectorKeyConstant(key, value, row, data)
     local enumNameForConstants = keyToSpecialEnum[key]
     if not enumNameForConstants then return end
-    local enumNameForConstantsWithoutUnderscoreSuffix = strsub(enumNameForConstants, 1, -2) --remove _ at the end
---d(">enumNameForConstantsWithoutUnderscoreSuffix: " ..tos(enumNameForConstantsWithoutUnderscoreSuffix))
+    local enumNameForConstantsWithoutUnderscoreSuffix = enumNameForConstants
+    if string.sub(enumNameForConstants, -1) == "_" then
+        enumNameForConstantsWithoutUnderscoreSuffix = strsub(enumNameForConstants, 1, -2) --remove _ at the end
+    end
+d(">enumNameForConstantsWithoutUnderscoreSuffix: " ..tos(enumNameForConstantsWithoutUnderscoreSuffix))
     local enumsForConstants = enums[enumNameForConstantsWithoutUnderscoreSuffix]
     if not enumsForConstants then return end
     --Get the prefix of the enum to check in table tbug.tmpGroups
@@ -362,6 +365,8 @@ function TableInspectorPanel:initScrollList(control)
                 end
             end
         end
+
+--d(">isKeyRightUsed: " ..tos(isKeyRightUsed) ..", k: " ..tos(k) ..", v: " ..tos(v))
 
         --Special String key -> Add right key info?
         if not isKeyRightUsed and row.cKeyRight and isSpecialInspectorKey[k] then

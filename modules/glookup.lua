@@ -28,7 +28,7 @@ tbug.enums = g_enums
 local g_needRefresh = true
 local g_objects = {}
 local g_tmpGroups = setmetatable({}, autovivify(nil))
---tbug.tmpGroups = g_tmpGroups
+tbug.enumTmpGroups = g_tmpGroups
 local g_tmpKeys = {}
 local g_tmpStringIds = {}
 --tbug.tmpStringIds = g_tmpStringIds
@@ -36,7 +36,7 @@ local g_tmpStringIds = {}
 local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
 
 
-local isSpecialInspectorKey = tbug.isSpecialInspectorKey
+--local isSpecialInspectorKey = tbug.isSpecialInspectorKey
 local keyToSpecialEnum = tbug.keyToSpecialEnum
 local keyToSpecialEnumNoSubtablesInEnum = tbug.keyToSpecialEnumNoSubtablesInEnum
 local keyToSpecialEnumExclude = tbug.keyToSpecialEnumExclude
@@ -339,6 +339,10 @@ local function doRefresh()
     enumAnchorPosition[TOPLEFT] = "TOPLEFT"
     enumAnchorPosition[TOPRIGHT] = "TOPRIGHT"
 
+    local enumActorCategories = g_enums[keyToEnums["actorCategories"]] --GameplayActorCategories
+    enumActorCategories[GAMEPLAY_ACTOR_CATEGORY_PLAYER]  = "GAMEPLAY_ACTOR_CATEGORY_PLAYER"
+    enumActorCategories[GAMEPLAY_ACTOR_CATEGORY_COMPANION] = "GAMEPLAY_ACTOR_CATEGORY_COMPANION"
+
     local enumAnchorConstrains = g_enums[keyToEnums["anchorConstrains"]]
     enumAnchorConstrains[ANCHOR_CONSTRAINS_X] = "ANCHOR_CONSTRAINS_X"
     enumAnchorConstrains[ANCHOR_CONSTRAINS_XY] = "ANCHOR_CONSTRAINS_XY"
@@ -422,7 +426,7 @@ local function doRefresh()
     enumButtonState[BSTATE_DISABLED] = "BSTATE_DISABLED"
     enumButtonState[BSTATE_DISABLED_PRESSED] = "BSTATE_DISABLED_PRESSED"
 
-    local enumBags = g_enums[keyToEnums["bagId"]]
+    local enumBags = g_enums[keyToEnums["bagId"]] --Bags
     enumBags[BAG_WORN]              = "BAG_WORN"
     enumBags[BAG_BACKPACK]          = "BAG_BACKPACK"
     enumBags[BAG_BANK]              = "BAG_BANK"
@@ -498,6 +502,50 @@ local function doRefresh()
             until final
         end
 
+        --Create the 1table for the before split subtables -> like SPECIALIZED_ITEMTYPE_ again now
+        -->Loop all the relevant subtables
+        if specialEnumNoSubtables_subTables and not ZO_IsTableEmpty(specialEnumNoSubtables_subTables) then
+            for prefixWhichGotSubtables, subtableNames in pairs(specialEnumNoSubtables_subTables) do
+                local prefixWithoutLastUnderscore = strsub(prefixWhichGotSubtables, 1, -2)
+                --d(">>combining subtables to 1 table: " ..tos(prefixWithoutLastUnderscore))
+                g_enums[prefixWithoutLastUnderscore] = g_enums[prefixWithoutLastUnderscore] or {}
+                for _, subTablePrefixWithoutUnderscore in ipairs(subtableNames) do
+                    --d(">>>subtable name: " ..tos(subTablePrefixWithoutUnderscore))
+                    local subTableData = g_enums[subTablePrefixWithoutUnderscore]
+                    if subTableData ~= nil then
+                        for constantValue, constantName in pairs(subTableData) do
+                            --d(">>>>copied constant from subtable: " ..tos(constantName) .. " (" .. tos(constantValue) ..")")
+                            if type(constantName) == "string" then
+                                g_enums[prefixWithoutLastUnderscore][constantValue] = constantName
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        --For the Special cRightKey entries at tableInspector
+        local alreadyCheckedValues = {}
+        for k, v in pairs(keyToSpecialEnum) do
+            if not alreadyCheckedValues[v] then
+                alreadyCheckedValues[v] = true
+                local tmpGroupEntry = keyToSpecialEnumTmpGroupKey[k]
+                local selectedTmpGroupTable = g_tmpGroups[tmpGroupEntry]
+                if selectedTmpGroupTable ~= nil then
+                    makeEnumWithMinMaxAndIterationExclusion(selectedTmpGroupTable, v, k)
+                end
+            end
+        end
+
+        --Strings in _G.EsoStrings
+        local enumStringId = g_enums["SI"]
+        for v, k in zo_insecureNext, g_tmpStringIds do
+            if k then
+                enumStringId[v] = k
+            end
+        end
+
+
     else
         --LibAsync IS provided?
         --Examples
@@ -549,7 +597,7 @@ local function doRefresh()
         --Add the SI string value enums
         :Then(function(p_task)
             --Create the 1table for the before split subtables -> like SPECIALIZED_ITEMTYPE_ again now
-            -->Loop all eh relevant subtables
+            -->Loop all the relevant subtables
             if specialEnumNoSubtables_subTables and not ZO_IsTableEmpty(specialEnumNoSubtables_subTables) then
                 for prefixWhichGotSubtables, subtableNames in pairs(specialEnumNoSubtables_subTables) do
                     local prefixWithoutLastUnderscore = strsub(prefixWhichGotSubtables, 1, -2)
