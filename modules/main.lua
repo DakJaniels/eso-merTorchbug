@@ -792,6 +792,31 @@ function tbug.toggleTitleSizeInfo(selfInspector)
 end
 
 ------------------------------------------------------------------------------------------------------------------------
+local panelsLastRowClickedData = {}
+--tbug.panelsLastRowClickedData = panelsLastRowClickedData
+local function setLastRowClickedData(context, selfVar, row, data)
+--d("[Tbug]setLastRowClickedData - context: " ..tos(context))
+    if context == nil then return end
+    if selfVar == nil and row == nil and data == nil then
+        panelsLastRowClickedData[context] = nil
+    else
+        panelsLastRowClickedData[context] = {
+            _context = context,
+            self = selfVar,
+            row = row,
+            data = data,
+        }
+    end
+end
+tbug.setLastRowClickedData = setLastRowClickedData
+
+local function getLastRowClickedData(context)
+--d("[Tbug]setLastRowClickedData - context: " ..tos(context))
+    if context == nil then return end
+    return panelsLastRowClickedData[context]
+end
+tbug.getLastRowClickedData = getLastRowClickedData
+
 
 local function isMouseRightAndLeftAndSHIFTClickEnabled(onlyBaseSetting)
     onlyBaseSetting = onlyBaseSetting or false

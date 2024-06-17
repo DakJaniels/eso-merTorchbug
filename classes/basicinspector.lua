@@ -237,7 +237,7 @@ end
 
 
 function BasicInspectorPanel:initScrollList(control)
-d("BasicInspectorPanel:initScrollList")
+--d("BasicInspectorPanel:initScrollList")
 
     local list = assert(control:GetNamedChild("List"))
     tbug.inspectorScrollLists[list] = self

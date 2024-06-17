@@ -3,6 +3,7 @@ local tos = tostring
 local ton = tonumber
 local strformat = string.format
 local strsub = string.sub
+local strfind = string.find
 local type = type
 local osdate = os.date
 
@@ -22,6 +23,7 @@ local tbug_glookupEnum = tbug.glookupEnum
 
 local customKeysForInspectorRows = tbug.customKeysForInspectorRows
 local customKey__Object = customKeysForInspectorRows.object
+local specialTabTitleCleanAtInspectorLists = tbug.specialTabTitleCleanAtInspectorLists
 
 local tbug_buildRowContextMenuData = tbug.buildRowContextMenuData
 local tbug_setEditValueFromContextMenu = tbug.setEditValueFromContextMenu
@@ -37,6 +39,7 @@ local getControlType = tbug.getControlType
 
 local hideContextMenus = tbug.HideContextMenus
 local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
+local getLastRowClickedData = tbug.getLastRowClickedData
 
 --------------------------------
 
@@ -55,6 +58,48 @@ local function getSpecialInspectorKeyConstant(key, value, row, data)
     return constantStr
 end
 
+
+local function searchSpecialTabTitleStringPatternAndGetEnum(str, key)
+    for stringPattern, enumsToUse in pairs(specialTabTitleCleanAtInspectorLists) do
+        if strfind(str, stringPattern) ~= nil then
+--d(">>found: " .. tos(stringPattern) .. ", enumsToUse: " ..tos(enumsToUse))
+            local enumsForConstants = enums[enumsToUse]
+            if enumsForConstants ~= nil then
+                local constantStr = enumsForConstants[key]
+--d(">>>constantStr: " .. tos(constantStr))
+                if constantStr ~= nil then
+                    return constantStr
+                end
+            end
+        end
+    end
+    return
+end
+
+local function getSpecialTabTitleCleanAtInspectorKeyConstant(selfPanel, k, v, row, data)
+    --[[
+    local activeTab = selfPanel.inspector.activeTab --todo bug 20240617 returns the "old active tab" at the inspector, not the one we currently switch to!!!
+    if not activeTab then return end
+    local tabTitleClean = activeTab.titleClean
+    if tabTitleClean == nil or tabTitleClean == "" then return end
+d(">getSpecialTabTitleCleanAtInspectorKeyConstant - tabTitleClean: " ..tos(tabTitleClean))
+
+    local constantStr = searchSpecialTabTitleStringPatternAndGetEnum(tabTitleClean, k)
+    if constantStr ~= nil then return constantStr end
+    ]]
+    --Actual tab was maybe the "last one" as code here was run before the new got updated
+    --So check the saved data of last clicked row
+    local lastRowClickedDataOfTableInspector = getLastRowClickedData("table")
+    if lastRowClickedDataOfTableInspector ~= nil then
+        local clickedKey = lastRowClickedDataOfTableInspector.data.key
+--d(">getSpecialTabTitleCleanAtInspectorKeyConstant - clickedKey: " ..tos(clickedKey))
+        if clickedKey ~= nil and clickedKey ~= "" then
+            local constantStr = searchSpecialTabTitleStringPatternAndGetEnum(clickedKey, k)
+            if constantStr ~= nil then return constantStr end
+        end
+    end
+    return
+end
 
 --------------------------------
 local function invoke(object, method, ...)
@@ -373,6 +418,16 @@ function TableInspectorPanel:initScrollList(control)
             local keyRightText = getSpecialInspectorKeyConstant(k, v, row, data)
             if keyRightText ~= nil and keyRightText ~= "" then
                 setupValue(row.cKeyRight, type(keyRightText), keyRightText, true)
+                isKeyRightUsed = true
+            end
+        end
+
+        --Other special key: Key is number and tabTitleClean is e.g. bagTo*
+        if not isKeyRightUsed and row.cKeyRight and tk == "number" then
+            local keyRightText = getSpecialTabTitleCleanAtInspectorKeyConstant(self, k, v, row, data)
+            if keyRightText ~= nil and keyRightText ~= "" then
+                setupValue(row.cKeyRight, type(keyRightText), keyRightText, true)
+                isKeyRightUsed = true
             end
         end
     end
@@ -601,6 +656,8 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
     hideContextMenus()
     local sliderCtrl = self.sliderControl
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
+        tbug.setLastRowClickedData("table", self, nil, nil)
+
         self.editBox:LoseFocus()
         if sliderCtrl ~= nil then
             --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
@@ -651,6 +708,7 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
                 end
             end
 
+            tbug.setLastRowClickedData("table", self, row, data)
             if not shift and self.inspector.openTabFor then
                 local winTitle = self:BuildWindowTitleForTableKey(data)
                 local useInspectorTitel = (winTitle ~= nil and winTitle ~= "" and true) or false

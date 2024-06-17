@@ -428,6 +428,17 @@ for k,_ in pairs(keyToSpecialEnum) do
 end
 tbug.isSpecialInspectorKey = isSpecialInspectorKey
 
+--Special tab titles (clean) which control if the key at teh insepctor should show someting in addition at the keyRight
+-->key must be a lua pattern / value must be the ENUM name from table TBUG.ENUMS that will be used to show the ckeyRight
+local specialTabTitleCleanAtInspectorLists = {
+    ["bagTo(.*)"] =     "Bags",  --e.g. bagToInventory
+    ["bag2(.*)"] =      "Bags",  --e.g. bag2*
+    ["bagIdTo(.*)"] =   "Bags",  --e.g. bagIdTo*
+    ["bagId2(.*)"] =    "Bags",  --e.g. bagId2*
+    ["(.*)Bags"] =      "Bags",  --e.g. backingBags
+}
+tbug.specialTabTitleCleanAtInspectorLists = specialTabTitleCleanAtInspectorLists
+
 --The possible keys used for basicinspector function isTranslationTextRow() -> checking for ESOStrings or descriptor entries of ZO_MainMenu buttons etc.
 local possibleTranslationTextKeys = {
     ["descriptor"] = true,
@@ -468,3 +479,4 @@ local realESOEventNames = {
     [EVENT_HELP_SHOW_SPECIFIC_PAGE] = "EVENT_SHOW_SPECIFIC_HELP_PAGE",
 }
 tbug.realESOEventNames = realESOEventNames
+

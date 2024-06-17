@@ -252,6 +252,8 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
             self = self,
         }
     end
+    tbug.setLastRowClickedData("control", self, nil, nil)
+
     hideContextMenus()
     local sliderCtrl = self.sliderControl
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
@@ -302,6 +304,8 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
                     data._parentSubject = subject
                 end
             end
+
+            tbug.setLastRowClickedData("control", self, row, data)
             if shift then
                 --object, tabTitle, winTitle, recycleActive, objectParent, currentResultIndex, allResults, data
                 local inspector = tbug_inspect(data.value, title, nil, false, nil, nil, nil, data, nil)
