@@ -3,6 +3,7 @@ local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 local strfind = string.find
 local strlower = string.lower
 local strlen = string.len
+local strsub = string.sub
 
 --Mouse over control (MOC) - Number of opened tabs
 tbug.numMOCTabs = 0
@@ -30,6 +31,8 @@ local tsort = table.sort
 
 local osdate = os.date
 
+local prefixForLeftKey = tbug.prefixForLeftKey
+local prefixForLeftKeyLen = strlen(prefixForLeftKey)
 
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
 local excludeTypes = { [CT_INVALID_TYPE] = true }
@@ -529,6 +532,11 @@ local function checkForSpecialDataEntryAsKey(data, isRightKey)
             local cKeyRight = rowCtrl and rowCtrl.cKeyRight
             if cKeyRight and cKeyRight.GetText then
                 key = cKeyRight:GetText()
+
+                --Strip the <-- prefix for a rightKey that shows the value of the leftKey, and not for the value
+                if strfind(key, prefixForLeftKey, 1, true) == 1 then
+                    key = strsub(key, prefixForLeftKeyLen)
+                end
             end
         end
     end

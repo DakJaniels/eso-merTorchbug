@@ -7,6 +7,8 @@ local strfind = string.find
 local type = type
 local osdate = os.date
 
+local prefixForLeftKey = tbug.prefixForLeftKey
+
 local RT = tbug.RT
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
 local localizationStringKeyText = rtSpecialReturnValues[RT.LOCAL_STRING].replaceName
@@ -426,7 +428,7 @@ function TableInspectorPanel:initScrollList(control)
         if not isKeyRightUsed and row.cKeyRight and tk == "number" then
             local keyRightText = getSpecialTabTitleCleanAtInspectorKeyConstant(self, k, v, row, data)
             if keyRightText ~= nil and keyRightText ~= "" then
-                setupValue(row.cKeyRight, type(keyRightText), keyRightText, true)
+                setupValue(row.cKeyRight, type(keyRightText), prefixForLeftKey .. keyRightText, true) -- <- to show the rightKey belongs to the left key and not the value!
                 isKeyRightUsed = true
             end
         end

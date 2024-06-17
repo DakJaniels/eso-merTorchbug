@@ -74,6 +74,11 @@ tbug.maxInspectorTexturePreviewHeight   = 400
 
 tbug.maxScriptKeybinds = 5
 
+--Shows that the rightKey shows the name for the leftKey, and not for the value
+local prefixForLeftKey = "<- "
+tbug.prefixForLeftKey = prefixForLeftKey
+
+
 tbug.unitConstants = {
     player = "player"
 }
