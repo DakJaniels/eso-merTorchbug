@@ -535,7 +535,7 @@ local function checkForSpecialDataEntryAsKey(data, isRightKey)
 
                 --Strip the <-- prefix for a rightKey that shows the value of the leftKey, and not for the value
                 if strfind(key, prefixForLeftKey, 1, true) == 1 then
-                    key = strsub(key, prefixForLeftKeyLen)
+                    key = strsub(key, prefixForLeftKeyLen-1)
                 end
             end
         end

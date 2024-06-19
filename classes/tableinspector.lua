@@ -62,7 +62,9 @@ end
 
 
 local function searchSpecialTabTitleStringPatternAndGetEnum(str, key)
-    for stringPattern, enumsToUse in pairs(specialTabTitleCleanAtInspectorLists) do
+    for _, patternData in ipairs(specialTabTitleCleanAtInspectorLists) do
+        local stringPattern = patternData.pattern
+        local enumsToUse = patternData.enum
         if strfind(str, stringPattern) ~= nil then
 --d(">>found: " .. tos(stringPattern) .. ", enumsToUse: " ..tos(enumsToUse))
             local enumsForConstants = enums[enumsToUse]

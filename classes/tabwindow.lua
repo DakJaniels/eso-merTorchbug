@@ -1369,6 +1369,7 @@ function TabWindow:removeTab(key)
     --self:updateFilterEdit("", nil, 0)
     -->How can we reset it only at the active tab?
     local activeTab = self.activeTab
+    if not activeTab then return end
     local editControl = self.filterEdit
     activeTab.filterModeButtonLastMode = 1 --str
     activeTab.filterEditLastText = nil
@@ -1387,7 +1388,7 @@ function TabWindow:removeTab(key)
 
     local nextControl = self.tabs[index + 1]
     if nextControl then
---d(">>nextControl found")
+        --d(">>nextControl found")
         nextControl:ClearAnchors()
         if index > 1 then
             local prevControl = self.tabs[index - 1]
@@ -1397,7 +1398,7 @@ function TabWindow:removeTab(key)
         end
     end
     if activeTab == tabControl then
---d(">>activeTab!")
+        --d(">>activeTab!")
         if nextControl then
             self:selectTab(nextControl)
         else
@@ -1416,9 +1417,9 @@ function TabWindow:removeTab(key)
 
     self.tabPool:ReleaseObject(tabControl.pkey)
 
---tbug._selfControl = self.control
+    --tbug._selfControl = self.control
     if not self.tabs or #self.tabs == 0 then
---d(">reset all tabs: Title text = ''")
+        --d(">reset all tabs: Title text = ''")
         self.title:SetText("")
         --No tabs left in this inspector? Hide it then
         --self.control:SetHidden(true)

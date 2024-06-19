@@ -1706,7 +1706,6 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                                     --Loop all enums now
                                     for enumValue, enumName in pairs(enumsTab) do
                                         table.insert(enumContextMenuEntries, {enumName = enumName, enumValue=enumValue})
-
                                     end
                                     enumsWereAdded = #enumContextMenuEntries > 0
 
@@ -1738,7 +1737,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             for _, enumData in ipairs(enumContextMenuEntries) do
                                 local funcCalledOnEntrySelected = canEditValue and function() p_data.value = enumData.enumValue  setEditValueFromContextMenu(p_self, p_row, p_data, currentValue) end or noCallbackFunc
                                 --(text, callback, entryType, entries, additionalData)
-                                AddCustomScrollableMenuEntry(enumData.enumName, funcCalledOnEntrySelected, LSM_ENTRY_TYPE_NORMAL, nil, { enabled = canEditValue })
+                                AddCustomScrollableMenuEntry(enumData.enumName .. " (" .. tos(enumData.enumValue) .. ")", funcCalledOnEntrySelected, LSM_ENTRY_TYPE_NORMAL, nil, { enabled = canEditValue })
                             end
                             if dividerLate then
                                 --Divider line at the bottom

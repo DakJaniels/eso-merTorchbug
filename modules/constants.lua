@@ -59,9 +59,6 @@ tbug.author =   "merlight, current: Baertram"
 --
 ------------------------------------------------------------------------------------------------------------------------
 
-local osdate = os.date
-
-
 --Global inspector default and min/max width/height values
 tbug.defaultInspectorWindowWidth        = 760
 tbug.defaultInspectorWindowHeight       = 800
@@ -434,13 +431,31 @@ end
 tbug.isSpecialInspectorKey = isSpecialInspectorKey
 
 --Special tab titles (clean) which control if the key at teh insepctor should show someting in addition at the keyRight
--->key must be a lua pattern / value must be the ENUM name from table TBUG.ENUMS that will be used to show the ckeyRight
+-->key must be a number/index so you define the order of the checked patterns! Table entry must have "pattern" and "enum":
+-->pattern is the lua pattern to find the key's name in the inspector / ENUM name from table TBUG.ENUMS that will be used to show the ckeyRight
+
 local specialTabTitleCleanAtInspectorLists = {
-    ["bagTo(.*)"] =     "Bags",  --e.g. bagToInventory
-    ["bag2(.*)"] =      "Bags",  --e.g. bag2*
-    ["bagIdTo(.*)"] =   "Bags",  --e.g. bagIdTo*
-    ["bagId2(.*)"] =    "Bags",  --e.g. bagId2*
-    ["(.*)Bags"] =      "Bags",  --e.g. backingBags
+    [1] = {
+        pattern = "bagTo(.*)", enum = "Bags",  --e.g. bagToInventory
+    },
+    [2] = {
+        pattern = "bag2(.*)", enum = "Bags",  --e.g. bag2*
+    },
+    [3] = {
+        pattern = "bagIdTo(.*)", enum = "Bags",  --e.g. bagIdTo*
+    },
+    [4] = {
+        pattern = "bagId2(.*)", enum = "Bags",  --e.g. bagId2*
+    },
+    [5] = {
+        pattern = "(.*)Bags", enum = "Bags",  --e.g. backingBags
+    },
+    [6] = {
+        pattern = "[sS][pP][eE][cC][iI][aA][lL][iI][zZ][eE][dD][iI][tT][eE][mM][tT][yY][pP][eE]", enum = "SPECIALIZED_ITEMTYPE",  --e.g. specializedItemType
+    },
+    [7] = {
+        pattern = "[iI][tT][eE][mM][tT][yY][pP][eE]", enum = "ITEMTYPE",  --e.g. itemType
+    },
 }
 tbug.specialTabTitleCleanAtInspectorLists = specialTabTitleCleanAtInspectorLists
 
