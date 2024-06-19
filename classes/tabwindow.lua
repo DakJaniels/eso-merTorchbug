@@ -1814,7 +1814,7 @@ end
 function TabWindow:updateFilterEdit(searchText, searchMode, searchDelay)
     hideContextMenus()
     searchMode = searchMode or getFilterMode(self)
-d("[TB]updateFilterEdit -searchText: " ..tos(searchText) .. ", searchMode: " ..tos(searchMode) .. ", searchDelay: " .. tos(searchDelay))
+--d("[TB]updateFilterEdit -searchText: " ..tos(searchText) .. ", searchMode: " ..tos(searchMode) .. ", searchDelay: " .. tos(searchDelay))
     if searchText == nil then return end
 
     local activePanel = getActiveTabPanel(self)

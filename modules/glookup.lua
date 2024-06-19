@@ -622,7 +622,7 @@ local function doRefresh()
         end):Then(function(p_task)
 
             start2 = GetGameTimeMilliseconds()
-            df("[Tbug]Global ENUM generation took %ims", start2 - start) --Dauert ca 10+ Sekunden
+            --df("[Tbug]Global ENUM generation took %ims", start2 - start)
 
         end)
         --Transfer the special ENUM subtables back to 1
@@ -675,7 +675,8 @@ local function doRefresh()
             end
         end)
         :Then(function(p_task)
-            df("[Tbug]ENUM special and StringId generation took %ims", GetGameTimeMilliseconds() - start2)
+            --df("[Tbug]ENUM special and StringId generation took %ims", GetGameTimeMilliseconds() - start2)
+            df("[Tbug]Global ENUM generation took %ims", GetGameTimeMilliseconds() - start)
         end)
     end
 

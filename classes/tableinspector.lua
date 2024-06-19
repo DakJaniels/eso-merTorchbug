@@ -145,14 +145,14 @@ end
 
 
 function TableInspectorPanel:bindMasterList(editTable, specialMasterListID)
-d("[tbug]TableInspectorPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
+--d("[tbug]TableInspectorPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
     self.subject = editTable
     self.specialMasterListID = specialMasterListID
 end
 
 
 function TableInspectorPanel:buildMasterList()
-d("[tbug]TableInspectorPanel:buildMasterList")
+--d("[tbug]TableInspectorPanel:buildMasterList")
 
     if self:buildMasterListSpecial() then
 --d("<building special!")

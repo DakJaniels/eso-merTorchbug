@@ -514,12 +514,12 @@ function BasicInspectorPanel:onRowMouseDoubleClick(row, data, mouseButton, upIns
 end
 
 function BasicInspectorPanel:readyForUpdate(pendingUpdate)
-d("[TBUG]BasicInspectorPanel:readyForUpdate-pendingUpdateNew: " ..tos(pendingUpdate) .. ", lockedForUpd: " ..tos(self._lockedForUpdates))
+--d("[TBUG]BasicInspectorPanel:readyForUpdate-pendingUpdateNew: " ..tos(pendingUpdate) .. ", lockedForUpd: " ..tos(self._lockedForUpdates))
     if not self._lockedForUpdates then
         return true
     end
     if self._pendingUpdate < pendingUpdate then
-d(">pendingUpdate changed from: " .. tos(self._pendingUpdate) .. " to: " ..tos(pendingUpdate))
+--d(">pendingUpdate changed from: " .. tos(self._pendingUpdate) .. " to: " ..tos(pendingUpdate))
         self._pendingUpdate = pendingUpdate
     end
     return false
@@ -532,13 +532,13 @@ function BasicInspectorPanel:refreshData()
 
 
     if self:readyForUpdate(UPDATE_MASTER) then
-d(">MasterList")
+--d(">MasterList")
         self:buildMasterList()
-d(">>FilterScrollList")
+--d(">>FilterScrollList")
         self:filterScrollList()
-d(">>SortScrollList")
+--d(">>SortScrollList")
         self:sortScrollList()
-d(">>CommitScrollList")
+--d(">>CommitScrollList")
         self:commitScrollList()
     end
 end
