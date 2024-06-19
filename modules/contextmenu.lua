@@ -1931,16 +1931,40 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
 
         --Tabs
         local tabsSubmenu = {}
-        if not isGlobalInspectorWindow then
+        if not isGlobalInspectorWindow and toggleSizeButton.toggleState == false and (selfInspector.tabs and #selfInspector.tabs > 0) then
+            --[[
             tins(tabsSubmenu, {
                 label = "Close all tabs",
                 callback = function() tbug.closeAllTabs(selfInspector) end,
+            })
+            ]]
+            tins(tabsSubmenu, {
+                label = "Remove all tabs",
+                callback = function() selfInspector:removeAllTabs() end,
+            })
+        elseif isGlobalInspectorWindow and toggleSizeButton.toggleState == false and (selfInspector.tabs and #selfInspector.tabs < tbug.panelCount ) then
+            tins(tabsSubmenu, {
+                label = "+ Restore all standard tabs",
+                callback = function() tbug.slashCommand("-all-")  end,
             })
         end
         if not ZO_IsTableEmpty(tabsSubmenu) then
             AddCustomScrollableMenuEntry("-", noCallbackFunc, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
             AddCustomScrollableSubMenuEntry("Tabs", tabsSubmenu)
         end
+        --[[
+        --Not at the global inspector of TBUG itsself, else you'd remove all the libraries, scripts, globals etc. tabs
+        if not isGlobalInspectorWindow and toggleSizeButton.toggleState == false and (selfInspector.tabs and #selfInspector.tabs > 0) then
+            AddCustomScrollableMenuEntry("-", noCallbackFunc, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+            AddCustomScrollableMenuEntry("Remove all tabs", function() selfInspector:removeAllTabs() end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+            --Only at the global inspector
+        elseif isGlobalInspectorWindow and toggleSizeButton.toggleState == false and (selfInspector.tabs and #selfInspector.tabs < tbug.panelCount ) then
+            AddCustomScrollableMenuEntry("-", noCallbackFunc, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+            AddCustomScrollableMenuEntry("+ Restore all standard tabs +", function() tbug.slashCommand("-all-") end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+        end
+        ]]
+
+
 
         --Tools
         local toolsSubmenu = {}
@@ -1966,15 +1990,6 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
         AddCustomScrollableMenuEntry("Collapse/Expand", function() toggleSizeButton.onClicked[MOUSE_BUTTON_INDEX_LEFT](toggleSizeButton) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
         if toggleSizeButton.toggleState == false then
             AddCustomScrollableMenuEntry("Refresh", function() refreshButton.onClicked[MOUSE_BUTTON_INDEX_LEFT]() end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-        end
-        --Not at the global inspector of TBUG itsself, else you'd remove all the libraries, scripts, globals etc. tabs
-        if not isGlobalInspectorWindow and toggleSizeButton.toggleState == false and (selfInspector.tabs and #selfInspector.tabs > 0) then
-            AddCustomScrollableMenuEntry("-", noCallbackFunc, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-            AddCustomScrollableMenuEntry("Remove all tabs", function() selfInspector:removeAllTabs() end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-            --Only at the global inspector
-        elseif isGlobalInspectorWindow and toggleSizeButton.toggleState == false and (selfInspector.tabs and #selfInspector.tabs < tbug.panelCount ) then
-            AddCustomScrollableMenuEntry("-", noCallbackFunc, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
-            AddCustomScrollableMenuEntry("+ Restore all standard tabs +", function() tbug.slashCommand("-all-") end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
         end
         AddCustomScrollableMenuEntry("-", noCallbackFunc, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
         AddCustomScrollableMenuEntry("Hide", function() owner:SetHidden(true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
