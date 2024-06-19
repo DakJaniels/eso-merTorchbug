@@ -604,10 +604,10 @@ end
 function BasicInspectorPanel:setDropDownFilterFunc(dropdownFilterFunc, selectedDropdownFilters)
     if tbug.doDebug then d("[TBUG]BasicInspectorPanel:setDropDownFilterFunc: " ..tos(dropdownFilterFunc)) end
 
-tbug._debug = tbug._debug or {}
-tbug._debug.dropdownFiltersSelected = selectedDropdownFilters
+--tbug._debug = tbug._debug or {}
+--tbug._debug.dropdownFiltersSelected = selectedDropdownFilters
 
-d("[TBUG]BasicInspectorPanel:setDropDownFilterFunc: " ..tos(dropdownFilterFunc) .. ", #selectedDropdownFilters: " ..tos(selectedDropdownFilters))
+--d("[TBUG]BasicInspectorPanel:setDropDownFilterFunc: " ..tos(dropdownFilterFunc) .. ", #selectedDropdownFilters: " ..tos(selectedDropdownFilters))
     if self.dropdownFilterFunc ~= dropdownFilterFunc then
         self.dropdownFilterFunc = dropdownFilterFunc
         self.dropdownFiltersSelected = selectedDropdownFilters
