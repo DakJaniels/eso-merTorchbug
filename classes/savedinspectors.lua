@@ -287,7 +287,7 @@ end
 
 
 function SavedInspectorsPanel:bindMasterList(editTable, specialMasterListID)
-d("[tbug]SavedInspectorsPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
+--d("[tbug]SavedInspectorsPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
     self.subject = editTable
     self.specialMasterListID = specialMasterListID
 end
@@ -302,7 +302,7 @@ end
 function SavedInspectorsPanel:buildMasterListSpecial()
     local editTable = self.subject
     local specialMasterListID = self.specialMasterListID
-d("[TBug]SavedInspectorsPanel:buildMasterListSpecial - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
+--d("[TBug]SavedInspectorsPanel:buildMasterListSpecial - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
 
     if rawequal(editTable, nil) then
         return true
