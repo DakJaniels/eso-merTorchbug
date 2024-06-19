@@ -301,10 +301,10 @@ tbug._clickedRow = {
                 self.editBoxActive = true
                 editBox.updatedColumn = cValRow
                 editBox.updatedColumnIndex = columnIndex
-d(">cValRow:GetText(): " ..tos(cValRow:GetText()))
+--d(">cValRow:GetText(): " ..tos(cValRow:GetText()))
                 editBox:SetText(cValRow:GetText())
                 editBox:SetHidden(false)
-d(">editBox:TakeFocus()")
+--d(">editBox:TakeFocus()")
                 editBox:TakeFocus()
                 self:anchorEditBoxToListCell(editBox, cValRow)
                 self.editData = data
@@ -316,7 +316,7 @@ end
 
 
 function ObjectInspectorPanel:valueEditUpdate(editBox)
-d("[tbug]ObjectInspectorPanel:valueEditUpdate - editBox: " ..tos(editBox:GetText()))
+--d("[tbug]ObjectInspectorPanel:valueEditUpdate - editBox: " ..tos(editBox:GetText()))
     hideContextMenus()
 
     local expr = editBox:GetText()
