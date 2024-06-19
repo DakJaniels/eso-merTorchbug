@@ -1925,6 +1925,12 @@ local function onAddOnLoaded(event, addOnName)
     --Load the Character data of the current account
     tbug.CharacterIdToName = loadCharacterDataOfAccount()
 
+    --If LibAsync is enabled: Prepare the lookup tables etc. for tbug already after addon load here
+    if LibAsync ~= nil then
+        tbug.doRefresh()
+    end
+
+
     --PreHook the chat#s return key pressed function in order to check for run /script commands
     --and add them to the script history
     ZO_PreHook("ZO_ChatTextEntry_Execute", tbugChatTextEntry_Execute)

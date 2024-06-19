@@ -26,6 +26,7 @@ local mtEnum = { __index = function (_, v) return v end }
 local g_enums = setmetatable({}, autovivify(mtEnum))
 tbug.enums = g_enums
 local g_needRefresh = true
+local g_refreshRunning = false
 local g_objects = {}
 local g_tmpGroups = setmetatable({}, autovivify(nil))
 tbug.enumTmpGroups = g_tmpGroups
@@ -323,7 +324,19 @@ local isObjectType = {
     [functionType] = true,
 }
 
+local refreshStartTime
 local function doRefresh()
+    if not g_needRefresh then return end
+    if g_refreshRunning then
+        d("tbug: _G Lookup refresh already active! Started: " .. tos(startTime ~= nil and startTime > 0 and os.date("%c", refreshStartTime)))
+        return
+    end
+    if LibAsync ~= nil then
+        d("tbug: _G Lookup queued to LibAsync...")
+    end
+    refreshStartTime = GetTimeStamp()
+    g_refreshRunning = true
+
     --d("[TBUG]doRefresh")
     ZO_ClearTable(g_objects)
     ZO_ClearTable(g_tmpStringIds)
@@ -563,8 +576,8 @@ local function doRefresh()
                 local tmpGroupEntry = keyToSpecialEnumTmpGroupKey[k]
                 local selectedTmpGroupTable = tmpGroupEntry ~= nil and g_tmpGroups[tmpGroupEntry] or nil
                 if selectedTmpGroupTable ~= nil then
---d("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
---d(">>group: " ..tos(selectedTmpGroupTable))
+                    --d("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+                    --d(">>group: " ..tos(selectedTmpGroupTable))
                     makeEnumWithMinMaxAndIterationExclusion(selectedTmpGroupTable, v, k)
                 end
             end
@@ -578,6 +591,14 @@ local function doRefresh()
             end
         end
 
+        --Prepare the entries for the filterCombobox at the global inspector
+        tbug.filterComboboxFilterTypesPerPanel = {}
+        local filterComboboxFilterTypesPerPanel = tbug.filterComboboxFilterTypesPerPanel
+        --"Controls" panel
+        filterComboboxFilterTypesPerPanel[getTBUGGlobalInspectorPanelIdByName("controls")] = g_enums[keyToEnums["type"]] --ZO_ShallowTableCopy(g_enums[keyToEnums["type"]]) --CT_CONTROL, at "controls" tab
+
+        g_needRefresh = false
+        g_refreshRunning = false
 
     else
         --LibAsync IS provided?
@@ -588,7 +609,7 @@ local function doRefresh()
         local start2
 
         task:For(zo_insecureNext, g_tmpGroups):Do(function(prefix, group)
---d("prefix: " .. tos(prefix).. "; group: " ..tos(group))
+            --d("prefix: " .. tos(prefix).. "; group: " ..tos(group))
             --Transfer the tmpGroups of constants to the enumerations table, using the tmpGroups prefix e.g. SPECIALIZED_ and
             --checking for + creating subTables like SPECIALIZED_ITEMTYPE etc.
             --Enum entries at least need 2 constants entries in the g_tmpKeys or it will fail to create a new subTable
@@ -596,7 +617,7 @@ local function doRefresh()
             local final = true
             local i = 0
             task:While(function() return final == true and i < 9999 end):Do(function() --repeat until final is changed to false
-            --repeat
+                --repeat
                 i = i + 1 --security varibale to prevent an endless while loop
                 --local final = true
                 --for k, _ in zo_insecureNext , group do
@@ -616,19 +637,19 @@ local function doRefresh()
                     final = f
                     --end
                 end)
-            --until final
-            --end
+                --until final
+                --end
             end)
         end):Then(function(p_task)
 
-            start2 = GetGameTimeMilliseconds()
+            --start2 = GetGameTimeMilliseconds()
             --df("[Tbug]Global ENUM generation took %ims", start2 - start)
 
         end)
         --Transfer the special ENUM subtables back to 1
         --Create special enmus
         --Add the SI string value enums
-        :Then(function(p_task)
+            :Then(function(p_task)
             --Create the 1table for the before split subtables -> like SPECIALIZED_ITEMTYPE_ again now
             -->Loop all the relevant subtables
             if specialEnumNoSubtables_subTables and not ZO_IsTableEmpty(specialEnumNoSubtables_subTables) then
@@ -659,8 +680,8 @@ local function doRefresh()
                     local tmpGroupEntry = keyToSpecialEnumTmpGroupKey[k]
                     local selectedTmpGroupTable = tmpGroupEntry ~= nil and g_tmpGroups[tmpGroupEntry] or nil
                     if selectedTmpGroupTable ~= nil then
---d("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
---d(">>tmpGroupEntry: " ..tos(tmpGroupEntry))
+                        --d("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+                        --d(">>tmpGroupEntry: " ..tos(tmpGroupEntry))
                         makeEnumWithMinMaxAndIterationExclusion(selectedTmpGroupTable, v, k)
                     end
                 end
@@ -673,41 +694,44 @@ local function doRefresh()
                     enumStringId[v] = k
                 end
             end
+
+            --Prepare the entries for the filterCombobox at the global inspector
+            tbug.filterComboboxFilterTypesPerPanel = {}
+            local filterComboboxFilterTypesPerPanel = tbug.filterComboboxFilterTypesPerPanel
+            --"Controls" panel
+            filterComboboxFilterTypesPerPanel[getTBUGGlobalInspectorPanelIdByName("controls")] = g_enums[keyToEnums["type"]] --ZO_ShallowTableCopy(g_enums[keyToEnums["type"]]) --CT_CONTROL, at "controls" tab
+
+            g_needRefresh = false
         end)
-        :Then(function(p_task)
+            :Then(function(p_task)
             --df("[Tbug]ENUM special and StringId generation took %ims", GetGameTimeMilliseconds() - start2)
-            df("[Tbug]Global ENUM generation took %ims", GetGameTimeMilliseconds() - start)
+            df("[Tbug]LibAsync global ENUM generation took %ims", GetGameTimeMilliseconds() - start)
+
+            g_refreshRunning = false
         end)
     end
-
-
-
-
-    --Prepare the entries for the filterCombobox at the global inspector
-    tbug.filterComboboxFilterTypesPerPanel = {}
-    local filterComboboxFilterTypesPerPanel = tbug.filterComboboxFilterTypesPerPanel
-    --"Controls" panel
-    filterComboboxFilterTypesPerPanel[getTBUGGlobalInspectorPanelIdByName("controls")] = g_enums[keyToEnums["type"]] --ZO_ShallowTableCopy(g_enums[keyToEnums["type"]]) --CT_CONTROL, at "controls" tab
-
-    g_needRefresh = false
 end
+tbug.doRefresh = doRefresh
 
 
---Controls if the debug message after laoding _G table should show in chat
+--Controls if the debug message after loading _G table should show in chat
 if DEBUG >= 1 then
-    doRefresh = tbug.timed("tbug: glookupRefresh", doRefresh)
+    --If LibAsync is enabled: Prepare the lookup tables etc for tbug already after addon load -> See file main.lua EVENT_ADD_ON_LOADED
+    if LibAsync == nil then
+        doRefresh = tbug.timed("tbug: _G Lookup refresh", doRefresh)
+    end
 end
 
 
 function tbug.glookup(obj)
-    if g_needRefresh then
+    if g_needRefresh and not g_refreshRunning then
         doRefresh()
     end
     return g_objects[obj]
 end
 
 function tbug.glookupEnum(prefix)
-    if g_needRefresh then
+    if g_needRefresh and not g_refreshRunning then
         doRefresh()
     end
     return g_enums[prefix]
