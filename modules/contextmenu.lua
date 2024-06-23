@@ -1268,14 +1268,15 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     local searchString = ""
                     for i=1, #splitTab - 1, 1 do
                         searchString = searchString .. splitTab[i] .. constantsSplitSepparator
-                        if not searchValuesAdded[searchString] then
+                        local searchStringForSubmenu = searchString
+                        if not searchValuesAdded[searchStringForSubmenu] then
                             tins(searchSubmenu,
                                     {
-                                        name =     "Search '" .. searchString .. "'",
-                                        callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, searchString) end,
+                                        name =     "Search '" .. searchStringForSubmenu .. "'",
+                                        callback =  function() setSearchBoxTextFromContextMenu(p_self, p_row, p_data, searchStringForSubmenu) end,
                                     }
                             )
-                            searchValuesAdded[searchString] = true
+                            searchValuesAdded[searchStringForSubmenu] = true
                         end
                     end
                 end
