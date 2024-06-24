@@ -69,7 +69,7 @@ end
 
 function GlobalInspector:UpdateLoadingState(doHide)
     if self.loadingSpinner == nil then return end
-d("[tbug]GlobalInspector:UpdateLoadingState - doHide: " ..tostring(doHide))
+--d("[tbug]GlobalInspector:UpdateLoadingState - doHide: " ..tostring(doHide))
     if doHide then
         self.loadingSpinner:Hide()
     else

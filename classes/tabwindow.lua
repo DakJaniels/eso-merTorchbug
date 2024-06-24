@@ -1679,8 +1679,6 @@ function TabWindow:updateFilter(filterEdit, mode, filterModeStr, searchTextDelay
     hideContextMenus()
     if tbug.doDebug then d("[tbug]TabWindow:updateFilter-mode: " ..tos(mode) .. ", filterModeStr: " ..tos(filterModeStr) .. ", searchTextDelay: " ..tos(searchTextDelay)) end
 
-    local isGlobalInspector = self.control.isGlobalInspector == true
-
     local function addToSearchHistory(p_self, p_filterEdit)
         saveNewSearchHistoryContextMenuEntry(p_filterEdit, p_self, p_self.control.isGlobalInspector)
     end
@@ -1810,14 +1808,18 @@ d(">got panels")
             end
 
             --Hide the loading spinner again
-            --hideLoadingSpinner(p_self.control, true)
+            hideLoadingSpinner(p_self.control, true)
         end
 
 
         return filterFuncValid and gotPanels
     end
 
-    hideLoadingSpinner(self.control, false)
+    --Show the loading spinner now - But only if the currently shown list is not empty (e.g. no events loaded yet)
+    local activePanel = getActiveTabPanel(self)
+    if activePanel ~= nil and activePanel.masterlist and not ZO_IsTableEmpty(activePanel.masterlist) then
+        hideLoadingSpinner(self.control, false)
+    end
 
     throttledCall("merTorchbugSearchEditChanged", searchTextDelay,
             filterEditBoxContentsNow, self, filterEdit, filterEdit:GetText(), mode, filterModeStr
