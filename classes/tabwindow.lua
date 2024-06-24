@@ -45,6 +45,7 @@ local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 local characterIdToName
 
 local defaultScrollableContextMenuOptions = tbug.defaultScrollableContextMenuOptions
+local hideLoadingSpinner = tbug.hideLoadingSpinner
 
 ------------------------------------------------------------------------------------------------------------------------
 local function resetTabControlData(tabControl)
@@ -96,18 +97,6 @@ local function onMouseExitHideTooltip(ctrl)
     ctrl.hideTooltip = true
     ZO_Tooltips_HideTextTooltip()
 end
-
-local function hideLoadingSpinner(control, doHide)
-    if control and control.isGlobalInspector == true then
-        --d("[Tbug]hideLoadingSpinner - isGlobalInspector: true")
-        --Show the loading spinner at the global inspector
-        local globalInspector = tbug.getGlobalInspector()
-        if globalInspector ~= nil then
-            globalInspector:UpdateLoadingState(doHide)
-        end
-    end
-end
-tbug.hideLoadingSpinner = hideLoadingSpinner
 
 local function buildTabTitleOrTooltip(tabControl, keyText, isGeneratingTitle)
      isGeneratingTitle = isGeneratingTitle or false
@@ -1808,7 +1797,7 @@ d(">got panels")
             end
 
             --Hide the loading spinner again
-            hideLoadingSpinner(p_self.control, true)
+            hideLoadingSpinner(p_self.control, not self.g_refreshRunning) --only hide the loading spinner if no _G refresh is currently active
         end
 
 

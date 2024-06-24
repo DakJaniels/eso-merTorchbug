@@ -74,6 +74,18 @@ local function hideContextMenus()
 end
 tbug.HideContextMenus = hideContextMenus
 
+local function hideLoadingSpinner(control, doHide)
+    if control and control.isGlobalInspector == true then
+        --d("[Tbug]hideLoadingSpinner - isGlobalInspector: true, doHide: " ..tostring(doHide))
+        --Show the loading spinner at the global inspector
+        local globalInspector = tbug.getGlobalInspector()
+        if globalInspector ~= nil then
+            globalInspector:UpdateLoadingState(doHide)
+        end
+    end
+end
+tbug.hideLoadingSpinner = hideLoadingSpinner
+
 local function strsplit(inputstr, sep)
    sep = sep or "%s" --whitespace
    local t={}

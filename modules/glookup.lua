@@ -35,7 +35,7 @@ local g_tmpStringIds = {}
 --tbug.tmpStringIds = g_tmpStringIds
 
 local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
-
+local hideLoadingSpinner = tbug.hideLoadingSpinner
 
 --local isSpecialInspectorKey = tbug.isSpecialInspectorKey
 local keyToSpecialEnum = tbug.keyToSpecialEnum
@@ -328,7 +328,7 @@ local refreshStartTime
 local function doRefresh()
     if not g_needRefresh then return end
     if g_refreshRunning then
-        d("tbug: _G Lookup refresh already active! Started: " .. tos(startTime ~= nil and startTime > 0 and os.date("%c", refreshStartTime)))
+        d("tbug: _G Lookup refresh already active! Started: " .. tos(refreshStartTime ~= nil and refreshStartTime > 0 and os.date("%c", refreshStartTime)))
         return
     end
     if LibAsync ~= nil then
@@ -336,6 +336,14 @@ local function doRefresh()
     end
     refreshStartTime = GetTimeStamp()
     g_refreshRunning = true
+
+    --Show the loading spinner
+    local globalInspector = tbug.getGlobalInspector(false)
+    if globalInspector ~= nil then
+--d("[Tbug]Global Inspector was found - Start of _G refresh")
+        globalInspector.g_refreshRunning = g_refreshRunning
+        hideLoadingSpinner(globalInspector.control, false)
+    end
 
     --d("[TBUG]doRefresh")
     ZO_ClearTable(g_objects)
@@ -600,6 +608,11 @@ local function doRefresh()
         g_needRefresh = false
         g_refreshRunning = false
 
+        if globalInspector ~= nil then
+            globalInspector.g_refreshRunning = g_refreshRunning
+            hideLoadingSpinner(globalInspector.control, true)
+        end
+
     else
         --LibAsync IS provided?
         --Examples
@@ -708,6 +721,12 @@ local function doRefresh()
             df("[Tbug]LibAsync global ENUM generation took %ims", GetGameTimeMilliseconds() - start)
 
             g_refreshRunning = false
+
+            if globalInspector ~= nil then
+--d("[Tbug]Global Inspector was found - End of _G refresh")
+                globalInspector.g_refreshRunning = g_refreshRunning
+                hideLoadingSpinner(globalInspector.control, true)
+            end
         end)
     end
 end

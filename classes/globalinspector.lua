@@ -61,7 +61,7 @@ function GlobalInspector:__init__(id, control)
     self.panels = {}
 
     self.loadingSpinner = control:GetNamedChild("LoadingSpinner")
-    self:UpdateLoadingState(true)
+    self:UpdateLoadingState(not self.g_refreshRunning)
 
     self:connectPanels(nil, false, false, nil)
     self:selectTab(1)
