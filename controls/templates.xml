@@ -458,6 +458,15 @@
 					<Dimensions y="20" x="100" />
 					<Anchor point="BOTTOMRIGHT" relativeTo="$(parent)EventsButton" relativePoint="TOPLEFT" />
 				</Label>
+				<!-- Loading spinner -->
+				<Control name="$(parent)LoadingSpinner" inherits="ZO_Loading" tier="DT_CONTROLS" layer="DL_OVERLAY" level="99" hidden="true">
+					<Anchor point="CENTER" relativeTo="$(parent)Title" relativePoint="CENTER" offsetY="5"/>
+					<Dimensions y="20" />
+					<OnInitialized>
+						ZO_Loading_Initialize(self, GetString(SI_INTERFACE_OPTIONS_DEFERRED_LOADING_TEXT))
+					</OnInitialized>
+				</Control>
+
 				<!--
 				<Control name="$(parent)ContentsTop" tier="LOW" layer="CONTROLS" level="1">
 					<Anchor point="BOTTOMLEFT" relativeTo="$(parent)TitleBg" relativePoint="BOTTOMLEFT" offsetY="2" />
@@ -505,7 +514,6 @@
 				</Label>
 			</Controls>
 		</TopLevelControl>
-
 
 	</Controls>
 </GuiXml>

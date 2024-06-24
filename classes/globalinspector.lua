@@ -59,8 +59,23 @@ function GlobalInspector:__init__(id, control)
     self.title:SetText("GLOBALS")
 
     self.panels = {}
+
+    self.loadingSpinner = control:GetNamedChild("LoadingSpinner")
+    self:UpdateLoadingState(true)
+
     self:connectPanels(nil, false, false, nil)
     self:selectTab(1)
+end
+
+function GlobalInspector:UpdateLoadingState(doHide)
+    if self.loadingSpinner == nil then return end
+d("[tbug]GlobalInspector:UpdateLoadingState - doHide: " ..tostring(doHide))
+    if doHide then
+        self.loadingSpinner:Hide()
+    else
+        self.loadingSpinner:Show()
+    end
+    self.loading = not doHide
 end
 
 
@@ -98,12 +113,14 @@ function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
         --Get the filter data to add to the combobox - TOOD: Different filters, by panel!
         local filterDataToAdd = tbug.filterComboboxFilterTypesPerPanel[tabIndex]
 --TBUG._filterDataToAdd = filterDataToAdd
-        --Add the filter data to the combobox's dropdown
-        for controlType, controlTypeName in pairs(filterDataToAdd) do
-            if type(controlType) == "number" and controlType > -1 then
-                local entry = comboBox:CreateItemEntry(controlTypeName)
-                entry.filterType = controlType
-                comboBox:AddItem(entry)
+        if not ZO_IsTableEmpty(filterDataToAdd) then
+            --Add the filter data to the combobox's dropdown
+            for controlType, controlTypeName in pairs(filterDataToAdd) do
+                if type(controlType) == "number" and controlType > -1 then
+                    local entry = comboBox:CreateItemEntry(controlTypeName)
+                    entry.filterType = controlType
+                    comboBox:AddItem(entry)
+                end
             end
         end
         --Update the (last) selected entries (if any filtered before)

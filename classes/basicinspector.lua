@@ -91,7 +91,6 @@ function BasicInspectorPanel:__init__(control, inspector, pool)
     end
 end
 
-
 function BasicInspectorPanel:addDataType(typeId, templateName, ...)
     local list = self.list
 
