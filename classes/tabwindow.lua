@@ -99,7 +99,7 @@ end
 
 local function hideLoadingSpinner(control, doHide)
     if control and control.isGlobalInspector == true then
-        d("[Tbug]hideLoadingSpinner - isGlobalInspector: true")
+        --d("[Tbug]hideLoadingSpinner - isGlobalInspector: true")
         --Show the loading spinner at the global inspector
         local globalInspector = tbug.getGlobalInspector()
         if globalInspector ~= nil then
@@ -1817,7 +1817,7 @@ d(">got panels")
 
     --Show the loading spinner now - But only if the currently shown list is not empty (e.g. no events loaded yet)
     local activePanel = getActiveTabPanel(self)
-    if activePanel ~= nil and activePanel.masterlist and not ZO_IsTableEmpty(activePanel.masterlist) then
+    if activePanel ~= nil and activePanel.masterList and not ZO_IsTableEmpty(activePanel.masterList) then
         hideLoadingSpinner(self.control, false)
     end
 
