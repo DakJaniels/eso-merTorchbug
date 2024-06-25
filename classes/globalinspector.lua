@@ -40,8 +40,8 @@ tbug.panelClassNames["globalInspector"] = GlobalInspectorPanel
 local RT = tbug.RT
 
 
-function GlobalInspectorPanel:buildMasterList()
---d("[TBug]GlobalInspector:buildMasterList")
+function GlobalInspectorPanel:buildMasterList(libAsyncTask)
+d("[TBug]GlobalInspector:buildMasterList")
     self:buildMasterListSpecial()
 end
 
@@ -162,7 +162,7 @@ function GlobalInspector:makePanel(title, panelData)
 end
 
 function GlobalInspector:connectPanels(panelName, rebuildMasterList, releaseAllTabs, tabIndex)
---d("[TBug]GlobalInspector:connectPanels - panelName: " .. tostring(panelName) ..", rebuildMasterList: " .. tostring(rebuildMasterList))
+d("[TBug]GlobalInspector:connectPanels - panelName: " .. tostring(panelName) ..", rebuildMasterList: " .. tostring(rebuildMasterList))
     rebuildMasterList = rebuildMasterList or false
     releaseAllTabs = releaseAllTabs or false
     if not self.panels then return end
@@ -205,7 +205,7 @@ function GlobalInspector:connectPanels(panelName, rebuildMasterList, releaseAllT
     end
 
     if rebuildMasterList == true then
---d(">[TBug]GlobalInspector:connectPanels -> Calling refresh of all tabs!")
+d(">[TBug]GlobalInspector:connectPanels -> Calling refresh of all tabs!")
         self:refresh()
     end
 end
@@ -217,7 +217,7 @@ local function pushToMasterlist(masterList, dataType, key, value)
 end
 
 function GlobalInspector:refresh()
---d("[TBug]GlobalInspector:refresh")
+d("[TBug]GlobalInspector:refresh")
 
     local panels       = self.panels
     local panelClasses = panels.classes:clearMasterList(_G) --Set's the subject to _G

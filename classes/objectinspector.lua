@@ -316,7 +316,7 @@ end
 
 
 function ObjectInspectorPanel:valueEditUpdate(editBox)
---d("[tbug]ObjectInspectorPanel:valueEditUpdate - editBox: " ..tos(editBox:GetText()))
+    --d("[tbug]ObjectInspectorPanel:valueEditUpdate - editBox: " ..tos(editBox:GetText()))
     hideContextMenus()
 
     local expr = editBox:GetText()
@@ -324,6 +324,10 @@ function ObjectInspectorPanel:valueEditUpdate(editBox)
         if self.editData and self.editData.dataEntry and editConfirmAllowedTypes[self.editData.dataEntry.typeId] then
             return
         end
+    end
+
+    if expr == nil then
+        expr = tos(expr)
     end
     local func, err = zo_loadstring("return " .. expr)
     -- syntax check only, no evaluation yet

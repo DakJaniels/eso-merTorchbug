@@ -9,6 +9,8 @@ local tos = tostring
 
 local osdate = os.date
 
+local libAS = LibAsync1
+
 local UPDATE_NONE = 0
 local UPDATE_SCROLL = 1
 local UPDATE_SORT = 2
@@ -19,12 +21,15 @@ local earliestTimeStamp = 1
 local latestTimeStamp = 2147483647
 
 local RT = tbug.RT
+local panelNames = tbug.panelNames
 local possibleTranslationTextKeys = tbug.possibleTranslationTextKeys
 
 local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
 local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 
 local hideContextMenus = tbug.HideContextMenus
+local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
+local getGlobalInspector = tbug.getGlobalInspector
 
 local function createPanelFunc(inspector, panelClass)
     local function createPanel(pool)
@@ -135,7 +140,7 @@ function BasicInspectorPanel:addDataType(typeId, templateName, ...)
 end
 
 --Will be overwritten at the other classes, e.g. ControlInspectorPanel:buildMasterList(), or GlobalInspectorPanel:buildMasterList() ...
-function BasicInspectorPanel:buildMasterList()
+function BasicInspectorPanel:buildMasterList(libAsyncTask)
 end
 
 
@@ -188,8 +193,8 @@ function BasicInspectorPanel:UpdateContentsCount()
 end
 
 
-function BasicInspectorPanel:filterScrollList()
---d("[TBUG]BasicInspectorPanel:filterScrollList")
+function BasicInspectorPanel:filterScrollList(libAsyncTask)
+d("[TBUG]BasicInspectorPanel:filterScrollList")
     local masterList = self.masterList
     local filterFunc = self.filterFunc
     local dropdownFilterFunc = self.dropdownFilterFunc
@@ -210,28 +215,57 @@ if TBUG._debugNow then
 end
 ]]
 
-        for i = 1, #masterList do
-            local dataEntry = masterList[i]
-            local data = dataEntry.data
+        local selfVar = self
+        if libAS ~= nil then
+            local start = GetGameTimeMilliseconds()
+d("[Tbug]LibAsync - BasicInspectorPanel - filterScrollList - Start")
 
-            local dropdownFilterResult = (dropdownFilterFuncIsFunc == true and dropdownFilterFunc(data, self)) or false --comboBox dropdown filter
-            if dropdownFilterResult == false and dropdownFilterFunc == false then dropdownFilterResult = true end
+            libAsyncTask = libAsyncTask or libAS:Create("TBug_task-BasicInspectorPanel-filterScrollList")
+            libAsyncTask:For(1, #masterList):Do(function(i)
+                local dataEntry = masterList[i]
+                local data = dataEntry.data
 
-            local textFilterResult = (filterFuncIsFunc == true and filterFunc(data)) or false                   --text editbox filter
-            if textFilterResult == false and filterFunc == false then textFilterResult = true end
+                local dropdownFilterResult = (dropdownFilterFuncIsFunc == true and dropdownFilterFunc(data, selfVar)) or false --comboBox dropdown filter
+                if dropdownFilterResult == false and dropdownFilterFunc == false then dropdownFilterResult = true end
 
-            if dropdownFilterResult == true and textFilterResult == true then
-                dataList[j] = dataEntry
-                j = j + 1
+                local textFilterResult = (dropdownFilterResult == true and (filterFuncIsFunc == true and filterFunc(data))) or false --text editbox filter
+                if textFilterResult == false and filterFunc == false then textFilterResult = true end
+
+                if dropdownFilterResult == true and textFilterResult == true then
+                    dataList[j] = dataEntry
+                    j = j + 1
+                end
+            end):Then(function()
+d("<<<<LibAsync BasicInspectorPanel - filterScrollList - End - Took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
+                self:UpdateContentsCount()
+            end)
+
+        else
+            for i = 1, #masterList do
+                local dataEntry = masterList[i]
+                local data = dataEntry.data
+
+                local dropdownFilterResult = (dropdownFilterFuncIsFunc == true and dropdownFilterFunc(data, self)) or false --comboBox dropdown filter
+                if dropdownFilterResult == false and dropdownFilterFunc == false then dropdownFilterResult = true end
+
+                local textFilterResult = (dropdownFilterResult == true and (filterFuncIsFunc == true and filterFunc(data))) or false --text editbox filter
+                if textFilterResult == false and filterFunc == false then textFilterResult = true end
+
+                if dropdownFilterResult == true and textFilterResult == true then
+                    dataList[j] = dataEntry
+                    j = j + 1
+                end
             end
+            self:UpdateContentsCount()
         end
+
+
     else
         for i = 1, #masterList do
             dataList[i] = masterList[i]
         end
+        self:UpdateContentsCount()
     end
-
-    self:UpdateContentsCount()
 end
 
 
@@ -526,19 +560,62 @@ end
 
 
 function BasicInspectorPanel:refreshData()
-    --local dropdownFilterFunc = self.dropdownFilterFunc
---d("BasicInspectorPanel:refreshData-dropdownFilterFunc: " ..tos(dropdownFilterFunc))
-
-
+d("BasicInspectorPanel:refreshData")
     if self:readyForUpdate(UPDATE_MASTER) then
---d(">MasterList")
-        self:buildMasterList()
---d(">>FilterScrollList")
-        self:filterScrollList()
---d(">>SortScrollList")
-        self:sortScrollList()
---d(">>CommitScrollList")
-        self:commitScrollList()
+        local doRefreshDirectly = true
+        if libAS ~= nil then
+            local currentPanel = self.currentPanel
+            if currentPanel and currentPanel.control.isGlobalInspector then
+                local currentPanelTabId = getTBUGGlobalInspectorPanelIdByName(currentPanel)
+                if currentPanelTabId ~= nil and panelNames[currentPanelTabId].async == true then
+                    getGlobalInspector = getGlobalInspector or tbug.getGlobalInspector
+                    local globalInspector = getGlobalInspector(true)
+                    if globalInspector ~= nil then
+                        doRefreshDirectly = false
+                        globalInspector:UpdateLoadingState(false)
+
+                        local selfVar = self
+
+                        local start = GetGameTimeMilliseconds()
+
+                        --Use LibAsync tasks to call the functions
+                        local task = libAS:Create("TBug_task-BasicInspector_refreshData")
+                        task:Call(function(p_task)
+d("[Tbug]LibAsync - BasicInspectorPanel - refreshData - Start")
+                            ---First task
+                            d(">MasterList")
+                            selfVar:buildMasterList(p_task)
+
+                        end):Then(function(p_task)
+                            --Then:
+                            d(">>FilterScrollList")
+                            selfVar:filterScrollList(p_task)
+                        end):Then(function(p_task)
+                            --Then
+                            d(">>SortScrollList")
+                            selfVar:sortScrollList()
+                        end):Then(function(p_task)
+                            --Final task
+                            d(">>CommitScrollList")
+                            selfVar:commitScrollList()
+                            globalInspector:UpdateLoadingState(true)
+                        end):Then(function()
+d("<<<<<LibAsync - BasicInspectorPanel - refreshData - End, took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
+                        end)
+                    end
+                end
+            end
+        end
+        if doRefreshDirectly then
+            --d(">MasterList")
+            self:buildMasterList()
+            --d(">>FilterScrollList")
+            self:filterScrollList()
+            --d(">>SortScrollList")
+            self:sortScrollList()
+            --d(">>CommitScrollList")
+            self:commitScrollList()
+        end
     end
 end
 

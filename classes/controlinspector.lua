@@ -4,6 +4,8 @@ local tos = tostring
 local ton = tonumber
 local strformat = string.format
 
+local libAS = LibAsync1
+
 local typeColors = tbug.cache.typeColors
 
 local rowTypes = tbug.RowTypes
@@ -54,8 +56,8 @@ local function getControlChild(data, control)
 end
 
 
-function ControlInspectorPanel:buildMasterList()
-    --d("[tbug]ControlInspectorPanel:buildMasterList")
+function ControlInspectorPanel:buildMasterList(libAsyncTask)
+    d("[tbug]ControlInspectorPanel:buildMasterList")
     local g_specialProperties = controlInspectorDataTypes.g_specialProperties
     local g_controlPropListRow = controlInspectorDataTypes.g_controlPropListRow
     local td = tbug.td
@@ -67,11 +69,171 @@ function ControlInspectorPanel:buildMasterList()
     if numChildren == nil then numChildren = 0 end
     local childrenHeaderId
 
-    --Add the _parentControl -> if you are at a __index invoked metatable control
-    -->adds the "__Object" name
     local _parentSubject = self._parentSubject
-    if _parentSubject ~= nil then
-        for _, prop in ipairs(controlInspectorDataTypes.commonProperties_parentSubject) do
+    local controlPropsListRows = g_controlPropListRow[controlType]
+    local controlProps = g_specialProperties[controlType]
+
+    local loopBeforeDone = true
+
+    if libAS ~= nil then
+        local start = GetGameTimeMilliseconds()
+
+        libAsyncTask = libAsyncTask or libAS:Create("TBug_task-ControlInspectorPanel-builMasterList")
+
+        --Add the _parentControl -> if you are at a __index invoked metatable control
+        -->adds the "__Object" name
+        libAsyncTask:Call(function(p_task)
+d("[Tbug]LibAsync - ControlInspector - Start")
+            if _parentSubject ~= nil then
+                loopBeforeDone = false
+d(">>commonProperties_parentSubject")
+                p_task:For(ipairs(controlInspectorDataTypes.commonProperties_parentSubject)):Do(function(key, prop)
+                    local doAdd = true
+                    if prop.checkFunc then
+                        doAdd = prop.checkFunc(subject)
+                    end
+                    if doAdd == true then
+                        n = n + 1
+                        masterList[n] = createPropEntry{prop = prop}
+                    end
+                end)
+                loopBeforeDone = true
+            end
+
+            --Common properties (e.g. name, type, parent) added to the inspector list
+            libAS:WaitUntil(function()
+                return loopBeforeDone == true
+            end):Then(function()
+d(">>g_commonProperties")
+                loopBeforeDone = false
+                p_task:For(ipairs(controlInspectorDataTypes.g_commonProperties)):Do(function(key, prop)
+                    local doAdd = true
+                    if prop.checkFunc then
+                        doAdd = prop.checkFunc(subject)
+                    end
+                    if doAdd == true then
+                        n = n + 1
+                        masterList[n] = createPropEntry{prop = prop}
+                    end
+                end)
+                loopBeforeDone = true
+            end)
+
+            --CT_* control properties added to the inspector list
+            if controlPropsListRows then
+                libAS:WaitUntil(function()
+                    return loopBeforeDone == true
+                end):Then(function()
+                    loopBeforeDone = false
+                    local _, controlName = pcall(invoke, subject, "GetName")
+                    if controlName and controlName ~= "" then
+                        if tbug.isSupportedInventoryRowPattern(controlName) == true then
+d(">>controlPropsListRows")
+                            p_task:For(ipairs(controlPropsListRows)):Do(function(key, prop)
+                                n = n + 1
+                                masterList[n] = createPropEntry{prop = prop}
+                            end)
+                        end
+                    end
+                    loopBeforeDone = true
+                end)
+            end
+
+            --Common properties part 2 (e.g. anchors, dimensions) added to the inspector list
+            libAS:WaitUntil(function()
+                return loopBeforeDone == true
+            end):Then(function()
+                loopBeforeDone = false
+d(">>g_commonProperties2")
+                p_task:For(ipairs(controlInspectorDataTypes.g_commonProperties2)):Do(function(key, prop)
+                    n = n + 1
+                    masterList[n] = createPropEntry{prop = prop}
+                end)
+                loopBeforeDone = true
+            end)
+
+            --Special properties (e.g. bagId/slotIndex/itemLink) added to the inspector list
+            if controlProps then
+                libAS:WaitUntil(function()
+                    return loopBeforeDone == true
+                end):Then(function()
+                    loopBeforeDone = false
+d(">>controlProps")
+                    p_task:For(ipairs(controlProps)):Do(function(key, prop)
+                        if prop.isChildrenHeader == true then
+                            childrenHeaderId = prop.headerId
+                            prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
+                        end
+                        n = n + 1
+                        masterList[n] = createPropEntry{prop = prop}
+                    end)
+                    loopBeforeDone = true
+                end)
+            end
+
+            --Explicit CT_CONTROL properties added to the inspector list
+            if controlType ~= CT_CONTROL then
+                libAS:WaitUntil(function()
+                    return loopBeforeDone == true
+                end):Then(function()
+                    loopBeforeDone = false
+d(">>g_specialProperties[CT_CONTROL]")
+                    p_task:For(ipairs(g_specialProperties[CT_CONTROL])):Do(function(key, prop)
+                        if prop.isChildrenHeader == true then
+                            childrenHeaderId = prop.headerId
+                            prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
+                        end
+                        n = n + 1
+                        masterList[n] = createPropEntry{prop = prop}
+                    end)
+                    loopBeforeDone = true
+                end)
+            end
+
+            --Child controls
+            libAS:WaitUntil(function()
+                return loopBeforeDone == true
+            end):Then(function()
+                loopBeforeDone = false
+
+                tbug.tdBuildChildControls = true
+d(">>children")
+                p_task:For(1, ton(numChildren) or 0):Do(function(i)
+                    local childProp = td{name = tos(i), get = getControlChild, enum = "CT_names", parentId=childrenHeaderId}
+                    n = n + 1
+                    masterList[n] = createPropEntry{prop = childProp, childIndex = i}
+                end)
+                :Then(function()
+                    tbug.tdBuildChildControls = false
+                    childrenHeaderId = nil
+
+                    loopBeforeDone = true
+        d(">>truncate")
+                    tbug.truncate(masterList, n)
+        d("<<<<<<< END - took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
+                end)
+            end)
+        end)
+
+    ------------------------------------------------------------------------------------------------------------------------
+    else
+        --Add the _parentControl -> if you are at a __index invoked metatable control
+        -->adds the "__Object" name
+        if _parentSubject ~= nil then
+            for _, prop in ipairs(controlInspectorDataTypes.commonProperties_parentSubject) do
+                local doAdd = true
+                if prop.checkFunc then
+                    doAdd = prop.checkFunc(subject)
+                end
+                if doAdd == true then
+                    n = n + 1
+                    masterList[n] = createPropEntry{prop = prop}
+                end
+            end
+        end
+
+        --Common properties (e.g. name, type, parent) added to the inspector list
+        for _, prop in ipairs(controlInspectorDataTypes.g_commonProperties) do
             local doAdd = true
             if prop.checkFunc then
                 doAdd = prop.checkFunc(subject)
@@ -81,77 +243,63 @@ function ControlInspectorPanel:buildMasterList()
                 masterList[n] = createPropEntry{prop = prop}
             end
         end
-    end
 
-    --Common properties (e.g. name, type, parent) added to the inspector list
-    for _, prop in ipairs(controlInspectorDataTypes.g_commonProperties) do
-        local doAdd = true
-        if prop.checkFunc then
-            doAdd = prop.checkFunc(subject)
-        end
-        if doAdd == true then
-            n = n + 1
-            masterList[n] = createPropEntry{prop = prop}
-        end
-    end
-
-    --CT_* control properties added to the inspector list
-    local controlPropsListRows = g_controlPropListRow[controlType]
-    if controlPropsListRows then
-        local _, controlName = pcall(invoke, subject, "GetName")
-        if controlName and controlName ~= "" then
-            if tbug.isSupportedInventoryRowPattern(controlName) == true then
-                for _, prop in ipairs(controlPropsListRows) do
-                    n = n + 1
-                    masterList[n] = createPropEntry{prop = prop}
+        --CT_* control properties added to the inspector list
+        if controlPropsListRows then
+            local _, controlName = pcall(invoke, subject, "GetName")
+            if controlName and controlName ~= "" then
+                if tbug.isSupportedInventoryRowPattern(controlName) == true then
+                    for _, prop in ipairs(controlPropsListRows) do
+                        n = n + 1
+                        masterList[n] = createPropEntry{prop = prop}
+                    end
+        --else
                 end
-                --else
             end
         end
-    end
 
-    --Common properties part 2 (e.g. anchors, dimensions) added to the inspector list
-    for _, prop in ipairs(controlInspectorDataTypes.g_commonProperties2) do
-        n = n + 1
-        masterList[n] = createPropEntry{prop = prop}
-    end
-
-    --Special properties (e.g. bagId/slotIndex/itemLink) added to the inspector list
-    local controlProps = g_specialProperties[controlType]
-    if controlProps then
-        for _, prop in ipairs(controlProps) do
-            if prop.isChildrenHeader == true then
-                childrenHeaderId = prop.headerId
-                prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
-            end
+        --Common properties part 2 (e.g. anchors, dimensions) added to the inspector list
+        for _, prop in ipairs(controlInspectorDataTypes.g_commonProperties2) do
             n = n + 1
             masterList[n] = createPropEntry{prop = prop}
         end
-    end
 
-    --Explicit CT_CONTROL properties added to the inspector list
-    if controlType ~= CT_CONTROL then
-        for _, prop in ipairs(g_specialProperties[CT_CONTROL]) do
-            if prop.isChildrenHeader == true then
-                childrenHeaderId = prop.headerId
-                prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
+        --Special properties (e.g. bagId/slotIndex/itemLink) added to the inspector list
+        if controlProps then
+            for _, prop in ipairs(controlProps) do
+                if prop.isChildrenHeader == true then
+                    childrenHeaderId = prop.headerId
+                    prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
+                end
+                n = n + 1
+                masterList[n] = createPropEntry{prop = prop}
             end
-            n = n + 1
-            masterList[n] = createPropEntry{prop = prop}
         end
-    end
 
-    --Child controls
-    tbug.tdBuildChildControls = true
-    for i = 1, ton(numChildren) or 0 do
-        local childProp = td{name = tos(i), get = getControlChild, enum = "CT_names", parentId=childrenHeaderId}
-        n = n + 1
-        masterList[n] = createPropEntry{prop = childProp, childIndex = i}
-    end
-    tbug.tdBuildChildControls = false
-    childrenHeaderId = nil
+        --Explicit CT_CONTROL properties added to the inspector list
+        if controlType ~= CT_CONTROL then
+            for _, prop in ipairs(g_specialProperties[CT_CONTROL]) do
+                if prop.isChildrenHeader == true then
+                    childrenHeaderId = prop.headerId
+                    prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
+                end
+                n = n + 1
+                masterList[n] = createPropEntry{prop = prop}
+            end
+        end
 
-    tbug.truncate(masterList, n)
+        --Child controls
+        tbug.tdBuildChildControls = true
+        for i = 1, ton(numChildren) or 0 do
+            local childProp = td{name = tos(i), get = getControlChild, enum = "CT_names", parentId=childrenHeaderId}
+            n = n + 1
+            masterList[n] = createPropEntry{prop = childProp, childIndex = i}
+        end
+        tbug.tdBuildChildControls = false
+        childrenHeaderId = nil
+
+        tbug.truncate(masterList, n)
+    end
 end
 
 

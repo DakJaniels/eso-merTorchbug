@@ -211,6 +211,17 @@ function tbug.getControlType(control, enumType)
 end
 getControlType = tbug.getControlType
 
+local function getGlobalInspectorPanelTabName(tabName)
+    if type(tabName) ~= "string" then return end
+    for k, globalInspectrTabData in ipairs(panelNames) do
+        if globalInspectrTabData.key == tabName or globalInspectrTabData.name == tabName then
+            return globalInspectrTabData.key
+        end
+    end
+    return
+end
+tbug.getGlobalInspectorPanelTabName = getGlobalInspectorPanelTabName
+
 local function getTBUGGlobalInspectorPanelIdByName(tabKeyOrName)
     for panelId, panelData in ipairs(panelNames) do
         if panelData.key == tabKeyOrName or panelData.name == tabKeyOrName then return panelId end

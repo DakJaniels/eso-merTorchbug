@@ -14,6 +14,7 @@ local strup = string.upper
 local strsplit = tbug.strSplit
 local zo_strsplit = zo_strsplit
 local tconcat = table.concat
+local zo_insecureNext = zo_insecureNext
 
 local EsoStrings = EsoStrings
 
@@ -262,7 +263,7 @@ local function mapEnum(k, v)
         if skip == true then
             --prefix = strmatch(k, "^([A-Z][A-Z0-9]*_[A-Z0-9]+_)")
             prefix = getPrefix(k, "_", 2)
-        elseif strfind(k, skip) then
+        elseif type(skip) == "string" and strfind(k, skip) then
             return
         end
     end
@@ -617,9 +618,12 @@ local function doRefresh()
         --LibAsync IS provided?
         --Examples
 
-        local task = libAS:Create("TBug_task-_G_ENUMs_Parse")
         local start = GetGameTimeMilliseconds()
+        local task = libAS:Create("TBug_task-_G_ENUMs_Parse")
         local start2
+
+        local enumError = false
+
 
         task:For(zo_insecureNext, g_tmpGroups):Do(function(prefix, group)
             --d("prefix: " .. tos(prefix).. "; group: " ..tos(group))
@@ -627,26 +631,44 @@ local function doRefresh()
             --checking for + creating subTables like SPECIALIZED_ITEMTYPE etc.
             --Enum entries at least need 2 constants entries in the g_tmpKeys or it will fail to create a new subTable
             --for prefix, group in zo_insecureNext , g_tmpGroups do
-            local final = true
+
             local i = 0
-            task:While(function() return final == true and i < 9999 end):Do(function() --repeat until final is changed to false
+            local final = true
+
+            task:While(function() return final == true and i < 15000 end):Do(function() --repeat until final is changed to false -> max 15000 loops to prevent an endless loop
+--d(">loop #" ..tostring(i) .. ", final: " .. tostring(final))
                 --repeat
                 i = i + 1 --security varibale to prevent an endless while loop
-                --local final = true
                 --for k, _ in zo_insecureNext , group do
                 task:For(zo_insecureNext, group):Do(function(k, v)
+                    local doAbort = false
+                    --final = true
+
                     -- find the shortest prefix that yields distinct values
                     local p, f = prefix, false
                     --Make the enum entry now and remove g_tmpGroups constant entry (set = nil) -> to prevent endless loop!
-                    while not makeEnum(group, p, 2, true) do
+                    task:While(function()
+                        if doAbort == true then
+                            --d("<<ABORT while now!")
+                            doAbort = false
+                            return false
+                        else
+                            return not makeEnum(group, p, 2, true)
+                        end
+                    end):Do(function()
+                        --while not makeEnum(group, p, 2, true) do
                         --Creates subTables at "_", e.g. SPECIALIZED_ITEMTYPE, SPECIALIZED_ITEMTYP_ARMOR, ...
                         local _, me = strfind(k, "[^_]_", #p + 1)
                         if not me then
                             f = final
-                            break --break inner while loop
+                            --d("<Breaking the inner loop: " ..tostring(k) .. ", f: " .. tostring(f))
+                            --break --break inner while loop
+                            doAbort = true
                         end
-                        p = strsub(k, 1, me)
-                    end
+                        if doAbort == false then
+                            p = strsub(k, 1, me)
+                        end
+                    end)
                     final = f
                     --end
                 end)
@@ -654,15 +676,14 @@ local function doRefresh()
                 --end
             end)
         end):Then(function(p_task)
-
+--d(">>next steps - final was false!")
             --start2 = GetGameTimeMilliseconds()
-            --df("[Tbug]Global ENUM generation took %ims", start2 - start)
+            --df("tbug: LibAsync global ENUM groups generation took %ims", start2 - start)
 
-        end)
-        --Transfer the special ENUM subtables back to 1
-        --Create special enmus
-        --Add the SI string value enums
-            :Then(function(p_task)
+            --Transfer the special ENUM subtables back to 1
+            --Create special enmus
+            --Add the SI string value enums
+
             --Create the 1table for the before split subtables -> like SPECIALIZED_ITEMTYPE_ again now
             -->Loop all the relevant subtables
             if specialEnumNoSubtables_subTables and not ZO_IsTableEmpty(specialEnumNoSubtables_subTables) then
@@ -684,7 +705,7 @@ local function doRefresh()
                     end
                 end
             end
-
+        end):Then(function(p_task)
             --For the Special cRightKey entries at tableInspector
             local alreadyCheckedValues = {}
             for k, v in pairs(keyToSpecialEnum) do
@@ -700,6 +721,7 @@ local function doRefresh()
                 end
             end
 
+        end):Then(function(p_task)
             --Strings in _G.EsoStrings
             local enumStringId = g_enums["SI"]
             for v, k in zo_insecureNext, g_tmpStringIds do
@@ -708,22 +730,32 @@ local function doRefresh()
                 end
             end
 
+        end):Then(function(p_task)
             --Prepare the entries for the filterCombobox at the global inspector
             tbug.filterComboboxFilterTypesPerPanel = {}
             local filterComboboxFilterTypesPerPanel = tbug.filterComboboxFilterTypesPerPanel
             --"Controls" panel
             filterComboboxFilterTypesPerPanel[getTBUGGlobalInspectorPanelIdByName("controls")] = g_enums[keyToEnums["type"]] --ZO_ShallowTableCopy(g_enums[keyToEnums["type"]]) --CT_CONTROL, at "controls" tab
 
-            g_needRefresh = false
+
         end)
-            :Then(function(p_task)
+        :OnError(function(p_task)
+            df("tbug: [ERROR] at LibAsync global ENUM generation. Took %ims", GetGameTimeMilliseconds() - start)
+            enumError = true
+        end)
+        :Finally(function(p_task)
             --df("[Tbug]ENUM special and StringId generation took %ims", GetGameTimeMilliseconds() - start2)
-            df("[Tbug]LibAsync global ENUM generation took %ims", GetGameTimeMilliseconds() - start)
+            if not enumError then
+                df("tbug: LibAsync global ENUM generation finished after %ims", GetGameTimeMilliseconds() - start)
+                g_needRefresh = false
+            else
+                g_needRefresh = true
+            end
 
             g_refreshRunning = false
 
             if globalInspector ~= nil then
---d("[Tbug]Global Inspector was found - End of _G refresh")
+                --d("[Tbug]Global Inspector was found - End of _G refresh")
                 globalInspector.g_refreshRunning = g_refreshRunning
                 hideLoadingSpinner(globalInspector.control, true)
             end

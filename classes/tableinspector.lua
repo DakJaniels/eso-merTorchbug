@@ -125,8 +125,6 @@ TableInspectorPanel.TEMPLATE_NAME = "tbugTableInspectorPanel"
 tbug.panelClassNames["tableInspector"] = TableInspectorPanel
 
 
-local RT = tbug.RT
-
 function TableInspectorPanel:__init__(control, ...)
     ObjectInspectorPanel.__init__(self, control, ...)
 
@@ -145,14 +143,14 @@ end
 
 
 function TableInspectorPanel:bindMasterList(editTable, specialMasterListID)
---d("[tbug]TableInspectorPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
+d("[tbug]TableInspectorPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
     self.subject = editTable
     self.specialMasterListID = specialMasterListID
 end
 
 
-function TableInspectorPanel:buildMasterList()
---d("[tbug]TableInspectorPanel:buildMasterList")
+function TableInspectorPanel:buildMasterList(libAsyncTask)
+d("[tbug]TableInspectorPanel:buildMasterList")
 
     if self:buildMasterListSpecial() then
 --d("<building special!")
@@ -161,6 +159,7 @@ function TableInspectorPanel:buildMasterList()
     local masterList = self.masterList
     local n = 0
 
+    local subject = self.subject
     --Add the _parentControl -> if you are at a __index invoked metatable control
     -->adds the "__Object" name
     local _parentSubject = self._parentSubject
@@ -176,7 +175,7 @@ function TableInspectorPanel:buildMasterList()
         --end
     end
 
-    for k, v in zo_insecureNext , self.subject do --self.subject often is _G
+    for k, v in zo_insecureNext , subject do --self.subject often is _G
         local tv = type(v)
         local rt = RT.GENERIC
 
@@ -189,7 +188,7 @@ function TableInspectorPanel:buildMasterList()
         masterList[n] = ZO_ScrollList_CreateDataEntry(rt, data)
     end
 
-    local mt = getmetatable(self.subject)
+    local mt = getmetatable(subject)
     if mt then
         local rt = RT.GENERIC
         if rawequal(mt, rawget(mt, "__index")) then
@@ -213,6 +212,8 @@ end
 
 
 function TableInspectorPanel:buildMasterListSpecial()
+d("[TBug]TableInspectorPanel:buildMasterList")
+
     local editTable = self.subject
     local specialMasterListID = self.specialMasterListID
     local tbEvents = tbug.Events
