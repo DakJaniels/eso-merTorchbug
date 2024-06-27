@@ -1,4 +1,4 @@
-<GuiXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sir.insidi.at/or/schema/esoui.xsd">
+<GuiXml>
 	<Font name="TbugFontGameSmall" font="$(MEDIUM_FONT)|$(KB_13)|soft-shadow-thin" />
 	<Font name="TbugFontGameSmaller" font="$(MEDIUM_FONT)|$(KB_12)|soft-shadow-thin" />
 	<Font name="TbugFontGameSmallerBold" font="$(BOLD_FONT)|$(KB_12)|soft-shadow-thin" />
@@ -459,7 +459,7 @@
 					<Anchor point="BOTTOMRIGHT" relativeTo="$(parent)EventsButton" relativePoint="TOPLEFT" />
 				</Label>
 				<!-- Loading spinner -->
-				<Control name="$(parent)LoadingSpinner" inherits="ZO_Loading" tier="DT_CONTROLS" layer="DL_OVERLAY" level="99" hidden="true">
+				<Control name="$(parent)LoadingSpinner" inherits="ZO_Loading" tier="DT_CONTROLS" layer="DL_OVERLAY" level="99" resizeToFitConstrains="X" hidden="true">
 					<Anchor point="CENTER" relativeTo="$(parent)Title" relativePoint="CENTER" offsetY="5"/>
 					<Dimensions y="20" />
 					<OnInitialized>
