@@ -49,10 +49,7 @@ local functionsItemLinkSorted = tbug.functionsItemLinkSorted
 ------------------------------------------------------------------------------------------------------------------------
 local function throttledCall(callbackName, timer, callback, ...)
     if not callbackName or callbackName == "" or not callback then return end
-    local args
-    if ... ~= nil then
-        args = {...}
-    end
+    local args = ... ~= nil and  {...} or {}
     local function Update()
         EM:UnregisterForUpdate(callbackName)
         callback(unpack(args))

@@ -1494,6 +1494,8 @@ end
 function TabWindow:selectTab(key, isMOC)
     --TBUG._selectedTab = self
     isMOC = isMOC or false
+    local wasSelected = false
+
     local tabIndex = self:getTabIndex(key)
     if tbug.doDebug then d("[TabWindow:selectTab]tabIndex: " ..tos(tabIndex) .. ", key: " ..tos(key) ..", isMOC: " ..tos(isMOC)) end
     ZO_Tooltips_HideTextTooltip()
@@ -1501,7 +1503,7 @@ function TabWindow:selectTab(key, isMOC)
     local tabControl = self:getTabControl(key)
     if self.activeTab == tabControl then
         if tbug.doDebug then d("< ABORT: active tab = current tab") end
-        return
+        return true
     end
     hideEditAndSliderControls(self, nil)
 
@@ -1574,7 +1576,10 @@ function TabWindow:selectTab(key, isMOC)
         self.filterEdit:SetText(activeTab.filterEditLastText)
 
         if tbug.doDebug then d(">ActiveTab: " ..tos(activeTab.tabName) .. ", lastMode: " ..tos(activeTab.filterModeButtonLastMode) ..", filterEditLastText: " ..tos(activeTab.filterEditLastText)) end
+
+        wasSelected = true
     end
+    return wasSelected
 end
 
 function TabWindow:getSavedVariablesCharacterName(characterIdStr, subjectOfNewTab)

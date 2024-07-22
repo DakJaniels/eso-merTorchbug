@@ -727,6 +727,7 @@ local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
 function tbug.inspectorSelectTabByName(inspectorName, tabName, tabIndex, doCreateIfMissing, searchData)
     doCreateIfMissing = doCreateIfMissing or false
 --d("[TB]inspectorSelectTabByName - inspectorName: " ..tos(inspectorName) .. ", tabName: " ..tos(tabName) .. ", tabIndex: " ..tos(tabIndex) .. ", doCreateIfMissing: " ..tos(doCreateIfMissing) ..", searchData: ".. tos(searchData))
+    local wasSelected = false
     if tbug[inspectorName] then
         local inspector = tbug[inspectorName]
         local isGlobalInspector = (inspectorName == "globalInspector") or false
@@ -758,11 +759,12 @@ function tbug.inspectorSelectTabByName(inspectorName, tabName, tabIndex, doCreat
                 end
             end
             if tabIndex then
-                inspector:selectTab(tabIndex)
+                wasSelected = inspector:selectTab(tabIndex)
                 getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
             end
         end
     end
+    return wasSelected
 end
 local tbug_inspectorSelectTabByName = tbug.inspectorSelectTabByName
 
@@ -866,6 +868,7 @@ function tbug.slashCommandMOC(comingFromEventGlobalMouseUp, searchValues)
     inspectResults((comingFromEventGlobalMouseUp == true and "MOC_EVENT_GLOBAL_MOUSE_UP") or "MOC", searchData, mouseOverControl, true, mouseOverControl)
 end
 local tbug_slashCommandMOC = tbug.slashCommandMOC
+
 
 function tbug.slashCommand(args, searchValues)
     local supportedGlobalInspectorArgs = tbug.allowedSlashCommandsForPanels

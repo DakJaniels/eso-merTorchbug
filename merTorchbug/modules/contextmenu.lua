@@ -26,6 +26,7 @@ local isSplittableString = tbug.isSplittableString
 local findUpperCaseCharsAndReturnOffsetsTab = tbug.findUpperCaseCharsAndReturnOffsetsTab
 local tbug_slashCommand = tbug.slashCommand
 local tbug_slashCommandSCENEMANAGER = tbug.slashCommandSCENEMANAGER
+local tbug_inspectorSelectTabByName = tbug.inspectorSelectTabByName
 
 local globalInspectorDialogTabKey = getGlobalInspectorPanelTabName("dialogs")
 local globalInspectorFunctionsTabKey = getGlobalInspectorPanelTabName("functions")
@@ -64,8 +65,8 @@ local tbug_refreshInspectorPanel = tbug.refreshInspectorPanel
 local clickToIncludeAgainStr = " (Click to include)"
 
 local tbug_endsWith = tbug.endsWith
-local customKeysForInspectorRows = tbug.customKeysForInspectorRows
-local customKey__Object = customKeysForInspectorRows.object
+--local customKeysForInspectorRows = tbug.customKeysForInspectorRows
+--local customKey__Object = customKeysForInspectorRows.object
 
 local RT = tbug.RT
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
@@ -89,6 +90,7 @@ local function addTextToChat(textToAdd, getName)
     if getName == true then
         textToAdd = getRelevantNameForCall(textToAdd)
     end
+    if textToAdd == nil or textToAdd == "" then return end
     StartChatInput(textToAdd, CHAT_CHANNEL_SAY, nil)
 end
 
@@ -327,6 +329,43 @@ function tbug.searchExternalURL(p_self, p_row, p_data, searchString, searchURLTy
 end
 local searchExternalURL = tbug.searchExternalURL
 
+
+--Show the "Scripts" tab and put the key/value, and if it's a function an opening and closing () behind it, to the "test script" editbox
+function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType)
+    if not p_self or not p_row or not p_data or isKey == nil then return end
+    isFunctionsDataType = isFunctionsDataType or false
+    local scriptStr = ""
+    if isKey then
+        --Key
+        local key = p_data.key
+        scriptStr = tos(key)
+    else
+        --Value
+        local value = p_data.value
+        scriptStr = tos(value)
+    end
+    if scriptStr == "" then return end
+
+    if isFunctionsDataType then
+        scriptStr = scriptStr .. " ( )"
+    end
+d("[tbug]useForScript - scriptStr: " .. tos(scriptStr) .. ", isFunction: " .. tos(isFunctionsDataType))
+    --Activate the global inspector script's tab
+    globalInspector = globalInspector or tbug.getGlobalInspector()
+    local panels = globalInspector ~= nil and globalInspector.panels
+    if panels == nil then return end
+    if panels.scriptHistory == nil then return end
+d(">found scriptHistory panel")
+    --(inspectorName, tabName, tabIndex, doCreateIfMissing, searchData)
+    if tbug_inspectorSelectTabByName("globalInspector", "scriptHistory", nil, true, nil) == true then
+d(">>tab selected - set script to editbox now")
+        --Set the script text
+        --local testScriptEditBox = panels.scriptHistory.scriptEditBox
+        --if testScriptEditBox == nil then return end
+        panels.scriptHistory:testScript(p_row, p_data, isKey, scriptStr, false)
+    end
+end
+local useForScript = tbug.useForScript
 
 ------------------------------------------------------------------------------------------------------------------------
 --CONTROL OUTLINE
@@ -1227,6 +1266,11 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     AddCustomScrollableMenuEntry("Copy value SPECIAL to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, false, "special", nil) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                 end
 
+                --Use as script entries
+                AddCustomScrollableMenuEntry("Script actions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
+                AddCustomScrollableMenuEntry("Use key as script", function() useForScript(p_self, p_row, p_data, true, isFunctionsDataType) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+
+                --Search entries
                 local searchValuesAdded = {}
                 local searchSubmenu = {}
                 local keyStr = key
