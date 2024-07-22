@@ -350,20 +350,21 @@ function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType)
         scriptStr = scriptStr .. " ( )"
     end
 d("[tbug]useForScript - scriptStr: " .. tos(scriptStr) .. ", isFunction: " .. tos(isFunctionsDataType))
-    --Activate the global inspector script's tab
+
     globalInspector = globalInspector or tbug.getGlobalInspector()
     local panels = globalInspector ~= nil and globalInspector.panels
     if panels == nil then return end
     if panels.scriptHistory == nil then return end
 d(">found scriptHistory panel")
-    --(inspectorName, tabName, tabIndex, doCreateIfMissing, searchData)
-    if tbug_inspectorSelectTabByName("globalInspector", "scriptHistory", nil, true, nil) == true then
+
+    --Show the global inspector scripts tab
+    tbug_slashCommand("scripts", nil)
+
 d(">>tab selected - set script to editbox now")
-        --Set the script text
-        --local testScriptEditBox = panels.scriptHistory.scriptEditBox
-        --if testScriptEditBox == nil then return end
-        panels.scriptHistory:testScript(p_row, p_data, isKey, scriptStr, false)
-    end
+    --Set the script text
+    --local testScriptEditBox = panels.scriptHistory.scriptEditBox
+    --if testScriptEditBox == nil then return end
+    panels.scriptHistory:testScript(p_row, p_data, isKey, scriptStr, false)
 end
 local useForScript = tbug.useForScript
 
@@ -1387,7 +1388,10 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     end
                 end
 
+                local searchHeaderAdded = false
                 if not ZO_IsTableEmpty(searchSubmenu) then
+                    AddCustomScrollableMenuEntry("Search actions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
+                    searchHeaderAdded = true
                     AddCustomScrollableSubMenuEntry("Search", searchSubmenu)
                 end
 
@@ -1419,6 +1423,10 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     )
                 end
                 if not ZO_IsTableEmpty(externalSearchSubmenu) then
+                    if not searchHeaderAdded then
+                        AddCustomScrollableMenuEntry("Search actions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
+                        searchHeaderAdded = true
+                    end
                     AddCustomScrollableSubMenuEntry("Search external", externalSearchSubmenu)
                 end
 
