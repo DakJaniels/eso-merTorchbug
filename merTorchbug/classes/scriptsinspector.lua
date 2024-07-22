@@ -390,4 +390,5 @@ function ScriptsInspectorPanel:testScript(row, data, key, value, runCode)
     if runCode == true then
         runLua(value)
     end
+    return self.scriptEditBox
 end

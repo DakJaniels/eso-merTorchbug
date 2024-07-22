@@ -362,9 +362,11 @@ function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType)
 
 --d(">>tab selected - set script to editbox now")
     --Set the script text
-    --local testScriptEditBox = panels.scriptHistory.scriptEditBox
-    --if testScriptEditBox == nil then return end
-    panels.scriptHistory:testScript(p_row, p_data, isKey, scriptStr, false)
+    local testScriptEditBox = panels.scriptHistory:testScript(p_row, p_data, isKey, scriptStr, false)
+    testScriptEditBox:TakeFocus()
+    if isFunctionsDataType then
+        testScriptEditBox:SetCursorPosition(strlen(scriptStr) - 1)
+    end
 end
 local useForScript = tbug.useForScript
 
