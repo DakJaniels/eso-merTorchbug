@@ -347,7 +347,7 @@ function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType)
     if scriptStr == "" then return end
 
     if isFunctionsDataType then
-        scriptStr = scriptStr .. " ( )"
+        scriptStr = scriptStr .. "( )"
     end
 --d("[tbug]useForScript - scriptStr: " .. tos(scriptStr) .. ", isFunction: " .. tos(isFunctionsDataType))
 
