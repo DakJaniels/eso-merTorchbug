@@ -55,11 +55,7 @@ local function throttledCall(callbackName, timer, callback, ...)
     end
     local function Update()
         EM:UnregisterForUpdate(callbackName)
-        if args then
-            callback(unpack(args))
-        else
-            callback()
-        end
+        callback(unpack(args))
     end
     EM:UnregisterForUpdate(callbackName)
     EM:RegisterForUpdate(callbackName, timer, Update)
