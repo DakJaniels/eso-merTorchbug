@@ -349,18 +349,18 @@ function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType)
     if isFunctionsDataType then
         scriptStr = scriptStr .. " ( )"
     end
-d("[tbug]useForScript - scriptStr: " .. tos(scriptStr) .. ", isFunction: " .. tos(isFunctionsDataType))
+--d("[tbug]useForScript - scriptStr: " .. tos(scriptStr) .. ", isFunction: " .. tos(isFunctionsDataType))
 
     globalInspector = globalInspector or tbug.getGlobalInspector()
     local panels = globalInspector ~= nil and globalInspector.panels
     if panels == nil then return end
     if panels.scriptHistory == nil then return end
-d(">found scriptHistory panel")
+--d(">found scriptHistory panel")
 
     --Show the global inspector scripts tab
     tbug_slashCommand("scripts", nil)
 
-d(">>tab selected - set script to editbox now")
+--d(">>tab selected - set script to editbox now")
     --Set the script text
     --local testScriptEditBox = panels.scriptHistory.scriptEditBox
     --if testScriptEditBox == nil then return end
