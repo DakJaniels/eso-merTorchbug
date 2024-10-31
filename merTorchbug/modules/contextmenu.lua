@@ -2157,7 +2157,7 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
                         --d("[tbug]buttonGroupOnSelectionChangedCallback")
 						setTemplateFont(selectedTemplate)
                         --Refresh the visible inspectors so the font's update, and the table rows update their height
-                        refreshVisibleInspectors()
+                        refreshVisibleInspectors(true)
 					end,
                     additionalData = { UItemplate = templateData } --pass in the currrntly looped templateData to the item
 				})

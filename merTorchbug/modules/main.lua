@@ -303,35 +303,6 @@ local function buildSearchData(searchValues, delay)
 end
 tbug.buildSearchData = buildSearchData
 
-local function closeAllInspectors(globalInspectorToo)
-    globalInspectorToo = globalInspectorToo or false
-    local globalInspector, firstInspector
-    if globalInspectorToo == true then
-        globalInspector = tbug.getGlobalInspector(true)
-        if globalInspector ~= nil and not globalInspector.control:IsHidden() then
-            globalInspector:release()
-        end
-    end
-    firstInspector = tbug.firstInspector
-    if firstInspector ~= nil then
-        if not firstInspector.control:IsHidden() then
-            firstInspector:release()
-        end
-    end
-    local inspectorWindows = tbug.inspectorWindows
-    if inspectorWindows ~= nil and #inspectorWindows > 0 then
-        for windowIdx, windowData in ipairs(inspectorWindows) do
-            if (firstInspector == nil or (firstInspector ~= nil and windowData ~= firstInspector))
-                    and (globalInspector == nil or (globalInspector ~= nil and windowData ~= globalInspector)) then
-                if not windowData.control:IsHidden() then
-                    windowData:release()
-                end
-            end
-        end
-
-    end
-end
-tbug.closeAllInspectors = closeAllInspectors
 
 
 local function closeAllTabs(inspectorObject)
@@ -724,11 +695,100 @@ end
 local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
 
 
-local function refreshVisibleInspectors()
+local function iterateInspectorsWithCallback(globalInspectorToo, firstInspectorSeparate, callbackFunc)
+    globalInspectorToo = globalInspectorToo or false
+    firstInspectorSeparate = firstInspectorSeparate or false
+    if type(callbackFunc) ~= "function" then return end
+
+    local globalInspector, firstInspector
+    if globalInspectorToo == true then
+        globalInspector = tbug.getGlobalInspector(true)
+        callbackFunc(globalInspector, nil, nil, nil)
+    end
+
+    if firstInspectorSeparate == true then
+        firstInspector = tbug.firstInspector
+        callbackFunc(firstInspector, nil, nil, nil)
+    end
+
+    local inspectorWindows = tbug.inspectorWindows
+    if inspectorWindows ~= nil and #inspectorWindows > 0 then
+        for windowIdx, windowData in ipairs(inspectorWindows) do
+            callbackFunc(windowData, windowIdx, globalInspector, firstInspector)
+        end
+    end
+end
+
+local callbackFuncForInspectorsBase = function(callbackFunc, inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
+    if inspectorData == nil then return end
+    if type(callbackFunc) ~= "function" then return end
+
+    if inspectorWindowIndex == nil and globalInspector == nil and firstInspector == nil then
+        return callbackFunc(inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
+    elseif inspectorWindowIndex ~= nil then
+        if (firstInspector == nil or (firstInspector ~= nil and inspectorData ~= firstInspector))
+                and (globalInspector == nil or (globalInspector ~= nil and inspectorData ~= globalInspector)) then
+            if inspectorData.control ~= nil and not inspectorData.control:IsHidden() then
+                return callbackFunc(inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
+            end
+        end
+    end
+    return false
+end
+
+local callbackFuncForClose = function(inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
+    if inspectorData == nil then return end
+    if inspectorWindowIndex == nil and globalInspector == nil and firstInspector == nil then
+        if inspectorData.release ~= nil then
+            inspectorData.release()
+            return true
+        end
+    elseif inspectorWindowIndex ~= nil then
+        if (firstInspector == nil or (firstInspector ~= nil and inspectorData ~= firstInspector))
+                and (globalInspector == nil or (globalInspector ~= nil and inspectorData ~= globalInspector)) then
+            if inspectorData.control ~= nil and not inspectorData.control:IsHidden() then
+                inspectorData:release()
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local callbackFuncForRefresh = function(inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
+    if inspectorData == nil then return end
+    if inspectorWindowIndex == nil and globalInspector == nil and firstInspector == nil then
+        if inspectorData.refreh ~= nil then
+            inspectorData.refreh()
+            return true
+        end
+    elseif inspectorWindowIndex ~= nil then
+        if (firstInspector == nil or (firstInspector ~= nil and inspectorData ~= firstInspector))
+                and (globalInspector == nil or (globalInspector ~= nil and inspectorData ~= globalInspector)) then
+            if inspectorData.control ~= nil and not inspectorData.control:IsHidden() then
+                if inspectorData.control.refresh ~= nil then
+                    inspectorData.control:refreh()
+                elseif inspectorData.control.refresh ~= nil then
+                    inspectorData:refresh()
+                end
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function closeAllInspectors(globalInspectorToo)
+    iterateInspectorsWithCallback(globalInspectorToo, true, callbackFuncForClose)
+end
+tbug.closeAllInspectors = closeAllInspectors
+
+local function refreshVisibleInspectors(globalInspectorToo)
     --Loop over the inspectors shown and refresh them
-    --todo check CloseAllInspectors code for the loop
+    iterateInspectorsWithCallback(globalInspectorToo, true, callbackFuncForRefresh)
 end
 tbug.RefreshVisibleInspectors = refreshVisibleInspectors
+
 
 --Select the tab at the global inspector
 function tbug.inspectorSelectTabByName(inspectorName, tabName, tabIndex, doCreateIfMissing, searchData)
