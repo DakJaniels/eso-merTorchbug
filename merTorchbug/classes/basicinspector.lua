@@ -141,8 +141,8 @@ function BasicInspectorPanel:addDataType(typeId, templateName, controlHeight, sh
 	end
 	-- Cannot be nil or "ScrollTemplates.lua:1063: operator + is not supported for number + nil"
 	local spacingX, spacingY, indentX = 0, 0, 0
-    local controlWidth, selectable, centerEntries
-	ZO_ScrollList_AddControlOperation(list, typeId, templateName, controlWidth, controlHeight, ZO_ObjectPool_DefaultResetControl, showCallback, hideCallback, spacingX, spacingY, indentX, selectable, centerEntries)
+    local controlWidth --, selectable, centerEntries
+	ZO_ScrollList_AddControlOperation(list, typeId, templateName, controlWidth, controlHeight, ZO_ObjectPool_DefaultResetControl, showCallback, hideCallback, spacingX, spacingY, indentX) --, selectable, centerEntries)
 
 --	ZO_ScrollList_AddDataType(list, typeId, templateName, ...)
 

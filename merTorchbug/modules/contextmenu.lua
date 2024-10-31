@@ -2114,23 +2114,23 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
             }
             AddCustomScrollableSubMenuEntry("Mouse", settingsSubmenu)
 
+            --Choose which font and size the tBug UI list shsould draw with
 			local fontSubmenu = {}
 			for k, template in ipairs(tbug.UITemplates) do
-				table.insert(fontSubmenu, {
+				tins(fontSubmenu, {
 					buttonGroup = 1,
 					label		= template.name,
 					entryType	= LSM_ENTRY_TYPE_RADIOBUTTON,
 					checked		= function() return template.font == (tbug.savedVars.customTemplate.font or "ZoFontGameSmall") end,
-					callback	= function(comboBox, itemName, item, checked)
-						setTemplateFont(template)
+                    callback	= function(comboBox, itemName, item, checked)
+						--setTemplateFont(template) Will be called from buttonGroupOnSelectionChangedCallback IF anything was changed!
 					end,
 					buttonGroupOnSelectionChangedCallback = function(control, previousControl)
 						setTemplateFont(template)
 					end,
 				})
 			end
-
-            AddCustomScrollableSubMenuEntry("Font" , fontSubmenu)
+            AddCustomScrollableSubMenuEntry("Font & size" , fontSubmenu)
         end
         AddCustomScrollableMenuEntry("|cFF0000X Close|r", function() selfInspector:release() end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
         --Fix to show the context menu entries above the window, and make them selectable
