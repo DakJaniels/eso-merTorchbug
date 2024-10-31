@@ -620,18 +620,9 @@ function TableInspectorPanel:initScrollList(control)
         end
     end
 
-	local template = TBUG.savedVars.customTemplate
-	self:addDataType(RT.FONT_OBJECT,            "tbugTableInspectorRowFont",56, setupFontObject,    hideCallback)
---	self:addDataType(RT.GENERIC,                "tbugTableInspectorRow",    template.height, setupGeneric,       hideCallback)
---	self:addDataType(RT.LOCAL_STRING,           "tbugTableInspectorRow",    template.height, setupLocalString,   hideCallback)
---	self:addDataType(RT.SOUND_STRING,           "tbugTableInspectorRow",    template.height, setupGeneric,       hideCallback)
---	self:addDataType(RT.LIB_TABLE,              "tbugTableInspectorRow",    template.height, setupLibTable,      hideCallback)
---	self:addDataType(RT.ADDONS_TABLE,           "tbugTableInspectorRow",    template.height, setupAddOnTable,    hideCallback)
---	self:addDataType(RT.EVENTS_TABLE,           "tbugTableInspectorRow",    template.height, setupEventTable,    hideCallback)
---	self:addDataType(RT.SCENES_TABLE,           "tbugTableInspectorRow",    template.height, setupGeneric,       hideCallback)
---	self:addDataType(RT.FRAGMENTS_TABLE,        "tbugTableInspectorRow",    template.height, setupGeneric,       hideCallback)
---	self:addDataType(RT.SAVEDVARIABLES_TABLE,   "tbugTableInspectorRow",    template.height, setupGeneric,       hideCallback)
-
+    --Using height param = nil will read the actual height from the tbug.UITemplates/savedVariables
+    --> See basicInspector:addDataType
+	self:addDataType(RT.FONT_OBJECT,            "tbugTableInspectorRowFont", 56, setupFontObject,    hideCallback)
     self:addDataType(RT.GENERIC,                "tbugTableInspectorRow",    nil, setupGeneric,       hideCallback)
     self:addDataType(RT.LOCAL_STRING,           "tbugTableInspectorRow",    nil, setupLocalString,   hideCallback)
     self:addDataType(RT.SOUND_STRING,           "tbugTableInspectorRow",    nil, setupGeneric,       hideCallback)

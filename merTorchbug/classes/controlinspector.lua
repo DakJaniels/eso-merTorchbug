@@ -387,12 +387,8 @@ function ControlInspectorPanel:initScrollList(control)
         end
     end
 
-	-- tbug.savedVars.CustomTemplate.font
-	-- tbug.savedVars.CustomTemplate.height or 25
-
-	local template = tbug.savedVars.customTemplate
- --   self:addDataType(rowTypes.ROW_TYPE_HEADER,   "tbugTableInspectorHeaderRow",  template.height, setupHeader, hideCallback)
- --   self:addDataType(rowTypes.ROW_TYPE_PROPERTY, "tbugTableInspectorRow",        template.height, setupSimple, hideCallback)
+    --Using height param = nil will read the actual height from the tbug.UITemplates/savedVariables
+    --> See basicInspector:addDataType
     self:addDataType(rowTypes.ROW_TYPE_HEADER,   "tbugTableInspectorHeaderRow",  nil, setupHeader, hideCallback)
     self:addDataType(rowTypes.ROW_TYPE_PROPERTY, "tbugTableInspectorRow",        nil, setupSimple, hideCallback)
 end

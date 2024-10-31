@@ -292,18 +292,7 @@
 					</OnInitialized>
 
 					<OnEffectivelyShown>
-						local template = {}
-						if TBUG.savedVars then
-							template = TBUG.savedVars.customTemplate
-						end
-
-						local font = template.font or 'ZoFontGameSmall'
-
-						self.cKeyLeft:SetFont(font)
-						self.cKeyRight:SetFont(font)
-						self.cVal:SetFont(font)
-
-						self:SetHeight(template.height or 25)
+						TBUG.SetTemplate(self, self.cKeyLeft, self.cKeyRight, self.cVal, self.cVal2)
 					</OnEffectivelyShown>
 				</Texture>
 				<Texture name="$(parent)KeyBg" color="33666666" tier="LOW" layer="BACKGROUND" level="1">

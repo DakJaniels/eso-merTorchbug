@@ -37,6 +37,7 @@ local prefixForLeftKeyLen = strlen(prefixForLeftKey)
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
 local excludeTypes = { [CT_INVALID_TYPE] = true }
 local panelNames = tbug.panelNames
+local uiTemplates = tbug.UITemplates
 
 local getControlType
 local doNotGetParentInvokerNameAttributes = tbug.doNotGetParentInvokerNameAttributes
@@ -663,19 +664,37 @@ end
 tbug.sortItemLinkFunctions = sortItemLinkFunctions
 
 
+--UI font template functions
+function tbug.GetDefaultTemplate()
+    return uiTemplates[1] --default
+end
+local getDefaultTemplate = tbug.GetDefaultTemplate
+
+function tbug.GetTemplate()
+	local template = tbug.savedVars.customTemplate or getDefaultTemplate()
+    return template
+end
+local getTemplate = tbug.GetTemplate
+
+function tbug.GetTemplateFontAndHeight()
+    local template = getTemplate()
+    if template == nil then return 'ZoFontGameSmall', 23 end
+    local font = template.font or 'ZoFontGameSmall'
+    local height = template.height or 23
+    return font, height
+end
+
 function tbug.SetTemplate(control, ...)
-	local template = tbug.savedVars.customTemplate
-
-	--local font = template.font[index or 1] or 'ZoFontGameSmall'
-	local font = template.font or 'ZoFontGameSmall'
-
+	--local template = tbug.savedVars.customTemplate or getDefaultTemplate()
+    local font, height = tbug.GetTemplateFontAndHeight()
     for i = 1, select("#", ...) do
         local label = select(i, ...)
 		label:SetFont(font)
     end
 
-	control:SetHeight(template.height or 25)
+	control:SetHeight(height)
 end
+
 
 ------------------------------------------------------------------------------------------------------------------------
 

@@ -13,6 +13,7 @@ local trem = table.remove
 local EM = EVENT_MANAGER
 
 local searchURLs = tbug.searchURLs
+local getDefaultTemplate = tbug.GetDefaultTemplate
 
 --LibScrollableMenu
 --local headerEntryColor = ZO_ColorDef:New(GetInterfaceColor(INTERFACE_COLOR_TYPE_TEXT_COLORS, INTERFACE_TEXT_COLOR_GAMEPAD_CATEGORY_HEADER))
@@ -94,7 +95,9 @@ local function addTextToChat(textToAdd, getName)
     StartChatInput(textToAdd, CHAT_CHANNEL_SAY, nil)
 end
 
+
 local function setTemplateFont(template)
+    template = template or getDefaultTemplate()
     tbug.savedVars.customTemplate = {
         font = template.font,
         height = template.height,
@@ -1892,6 +1895,10 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
         --Clear the context menu
         hideContextMenus()
 
+
+        ----------------------------------------------------------------------------------------------------------------
+        -- -v-  ALL INSPECTORs                                                                                     -v-
+        ----------------------------------------------------------------------------------------------------------------
         --Draw layer
         local dLayer = owner:GetDrawLayer()
         --setDrawLevel(owner, DL_CONTROLS)
@@ -2079,14 +2086,25 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
             end
 
         end
+        ----------------------------------------------------------------------------------------------------------------
+        -- -^-  ALL INSPECTORs                                                                                     -^-
+        ----------------------------------------------------------------------------------------------------------------
 
+
+        ----------------------------------------------------------------------------------------------------------------
+        -- -v-  GLOBAL INSPECTOR only                                                                              -v-
+        ----------------------------------------------------------------------------------------------------------------
         if isGlobalInspectorWindow then
             if GetDisplayName() == "@Baertram" then
                 AddCustomScrollableMenuEntry("-", noCallbackFunc, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
                 AddCustomScrollableMenuEntry("~ DEBUG MODE ~", function() tbug.doDebug = not tbug.doDebug d("[TBUG]Debugging: " ..tos(tbug.doDebug)) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
             end
+
+
+            -- -v-  SETTINGS MENU at GLOBAL INSPECTOR                                                               -v-
             AddCustomScrollableMenuEntry("Settings", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
-            local settingsSubmenu = {
+            --Mouse settings
+            local settingsMouseSubmenu = {
                 {
                     label = keyShiftAndLMBRMB .." Inspect control below cursor",
                     callback = function(comboBox, itemName, item, checked)
@@ -2112,16 +2130,16 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
                     checkboxUpdateGroup = 1,
                 },
             }
-            AddCustomScrollableSubMenuEntry("Mouse", settingsSubmenu)
+            AddCustomScrollableSubMenuEntry("Mouse", settingsMouseSubmenu)
 
             --Choose which font and size the tBug UI list shsould draw with
-			local fontSubmenu = {}
-			for k, template in ipairs(tbug.UITemplates) do
-				tins(fontSubmenu, {
+			local settingsFontSubmenu = {}
+			for _, template in ipairs(tbug.UITemplates) do
+				tins(settingsFontSubmenu, {
 					buttonGroup = 1,
 					label		= template.name,
 					entryType	= LSM_ENTRY_TYPE_RADIOBUTTON,
-					checked		= function() return template.font == (tbug.savedVars.customTemplate.font or "ZoFontGameSmall") end,
+					checked		= function() return template.font == tbug.savedVars.customTemplate.font end,
                     callback	= function(comboBox, itemName, item, checked)
 						--setTemplateFont(template) Will be called from buttonGroupOnSelectionChangedCallback IF anything was changed!
 					end,
@@ -2130,8 +2148,14 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
 					end,
 				})
 			end
-            AddCustomScrollableSubMenuEntry("Font & size" , fontSubmenu)
+            AddCustomScrollableSubMenuEntry("Font & size" , settingsFontSubmenu)
+            -- -^-  SETTINGS MENU at GLOBAL INSPECTOR                                                               -^-
         end
+        ----------------------------------------------------------------------------------------------------------------
+        -- -^-  GLOBAL INSPECTOR only                                                                               -^-
+        ----------------------------------------------------------------------------------------------------------------
+
+
         AddCustomScrollableMenuEntry("|cFF0000X Close|r", function() selfInspector:release() end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
         --Fix to show the context menu entries above the window, and make them selectable
         if dLayer == DL_OVERLAY then

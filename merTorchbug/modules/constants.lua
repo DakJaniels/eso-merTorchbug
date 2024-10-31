@@ -493,6 +493,8 @@ local realESOEventNames = {
 tbug.realESOEventNames = realESOEventNames
 
 --Template data for the UI controls, e.g. list font and rowHeight (via virtual XML template names)
+--Used in function basicinspector:addDataType (to add the row datatypes for the ZO_ScrollLists)
+-->Switched in global inspector context menu at tbug icon -> font & size
 tbug.UITemplates = {
 	{ -- font 13
 		name = "default",
