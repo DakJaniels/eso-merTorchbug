@@ -689,7 +689,9 @@ function tbug.SetTemplate(control, ...)
     local font, height = tbug.GetTemplateFontAndHeight()
     for i = 1, select("#", ...) do
         local label = select(i, ...)
-		label:SetFont(font)
+        if label ~= nil and label.SetFont ~= nil then
+            label:SetFont(font)
+        end
     end
 
 	control:SetHeight(height)

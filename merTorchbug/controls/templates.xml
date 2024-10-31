@@ -292,7 +292,7 @@
 					</OnInitialized>
 
 					<OnEffectivelyShown>
-						TBUG.SetTemplate(self, self.cKeyLeft, self.cKeyRight, self.cVal, self.cVal2)
+						TBUG.SetTemplate(self, self.cKeyLeft, self.cKeyRight, self.cVal)
 					</OnEffectivelyShown>
 				</Texture>
 				<Texture name="$(parent)KeyBg" color="33666666" tier="LOW" layer="BACKGROUND" level="1">
