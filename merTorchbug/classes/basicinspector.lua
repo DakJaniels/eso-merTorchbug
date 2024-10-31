@@ -571,7 +571,7 @@ end
 
 
 function BasicInspectorPanel:refreshData()
-d("BasicInspectorPanel:refreshData")
+--d("BasicInspectorPanel:refreshData")
     if self:readyForUpdate(UPDATE_MASTER) then
         local doRefreshDirectly = true
         if libAS ~= nil then

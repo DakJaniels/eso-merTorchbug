@@ -12,8 +12,9 @@ local trem = table.remove
 
 local EM = EVENT_MANAGER
 
-local searchURLs = tbug.searchURLs
-local getDefaultTemplate = tbug.GetDefaultTemplate
+local searchURLs              = tbug.searchURLs
+local tbug_GetDefaultTemplate = tbug.GetDefaultTemplate
+local tbug_GetTemplate        = tbug.GetTemplate
 
 --LibScrollableMenu
 --local headerEntryColor = ZO_ColorDef:New(GetInterfaceColor(INTERFACE_COLOR_TYPE_TEXT_COLORS, INTERFACE_TEXT_COLOR_GAMEPAD_CATEGORY_HEADER))
@@ -63,6 +64,7 @@ local DISABLED_TEXT_COLOR = ZO_ColorDef:New(GetInterfaceColor(INTERFACE_COLOR_TY
 local eventsInspector
 local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
 local tbug_refreshInspectorPanel = tbug.refreshInspectorPanel
+local refreshVisibleInspectors = tbug.RefreshVisibleInspectors
 local clickToIncludeAgainStr = " (Click to include)"
 
 local tbug_endsWith = tbug.endsWith
@@ -97,7 +99,9 @@ end
 
 
 local function setTemplateFont(template)
-    template = template or getDefaultTemplate()
+    --d("[tbug]setTemplateFont - template: " .. tos(template) .. "; template.font: " .. tos(template.font))
+
+    template = template or tbug_GetDefaultTemplate()
     tbug.savedVars.customTemplate = {
         font = template.font,
         height = template.height,
@@ -2134,18 +2138,28 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
 
             --Choose which font and size the tBug UI list shsould draw with
 			local settingsFontSubmenu = {}
+
+            --Get the currently selected template drom SV, or use default template
+            local selectedTemplate = tbug_GetTemplate()
+
 			for _, template in ipairs(tbug.UITemplates) do
+                local templateData = template
 				tins(settingsFontSubmenu, {
 					buttonGroup = 1,
-					label		= template.name,
+					label		= templateData.name,
 					entryType	= LSM_ENTRY_TYPE_RADIOBUTTON,
-					checked		= function() return template.font == tbug.savedVars.customTemplate.font end,
+					checked		= function() return templateData.font == tbug.savedVars.customTemplate.font end,
                     callback	= function(comboBox, itemName, item, checked)
-						--setTemplateFont(template) Will be called from buttonGroupOnSelectionChangedCallback IF anything was changed!
+                        --We passed in the additionalData table with the templateData to the item and read it from there now
+                        selectedTemplate = item.UItemplate
 					end,
 					buttonGroupOnSelectionChangedCallback = function(control, previousControl)
-						setTemplateFont(template)
+                        --d("[tbug]buttonGroupOnSelectionChangedCallback")
+						setTemplateFont(selectedTemplate)
+                        --Refresh the visible inspectors so the font's update, and the table rows update their height
+                        refreshVisibleInspectors()
 					end,
+                    additionalData = { UItemplate = templateData } --pass in the currrntly looped templateData to the item
 				})
 			end
             AddCustomScrollableSubMenuEntry("Font & size" , settingsFontSubmenu)

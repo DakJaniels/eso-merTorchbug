@@ -723,6 +723,13 @@ function tbug.checkIfInspectorPanelIsShown(inspectorName, panelName)
 end
 local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
 
+
+local function refreshVisibleInspectors()
+    --Loop over the inspectors shown and refresh them
+    --todo check CloseAllInspectors code for the loop
+end
+tbug.RefreshVisibleInspectors = refreshVisibleInspectors
+
 --Select the tab at the global inspector
 function tbug.inspectorSelectTabByName(inspectorName, tabName, tabIndex, doCreateIfMissing, searchData)
     doCreateIfMissing = doCreateIfMissing or false
