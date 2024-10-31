@@ -2,9 +2,10 @@ TBUG = {}
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
 --Version and name of the AddOn
-tbug.version =  "1.70"
+tbug.version =  "1.72"
 tbug.name =     "merTorchbug"
 tbug.author =   "merlight, current: Baertram"
+
 
 ------------------------------------------------------------------------------------------------------------------------
 -- TODOs, planned features and known bugs
@@ -69,6 +70,11 @@ tbug.maxInspectorTexturePreviewWidth    = 400
 tbug.maxInspectorTexturePreviewHeight   = 400
 
 tbug.maxScriptKeybinds = 5
+
+--Shows that the rightKey shows the name for the leftKey, and not for the value
+local prefixForLeftKey = "<- "
+tbug.prefixForLeftKey = prefixForLeftKey
+
 
 tbug.unitConstants = {
     player = "player"
@@ -214,26 +220,28 @@ tbug.panelClassNames = {
 -->If left nil the default panel class "GlobalInspectorPanel" will be used. If you specify a name you must use one of the keys provided in table tbug.panelClassNames!
 -->The panel class name defines the XML virtual template name used to create the panel control via "GlobalInspector:makePanel", at the file e.g. classes/scriptsinspectorpanel.lua
 -->attribute ScriptsInspectorPanel.TEMPLATE_NAME
+--async:    Boolean to control if the panel's scroll list should be build with LibAsync (if enabled) or not (e.g. classes, constants, conrols got so many entries that the client lags
+-->if the tab gets activated)
 --
 --Usage: See function GlobalInspector:refresh()
 local panelNames = {
-    [1]  = { key="addons",         name="AddOns",          slashCommand={"addons"},                            lookup=nil,      comboBoxFilters=nil,    panelClassName=nil },
-    [2]  = { key="classes",        name="Classes",         slashCommand={"classes"},                           lookup=nil,      comboBoxFilters=nil,    panelClassName=nil  },
-    [3]  = { key="objects",        name="Objects",         slashCommand={"objects"},                           lookup=nil,      comboBoxFilters=nil,    panelClassName=nil  },
-    [4]  = { key="controls",       name="Controls",        slashCommand={"controls"},                          lookup=nil,      comboBoxFilters=true,   panelClassName=nil  },
-    [5]  = { key="fonts",          name="Fonts",           slashCommand={"fonts"},                             lookup=nil,      comboBoxFilters=nil,    panelClassName=nil  },
-    [6]  = { key="functions",      name="Functions",       slashCommand={"functions"},                         lookup=nil,      comboBoxFilters=nil,    panelClassName=nil  },
-    [7]  = { key="constants",      name="Constants",       slashCommand={"constants"},                         lookup=nil,      comboBoxFilters=nil,    panelClassName=nil  },
-    [8]  = { key="strings",        name="Strings",         slashCommand={"strings"},                           lookup=nil,      comboBoxFilters=nil,    panelClassName=nil  },
-    [9]  = { key="sounds",         name="Sounds",          slashCommand={"sounds"},                            lookup=nil,      comboBoxFilters=nil,    panelClassName=nil  },
-    [10] = { key="dialogs",        name="Dialogs",         slashCommand={"dialogs"},                           lookup=nil,      comboBoxFilters=nil,    panelClassName=nil  },
-    [11] = { key="scenes",         name="Scenes",          slashCommand={"scenes"},                            lookup=nil,      comboBoxFilters=nil,    panelClassName=nil  },
-    [12] = { key="fragments",      name="Fragm.",          slashCommand={"fragments", "fragm.", "fragm"},      lookup=nil,      comboBoxFilters=nil,    panelClassName=nil  },
-    [13] = { key="libs",           name="Libs",            slashCommand={"libs"},                              lookup=nil,      comboBoxFilters=nil,    panelClassName=nil  },
-    [14] = { key="scriptHistory",  name="Scripts",         slashCommand={"scripts"},                           lookup=nil,      comboBoxFilters=nil,    panelClassName = "scriptInspector" },
-    [15] = { key="events",         name="Events",          slashCommand={"events"},                            lookup=nil,      comboBoxFilters=nil,    panelClassName=nil },
-    [16] = { key="sv",             name="SV",              slashCommand={"sv"},                                lookup= "Sv",    comboBoxFilters=nil,    panelClassName=nil },
-    [17] = { key="savedInsp",      name="SavedInsp",       slashCommand={"savedinsp"},                         lookup= nil,     comboBoxFilters=nil,    panelClassName= "savedInspectors" },
+    [1]  = { key="addons",         name="AddOns",          slashCommand={"addons"},                            lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false, },
+    [2]  = { key="classes",        name="Classes",         slashCommand={"classes"},                           lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false, },
+    [3]  = { key="objects",        name="Objects",         slashCommand={"objects"},                           lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false,  },
+    [4]  = { key="controls",       name="Controls",        slashCommand={"controls"},                          lookup=nil,      comboBoxFilters=true,   panelClassName=nil, async=false,  },
+    [5]  = { key="fonts",          name="Fonts",           slashCommand={"fonts"},                             lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false,  },
+    [6]  = { key="functions",      name="Functions",       slashCommand={"functions"},                         lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false,  },
+    [7]  = { key="constants",      name="Constants",       slashCommand={"constants"},                         lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false,  },
+    [8]  = { key="strings",        name="Strings",         slashCommand={"strings"},                           lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false,  },
+    [9]  = { key="sounds",         name="Sounds",          slashCommand={"sounds"},                            lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false,  },
+    [10] = { key="dialogs",        name="Dialogs",         slashCommand={"dialogs"},                           lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false,  },
+    [11] = { key="scenes",         name="Scenes",          slashCommand={"scenes"},                            lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false,  },
+    [12] = { key="fragments",      name="Fragm.",          slashCommand={"fragments", "fragm.", "fragm"},      lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false,  },
+    [13] = { key="libs",           name="Libs",            slashCommand={"libs"},                              lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false,  },
+    [14] = { key="scriptHistory",  name="Scripts",         slashCommand={"scripts"},                           lookup=nil,      comboBoxFilters=nil,    panelClassName = "scriptInspector", async=false, },
+    [15] = { key="events",         name="Events",          slashCommand={"events"},                            lookup=nil,      comboBoxFilters=nil,    panelClassName=nil, async=false, },
+    [16] = { key="sv",             name="SV",              slashCommand={"sv"},                                lookup= "Sv",    comboBoxFilters=nil,    panelClassName=nil, async=false, },
+    [17] = { key="savedInsp",      name="SavedInsp",       slashCommand={"savedinsp"},                         lookup= nil,     comboBoxFilters=nil,    panelClassName= "savedInspectors", async=false, },
 }
 tbug.panelNames = panelNames
 tbug.panelCount = NonContiguousCount(panelNames)
@@ -247,17 +255,6 @@ local specialInspectTabTitles = {
     }
 }
 tbug.specialInspectTabTitles = specialInspectTabTitles
-
-local function getGlobalInspectorPanelTabName(tabName)
-    if type(tabName) ~= "string" then return end
-    for k, globalInspectrTabData in ipairs(panelNames) do
-        if globalInspectrTabData.key == tabName or globalInspectrTabData.name == tabName then
-            return globalInspectrTabData.key
-        end
-    end
-    return
-end
-tbug.getGlobalInspectorPanelTabName = getGlobalInspectorPanelTabName
 
 
 --The possible search modes at teh global inspector
@@ -286,9 +283,9 @@ tbug.RT = rt
 --The rowTypes that need to return another value than the key via "raw copy" context menu, and which need to use another
 --dataEntry or value attribute for the string search
 local rtSpecialReturnValues = {}
-rtSpecialReturnValues[rt.ADDONS_TABLE] = "value.name"
-rtSpecialReturnValues[rt.EVENTS_TABLE] = "value._eventName"
-rtSpecialReturnValues[rt.LOCAL_STRING] = "keyText"
+rtSpecialReturnValues[rt.ADDONS_TABLE] = {replaceName="value.name"}
+rtSpecialReturnValues[rt.EVENTS_TABLE] = {replaceName="value._timeStamp", replaceFunc=function() return tbug.formatTimestamp end} --"value._eventName"
+rtSpecialReturnValues[rt.LOCAL_STRING] = {replaceName="keyText"}
 tbug.RTSpecialReturnValues = rtSpecialReturnValues
 
 --The enumeration prefixes which should be skipped
@@ -357,6 +354,7 @@ tbug.searchURLs = {
 --Enumerations setup for the glookup.lua which reads global table _G and prepares the tbug enumrations so that they
 --can show real strings like BAG_BACKPACK instead of value 1
 local keyToEnums = {
+    ["actorCategories"]         = "GameplayActorCategories",
     ["anchorConstrains"]        = "AnchorConstrains",
     ["addressMode"]             = "TEX_MODE",
     ["blendMode"]               = "TEX_BLEND_MODE",
@@ -386,6 +384,7 @@ local keyToSpecialEnumTmpGroupKey = {
     ["quality"]                 = "ITEM_",
     ["specializedItemType"]     = "SPECIALIZED_",
     ["traitInformation"]        = "ITEM_",
+    ["traitType"]               = "ITEM_",
 }
 tbug.keyToSpecialEnumTmpGroupKey = keyToSpecialEnumTmpGroupKey
 
@@ -403,14 +402,16 @@ tbug.keyToSpecialEnumNoSubtablesInEnum = keyToSpecialEnumNoSubtablesInEnum
 
 local keyToSpecialEnum = {
     --Special key entries at tableInspector
-    ["bagId"]                   = "BAG_",
+    ["actorCategory"]           = keyToEnums["actorCategories"],
+    ["bagId"]                   = keyToEnums["bagId"],
     ["functionalQuality"]       = "ITEM_FUNCTIONAL_QUALITY_",
     ["displayQuality"]          = "ITEM_DISPLAY_QUALITY_",
     ["equipType"]               = "EQUIP_TYPE_",
     ["itemType"]                = "ITEMTYPE_",
     ["quality"]                 = "ITEM_QUALITY_",
     ["specializedItemType"]     = "SPECIALIZED_ITEMTYPE_",
-    ["traitInformation"]        = "ITEM_TRAIT_TYPE_",
+    ["traitInformation"]        = "ITEM_TRAIT_INFORMATION_",
+    ["traitType"]               = "ITEM_TRAIT_TYPE_",
 }
 tbug.keyToSpecialEnum = keyToSpecialEnum
 
@@ -420,13 +421,53 @@ for k,_ in pairs(keyToSpecialEnum) do
 end
 tbug.isSpecialInspectorKey = isSpecialInspectorKey
 
+--Special tab titles (clean) which control if the key at teh insepctor should show someting in addition at the keyRight
+-->key must be a number/index so you define the order of the checked patterns! Table entry must have "pattern" and "enum":
+-->pattern is the lua pattern to find the key's name in the inspector / ENUM name from table TBUG.ENUMS that will be used to show the ckeyRight
+
+local specialTabTitleCleanAtInspectorLists = {
+    [1] = {
+        pattern = "bagTo(.*)", enum = "Bags",  --e.g. bagToInventory
+    },
+    [2] = {
+        pattern = "bag2(.*)", enum = "Bags",  --e.g. bag2*
+    },
+    [3] = {
+        pattern = "bagIdTo(.*)", enum = "Bags",  --e.g. bagIdTo*
+    },
+    [4] = {
+        pattern = "bagId2(.*)", enum = "Bags",  --e.g. bagId2*
+    },
+    [5] = {
+        pattern = "(.*)Bags", enum = "Bags",  --e.g. backingBags
+    },
+    [6] = {
+        pattern = "[sS][pP][eE][cC][iI][aA][lL][iI][zZ][eE][dD][iI][tT][eE][mM][tT][yY][pP][eE]", enum = "SPECIALIZED_ITEMTYPE",  --e.g. specializedItemType
+    },
+    [7] = {
+        pattern = "[iI][tT][eE][mM][tT][yY][pP][eE]", enum = "ITEMTYPE",  --e.g. itemType
+    },
+}
+tbug.specialTabTitleCleanAtInspectorLists = specialTabTitleCleanAtInspectorLists
+
 --The possible keys used for basicinspector function isTranslationTextRow() -> checking for ESOStrings or descriptor entries of ZO_MainMenu buttons etc.
 local possibleTranslationTextKeys = {
     ["descriptor"] = true,
 }
 tbug.possibleTranslationTextKeys = possibleTranslationTextKeys
 
+--LibScrollableMenu context menu default options
+tbug.defaultScrollableContextMenuOptions = {
+    visibleRowsDropdown =   15,
+    visibleRowsSubmenu =    15,
+    sortEntries =           false,
+    enableFilter =          true,
+    headerCollapsible =     true,
+}
 
+--tbug.realESOEventNames = realESOEventNames
+
+--Template data for the UI controls, e.g. list font and rowHeight (via virtual XML template names)
 tbug.UITemplates = {
 	{ -- font 13
 		name = "default",
@@ -438,7 +479,7 @@ tbug.UITemplates = {
 		font = "ZoFontGameLarge",
 		height = 28,
 	},
-	{ 
+	{
 		name = "ZoFontGamepadBold18",
 		font = "ZoFontGamepadBold18",
 		height = 28,
@@ -464,3 +505,4 @@ tbug.UITemplates = {
 		height = 37,
 	}
 }
+

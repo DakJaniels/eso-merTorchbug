@@ -13,6 +13,9 @@ tbEvents.eventList = {}
 --Lookup table with key&value reversed
 tbEvents.eventListLookup = {}
 
+local realESOEventNames = tbug.realESOEventNames
+local blacklistedEventIds = tbug.blacklistedEventIds
+
 ------------------------------------------------------------------------------------------------------------------------
 --The events currently tracked/fired list
 tbEvents.eventsTable = {}
@@ -234,13 +237,13 @@ function tbug.StopEventTracking()
     end
 end
 
-
 --Add the possible events of the game (from _G table) to the eventsList
+
 for k,v in l_globalprefixes("EVENT_") do
-	if type(v)=="number"
-	 and k~="EVENT_GLOBAL_MOUSE_DOWN"
-	 and k~="EVENT_GLOBAL_MOUSE_UP"
-	 then tbEvents.eventList[v]=k
+	if not blacklistedEventIds[v] and type(v)=="number" then
+        --Lookup the real eventname
+        local eventName = realESOEventNames[v] or k
+        tbEvents.eventList[v]=eventName
 	end
 end
 setmetatable(tbEvents.eventList,{__index = "-NO EVENT-"})

@@ -3,9 +3,6 @@ local myNAME = TBUG.name
 
 local EM = EVENT_MANAGER
 
-local strlow = string.lower
-local zo_strf = zo_strformat
-
 local sessionStartTime = tbug.sessionStartTime
 local ADDON_MANAGER
 
@@ -43,6 +40,8 @@ local zo_ls = zo_loadstring
 local tins = table.insert
 local trem = table.remove
 local tcon = table.concat
+local zo_strf = zo_strformat
+
 local firstToUpper = tbug.firstToUpper
 local startsWith = tbug.startsWith
 local endsWith = tbug.endsWith
@@ -59,6 +58,8 @@ local tbug_glookup = tbug.glookup
 local tbug_getKeyOfObject = tbug.getKeyOfObject
 local getControlName = tbug.getControlName
 local isControl = tbug.isControl
+local throttledCall = tbug.throttledCall
+
 
 local tbug_inspect
 local objInsp
@@ -129,7 +130,7 @@ local function checkIfAlreadyInTable(table, key, value, checkKeyOrValue)
     return false
 end
 
-local function checkNotInCombatDungeonAvA()
+local function isPlayerInCombatDungeonRaidAvA()
     if IsUnitInCombat(unitPlayer) or IsUnitInDungeon(unitPlayer) or IsPlayerInRaid() or IsPlayerInRaidStagingArea() or IsPlayerInAvAWorld() then return true end
     return false
 end
@@ -142,48 +143,55 @@ local function showDoesNotExistError(object, winTitle, tabTitle)
 end
 
 local function showFunctionReturnValue(object, tabTitle, winTitle, objectParent)
---d("[tbug]showFunctionReturnValue")
     local wasRunWithoutErrors, resultsOfFunc = pcall(setfenv(object, tbug.env))
-    local title = (winTitle ~= nil and tos(winTitle)) or tos(tabTitle) or ""
-    title = (objectParent ~= nil and objectParent ~= "" and objectParent and ".") or "" .. title
---d(">wasRunWithoutErrors: " ..tos(wasRunWithoutErrors) .. ", resultsOfFunc: " ..tos(resultsOfFunc) .. ", title: " ..tos(title))
+    local title = (winTitle and tos(winTitle)) or tos(tabTitle) or ""
+    title = (objectParent and objectParent ~= "" and objectParent .. "." or "") .. title
 
-    if wasRunWithoutErrors == true then
-        d((resultsOfFunc == nil and "[TBUG]No results for function \'" .. tos(title) .. "\'") or "[TBUG]Results of function \'" .. tos(title) .. "\':")
+    if wasRunWithoutErrors then
+        d(resultsOfFunc and "[TBUG]Results of function '" .. tos(title) .. "':" or "[TBUG]No results for function '" .. tos(title) .. "'")
     else
-        d("[TBUG]<<<ERROR>>>Function \'" .. tos(title) .. "\' ended with errors:")
+        d("[TBUG]<<<ERROR>>>Function '" .. tos(title) .. "' ended with errors:")
     end
-    if resultsOfFunc == nil then return end
---tbug._resultsOfFunc = resultsOfFunc
-    if type(resultsOfFunc) == "table" then
-        for k, v in ipairs(resultsOfFunc) do
-            d("["..tos(k).."] "..v)
-        end
-    else
-        d("[1] "..tos(resultsOfFunc))
-    end
-end
 
---Check if the key/value is any itemLink API function like GetItemLink*. or IsItemLink* or CheckItemLink*
-local functionsItemLink = tbug.functionsItemLink
-local function checkIfItemLinkFunc(key, value)
---d("[tbug]checkIfItemLinkFunc-k: " ..tos(key) ..", value: " .. tos(value))
-    --Already in the table?
-    if functionsItemLink[key] == nil then
-        --Does the function name contain any itemlink?
-        if string.find(strlow(key), "itemlink", 1, true) then
-            functionsItemLink[key] = value
+    if resultsOfFunc then
+        if type(resultsOfFunc) == "table" then
+            for k, v in ipairs(resultsOfFunc) do
+                d("[" .. tos(k) .. "] " .. v)
+            end
+        else
+            d("[1] " .. tos(resultsOfFunc))
         end
     end
 end
-tbug.checkIfItemLinkFunc = checkIfItemLinkFunc
+
+local function valueEdit_CancelThrottled(editBox, delay)
+    if not editBox or not editBox.panel or not editBox.panel.valueEditCancel then return end
+    delay = delay or 0
+--d("[tbug]valueEdit_CancelThrottled-text: " .. tos(editBox:GetText()) .. ", delay: " ..tos(delay))
+    throttledCall("merTorchbugPanelValueEditCancel", delay,
+            editBox.panel.valueEditCancel, editBox.panel, editBox
+    )
+end
+tbug.valueEdit_CancelThrottled = valueEdit_CancelThrottled
+
+
+local function valueSlider_CancelThrottled(sliderCtrl, delay)
+    local sliderPanel = sliderCtrl ~= nil and sliderCtrl.panel
+    if not sliderPanel or not sliderPanel.valueSliderCancel or not sliderPanel.sliderCtrlActive then return end
+    delay = delay or 0
+--d("[tbug]valueSlider_CancelThrottled-value: " .. tos(sliderCtrl:GetValue()) .. ", delay: " ..tos(delay))
+    throttledCall("merTorchbugPanelValueSliderCancel", delay,
+            sliderPanel.valueSliderCancel, sliderPanel, sliderCtrl
+    )
+end
+tbug.valueSlider_CancelThrottled = valueSlider_CancelThrottled
 
 
 local function cleanTitle(titleText)
     --Remove leading [MOC_<numbers>] prefix
     --[[
-    if string.find(titleText, titleMocTemplate) ~= nil then
-        local mocEndPosInTitle = string.find(titleText, "]", 5, true)
+    if strfind(titleText, titleMocTemplate) ~= nil then
+        local mocEndPosInTitle = strfind(titleText, "]", 5, true)
         if mocEndPosInTitle ~= nil then
             titleText = string.sub(titleText, mocEndPosInTitle + 2) --+2 to skip ] and space afterwards
         end
@@ -390,7 +398,7 @@ local function inspectResults(specialInspectionString, searchData, source, statu
                 if searchValues ~= nil then
                     local inspectStr = argsOptions[1]
                     --d(">>inspectStr: " ..tos(inspectStr))
-                    searchData = buildSearchData(searchValues, 10)
+                    searchData = buildSearchData(searchValues, 10) --10 milliseconds delay before search starts
 
                     preventEndlessLoop = true
                     inspectResults(nil, searchData, inspectStr, evalString(inspectStr)) --evalString uses pcall and returns boolean, table(nilable)
@@ -719,6 +727,7 @@ local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
 function tbug.inspectorSelectTabByName(inspectorName, tabName, tabIndex, doCreateIfMissing, searchData)
     doCreateIfMissing = doCreateIfMissing or false
 --d("[TB]inspectorSelectTabByName - inspectorName: " ..tos(inspectorName) .. ", tabName: " ..tos(tabName) .. ", tabIndex: " ..tos(tabIndex) .. ", doCreateIfMissing: " ..tos(doCreateIfMissing) ..", searchData: ".. tos(searchData))
+    local wasSelected = false
     if tbug[inspectorName] then
         local inspector = tbug[inspectorName]
         local isGlobalInspector = (inspectorName == "globalInspector") or false
@@ -750,11 +759,12 @@ function tbug.inspectorSelectTabByName(inspectorName, tabName, tabIndex, doCreat
                 end
             end
             if tabIndex then
-                inspector:selectTab(tabIndex)
+                wasSelected = inspector:selectTab(tabIndex)
                 getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
             end
         end
     end
+    return wasSelected
 end
 local tbug_inspectorSelectTabByName = tbug.inspectorSelectTabByName
 
@@ -784,17 +794,66 @@ function tbug.toggleTitleSizeInfo(selfInspector)
 end
 
 ------------------------------------------------------------------------------------------------------------------------
+local panelsLastRowClickedData = {}
+--tbug.panelsLastRowClickedData = panelsLastRowClickedData
+local function setLastRowClickedData(context, selfVar, row, data)
+--d("[Tbug]setLastRowClickedData - context: " ..tos(context))
+    if context == nil then return end
+    if selfVar == nil and row == nil and data == nil then
+        panelsLastRowClickedData[context] = nil
+    else
+        panelsLastRowClickedData[context] = {
+            _context = context,
+            self = selfVar,
+            row = row,
+            data = data,
+        }
+    end
+end
+tbug.setLastRowClickedData = setLastRowClickedData
+
+local function getLastRowClickedData(context)
+--d("[Tbug]setLastRowClickedData - context: " ..tos(context))
+    if context == nil then return end
+    return panelsLastRowClickedData[context]
+end
+tbug.getLastRowClickedData = getLastRowClickedData
+
+
+local function isMouseRightAndLeftAndSHIFTClickEnabled(onlyBaseSetting)
+    onlyBaseSetting = onlyBaseSetting or false
+    local savedVars = tbug.savedVars
+--d("[Tbug]isMouseRightAndLeftAndSHIFTClickEnabled - onlyBaseSetting: " ..tos(onlyBaseSetting))
+    if savedVars.enableMouseRightAndLeftAndSHIFTInspector == true then
+        if onlyBaseSetting == true then return true end
+
+        if savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat == false then
+            return not isPlayerInCombatDungeonRaidAvA()
+        end
+        return true
+    end
+    return false
+end
+
+local onGlobalMouseUp
+local function updateTbugGlobalMouseUpHandler(isEnabled)
+--d("[Tbug]updateTbugGlobalMouseUpHandler - isEnabled: " ..tos(isEnabled))
+    if isEnabled then
+        EM:RegisterForEvent(myNAME.."_OnGlobalMouseUp", EVENT_GLOBAL_MOUSE_UP, onGlobalMouseUp)
+    else
+        EM:UnregisterForEvent(myNAME.."_OnGlobalMouseUp", EVENT_GLOBAL_MOUSE_UP)
+    end
+end
+tbug.updateTbugGlobalMouseUpHandler = updateTbugGlobalMouseUpHandler
+
 
 function tbug.slashCommandMOC(comingFromEventGlobalMouseUp, searchValues)
     comingFromEventGlobalMouseUp = comingFromEventGlobalMouseUp or false
     --d("tbug.slashCommandMOC - comingFromEventGlobalMouseUp: " ..tos(comingFromEventGlobalMouseUp))
-    local savedVars = tbug.savedVars
-    if comingFromEventGlobalMouseUp == true then
-        if not savedVars.enableMouseRightAndLeftAndSHIFTInspector then return end
-        if not savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat then
-            if checkNotInCombatDungeonAvA() == true then return end
-        end
-    end
+    --Was already checked in event_global_mouse_up!
+    --if comingFromEventGlobalMouseUp == true then
+        --if not isMouseRightAndLeftAndSHIFTClickEnabled() then return end
+    --end
 
     local env = tbug.env
     local wm = env.wm
@@ -809,6 +868,7 @@ function tbug.slashCommandMOC(comingFromEventGlobalMouseUp, searchValues)
     inspectResults((comingFromEventGlobalMouseUp == true and "MOC_EVENT_GLOBAL_MOUSE_UP") or "MOC", searchData, mouseOverControl, true, mouseOverControl)
 end
 local tbug_slashCommandMOC = tbug.slashCommandMOC
+
 
 function tbug.slashCommand(args, searchValues)
     local supportedGlobalInspectorArgs = tbug.allowedSlashCommandsForPanels
@@ -1868,27 +1928,27 @@ local function onAddOnLoaded(event, addOnName)
     --Load the Character data of the current account
     tbug.CharacterIdToName = loadCharacterDataOfAccount()
 
+    --If LibAsync is enabled: Prepare the lookup tables etc. for tbug already after addon load here
+    if LibAsync ~= nil then
+        tbug.doRefresh()
+    end
+
+
     --PreHook the chat#s return key pressed function in order to check for run /script commands
     --and add them to the script history
     ZO_PreHook("ZO_ChatTextEntry_Execute", tbugChatTextEntry_Execute)
 
     --Add a global OnMouseDown handler so we can track mouse button left + right + shift key for the "inspection start"
     local mouseUpBefore = {}
-    local function onGlobalMouseUp(eventId, button, ctrl, alt, shift, command)
-        --d(string.format("[merTorchbug]onGlobalMouseUp-button %s, ctrl %s, alt %s, shift %s, command %s", tos(button), tos(ctrl), tos(alt), tos(shift), tos(command)))
+    function onGlobalMouseUp(eventId, button, ctrl, alt, shift, command)
+    --d(string.format("[merTorchbug]onGlobalMouseUp-button %s, ctrl %s, alt %s, shift %s, command %s", tos(button), tos(ctrl), tos(alt), tos(shift), tos(command)))
         if not shift == true then return end
-        local savedVars = tbug.savedVars
-        if not savedVars.enableMouseRightAndLeftAndSHIFTInspector then return end
-
-        --If we are currenty in combat do not execute this!
-        if not savedVars.enableMouseRightAndLeftAndSHIFTInspectorDuringCombat then
-            if checkNotInCombatDungeonAvA() == true then return end
-        end
 
         local goOn = false
         if button == MOUSE_BUTTON_INDEX_LEFT_AND_RIGHT then
-            goOn = true
             mouseUpBefore = {}
+            if not isMouseRightAndLeftAndSHIFTClickEnabled() then return end
+            goOn = true
         else
             --The companion scenes do not send any MOUSE_BUTTON_INDEX_LEFT_AND_RIGHT :-( We need to try to detect it by other means
             --Get the active scene
@@ -1940,35 +2000,41 @@ local function onAddOnLoaded(event, addOnName)
     local function checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
         local panelOfInspector = tbug_inspectorScrollLists[selfScrollList]
         if panelOfInspector ~= nil then
+--d(">found panelOfInspector")
             --Hide the editBox and sliderControl at the inspector panel rows, if shown
-            panelOfInspector:valueEditCancel(panelOfInspector.editBox)
-            panelOfInspector:valueSliderCancel(panelOfInspector.sliderControl)
+            --panelOfInspector:valueEditCancel(panelOfInspector.editBox)
+            valueEdit_CancelThrottled(panelOfInspector.editBox, 100)
+            --panelOfInspector:valueSliderCancel(panelOfInspector.sliderControl)
+            valueSlider_CancelThrottled(panelOfInspector.sliderControl, 100)
         end
     end
+
     --For the mouse wheel and up/down button press
     SecurePostHook("ZO_ScrollList_ScrollRelative", function(selfScrollList, delta, onScrollCompleteCallback, animateInstantly)
 --tbug._selfScrollList = selfScrollList
+        --d("[tbug]ZO_ScrollList_ScrollRelative")
         checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
     end)
     --For the click on the scroll bar control
     SecurePostHook("ZO_Scroll_ScrollAbsoluteInstantly", function(selfScrollList, value)
 --tbug._selfScrollList = selfScrollList
+        --d("[tbug]ZO_Scroll_ScrollAbsoluteInstantly")
         checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
     end)
     SecurePostHook("ZO_ScrollList_ScrollAbsolute", function(selfScrollList, value)
 --tbug._selfScrollList = selfScrollList
+        --d("[tbug]ZO_ScrollList_ScrollAbsolute")
         checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
     end)
 
-    EM:RegisterForEvent(myNAME.."_OnGlobalMouseUp", EVENT_GLOBAL_MOUSE_UP, onGlobalMouseUp)
+    updateTbugGlobalMouseUpHandler(isMouseRightAndLeftAndSHIFTClickEnabled(true))
 
     EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated)
-	
 end
 
-	TB_CustomRowFont = "ZoFontGamepadBold25"
-	
+
 EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADD_ON_LOADED, onAddOnLoaded)
+
 
 
 --[[

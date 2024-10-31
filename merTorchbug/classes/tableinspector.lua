@@ -3,12 +3,15 @@ local tos = tostring
 local ton = tonumber
 local strformat = string.format
 local strsub = string.sub
+local strfind = string.find
 local type = type
 local osdate = os.date
 
+local prefixForLeftKey = tbug.prefixForLeftKey
+
 local RT = tbug.RT
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
-local localizationStringKeyText = rtSpecialReturnValues[RT.LOCAL_STRING]
+local localizationStringKeyText = rtSpecialReturnValues[RT.LOCAL_STRING].replaceName
 
 local typeColors = tbug.cache.typeColors
 local typeSafeLess = tbug.typeSafeLess
@@ -22,6 +25,7 @@ local tbug_glookupEnum = tbug.glookupEnum
 
 local customKeysForInspectorRows = tbug.customKeysForInspectorRows
 local customKey__Object = customKeysForInspectorRows.object
+local specialTabTitleCleanAtInspectorLists = tbug.specialTabTitleCleanAtInspectorLists
 
 local tbug_buildRowContextMenuData = tbug.buildRowContextMenuData
 local tbug_setEditValueFromContextMenu = tbug.setEditValueFromContextMenu
@@ -36,13 +40,18 @@ local getControlName = tbug.getControlName
 local getControlType = tbug.getControlType
 
 local hideContextMenus = tbug.HideContextMenus
+local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
+local getLastRowClickedData = tbug.getLastRowClickedData
 
 --------------------------------
 
 local function getSpecialInspectorKeyConstant(key, value, row, data)
     local enumNameForConstants = keyToSpecialEnum[key]
     if not enumNameForConstants then return end
-    local enumNameForConstantsWithoutUnderscoreSuffix = strsub(enumNameForConstants, 1, -2) --remove _ at the end
+    local enumNameForConstantsWithoutUnderscoreSuffix = enumNameForConstants
+    if strsub(enumNameForConstants, -1) == "_" then
+        enumNameForConstantsWithoutUnderscoreSuffix = strsub(enumNameForConstants, 1, -2) --remove _ at the end
+    end
 --d(">enumNameForConstantsWithoutUnderscoreSuffix: " ..tos(enumNameForConstantsWithoutUnderscoreSuffix))
     local enumsForConstants = enums[enumNameForConstantsWithoutUnderscoreSuffix]
     if not enumsForConstants then return end
@@ -51,6 +60,51 @@ local function getSpecialInspectorKeyConstant(key, value, row, data)
     return constantStr
 end
 
+
+local function searchSpecialTabTitleStringPatternAndGetEnum(str, key)
+    for _, patternData in ipairs(specialTabTitleCleanAtInspectorLists) do
+        local stringPattern = patternData.pattern
+        local enumsToUse = patternData.enum
+        local stringToSearch = tostring(str)
+        if strfind(stringToSearch, stringPattern) ~= nil then
+--d(">>found: " .. tos(stringPattern) .. ", enumsToUse: " ..tos(enumsToUse))
+            local enumsForConstants = enums[enumsToUse]
+            if enumsForConstants ~= nil then
+                local constantStr = enumsForConstants[key]
+--d(">>>constantStr: " .. tos(constantStr))
+                if constantStr ~= nil then
+                    return constantStr
+                end
+            end
+        end
+    end
+    return
+end
+
+local function getSpecialTabTitleCleanAtInspectorKeyConstant(selfPanel, k, v, row, data)
+    --[[
+    local activeTab = selfPanel.inspector.activeTab --todo bug 20240617 returns the "old active tab" at the inspector, not the one we currently switch to!!!
+    if not activeTab then return end
+    local tabTitleClean = activeTab.titleClean
+    if tabTitleClean == nil or tabTitleClean == "" then return end
+d(">getSpecialTabTitleCleanAtInspectorKeyConstant - tabTitleClean: " ..tos(tabTitleClean))
+
+    local constantStr = searchSpecialTabTitleStringPatternAndGetEnum(tabTitleClean, k)
+    if constantStr ~= nil then return constantStr end
+    ]]
+    --Actual tab was maybe the "last one" as code here was run before the new got updated
+    --So check the saved data of last clicked row
+    local lastRowClickedDataOfTableInspector = getLastRowClickedData("table")
+    if lastRowClickedDataOfTableInspector ~= nil then
+        local clickedKey = lastRowClickedDataOfTableInspector.data.key
+--d(">getSpecialTabTitleCleanAtInspectorKeyConstant - clickedKey: " ..tos(clickedKey))
+        if clickedKey ~= nil and clickedKey ~= "" then
+            local constantStr = searchSpecialTabTitleStringPatternAndGetEnum(clickedKey, k)
+            if constantStr ~= nil then return constantStr end
+        end
+    end
+    return
+end
 
 --------------------------------
 local function invoke(object, method, ...)
@@ -72,8 +126,6 @@ TableInspectorPanel.TEMPLATE_NAME = "tbugTableInspectorPanel"
 tbug.panelClassNames["tableInspector"] = TableInspectorPanel
 
 
-local RT = tbug.RT
-
 function TableInspectorPanel:__init__(control, ...)
     ObjectInspectorPanel.__init__(self, control, ...)
 
@@ -92,13 +144,14 @@ end
 
 
 function TableInspectorPanel:bindMasterList(editTable, specialMasterListID)
+d("[tbug]TableInspectorPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
     self.subject = editTable
     self.specialMasterListID = specialMasterListID
 end
 
 
-function TableInspectorPanel:buildMasterList()
---d("[tbug]TableInspectorPanel:buildMasterList")
+function TableInspectorPanel:buildMasterList(libAsyncTask)
+d("[tbug]TableInspectorPanel:buildMasterList")
 
     if self:buildMasterListSpecial() then
 --d("<building special!")
@@ -107,6 +160,7 @@ function TableInspectorPanel:buildMasterList()
     local masterList = self.masterList
     local n = 0
 
+    local subject = self.subject
     --Add the _parentControl -> if you are at a __index invoked metatable control
     -->adds the "__Object" name
     local _parentSubject = self._parentSubject
@@ -122,7 +176,7 @@ function TableInspectorPanel:buildMasterList()
         --end
     end
 
-    for k, v in zo_insecureNext , self.subject do
+    for k, v in zo_insecureNext , subject do --self.subject often is _G
         local tv = type(v)
         local rt = RT.GENERIC
 
@@ -135,7 +189,7 @@ function TableInspectorPanel:buildMasterList()
         masterList[n] = ZO_ScrollList_CreateDataEntry(rt, data)
     end
 
-    local mt = getmetatable(self.subject)
+    local mt = getmetatable(subject)
     if mt then
         local rt = RT.GENERIC
         if rawequal(mt, rawget(mt, "__index")) then
@@ -159,6 +213,8 @@ end
 
 
 function TableInspectorPanel:buildMasterListSpecial()
+d("[TBug]TableInspectorPanel:buildMasterList")
+
     local editTable = self.subject
     local specialMasterListID = self.specialMasterListID
     local tbEvents = tbug.Events
@@ -361,11 +417,23 @@ function TableInspectorPanel:initScrollList(control)
             end
         end
 
+--d(">isKeyRightUsed: " ..tos(isKeyRightUsed) ..", k: " ..tos(k) ..", v: " ..tos(v))
+
         --Special String key -> Add right key info?
         if not isKeyRightUsed and row.cKeyRight and isSpecialInspectorKey[k] then
             local keyRightText = getSpecialInspectorKeyConstant(k, v, row, data)
             if keyRightText ~= nil and keyRightText ~= "" then
                 setupValue(row.cKeyRight, type(keyRightText), keyRightText, true)
+                isKeyRightUsed = true
+            end
+        end
+
+        --Other special key: Key is number and tabTitleClean is e.g. bagTo*
+        if not isKeyRightUsed and row.cKeyRight and tk == "number" then
+            local keyRightText = getSpecialTabTitleCleanAtInspectorKeyConstant(self, k, v, row, data)
+            if keyRightText ~= nil and keyRightText ~= "" then
+                setupValue(row.cKeyRight, type(keyRightText), prefixForLeftKey .. keyRightText, true) -- <- to show the rightKey belongs to the left key and not the value!
+                isKeyRightUsed = true
             end
         end
     end
@@ -594,8 +662,8 @@ end
 
 function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shift)
     local isGlobalInspector = (self.inspector and self.inspector.control and self.inspector.control.isGlobalInspector) or false
+--d"[tbug]TableInspectorPanel:onRowClicked - isGlobalInspector: " ..tos(isGlobalInspector))
     if tbug.doDebug then
-        d("[tbug]TableInspectorPanel:onRowClicked - isGlobalInspector: " ..tos(isGlobalInspector))
         tbug._debugTableInspectorRowClicked = {
             row = row,
             data = data,
@@ -605,9 +673,12 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
     hideContextMenus()
     local sliderCtrl = self.sliderControl
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
+        tbug.setLastRowClickedData("table", self, nil, nil)
+
         self.editBox:LoseFocus()
         if sliderCtrl ~= nil then
-            sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+            --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+            valueSlider_CancelThrottled(sliderCtrl, 50)
         end
 
         local value = data.value
@@ -654,6 +725,7 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
                 end
             end
 
+            tbug.setLastRowClickedData("table", self, row, data)
             if not shift and self.inspector.openTabFor then
                 local winTitle = self:BuildWindowTitleForTableKey(data)
                 local useInspectorTitel = (winTitle ~= nil and winTitle ~= "" and true) or false
@@ -684,41 +756,54 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
             end
         end
     elseif mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
+        self.editBox:LoseFocus()
+        local mouseIsOverRightKey = MouseIsOver(row.cKeyRight)
         if self:canEditValue(data) then
+--d(">can edit value!")
             if MouseIsOver(row.cVal) then
+--d(">mouse is over cVal")
                 if sliderCtrl ~= nil then
-                    sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    valueSlider_CancelThrottled(sliderCtrl, 50)
                 end
+--d(">valueEditStart")
                 self:valueEditStart(self.editBox, row, data)
-                tbug_buildRowContextMenuData(self, row, data, false)
+--d(">build context menu")
+                tbug_buildRowContextMenuData(self, row, data, false, nil)
             elseif MouseIsOver(row.cVal2) then
                 if sliderCtrl ~= nil then
-                    sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    valueSlider_CancelThrottled(sliderCtrl, 50)
                 end
                 self:valueEditStart(self.editBox, row, data)
-            elseif MouseIsOver(row.cKeyLeft) or MouseIsOver(row.cKeyRight) then
+            elseif MouseIsOver(row.cKeyLeft) or mouseIsOverRightKey then
                 if sliderCtrl ~= nil then
-                    sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                    valueSlider_CancelThrottled(sliderCtrl, 50)
                 end
                 self.editBox:LoseFocus()
-                tbug_buildRowContextMenuData(self, row, data, true)
+                tbug_buildRowContextMenuData(self, row, data, true, mouseIsOverRightKey)
             end
-        elseif MouseIsOver(row.cKeyLeft) or MouseIsOver(row.cKeyRight) then
+        elseif MouseIsOver(row.cKeyLeft) or mouseIsOverRightKey then
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
             self.editBox:LoseFocus()
-            tbug_buildRowContextMenuData(self, row, data, true)
+            tbug_buildRowContextMenuData(self, row, data, true, mouseIsOverRightKey)
         elseif MouseIsOver(row.cVal1)  then
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
             self.editBox:LoseFocus()
-            tbug_buildRowContextMenuData(self, row, data, false)
+            tbug_buildRowContextMenuData(self, row, data, false, nil)
         else
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
+--d(">loosing focus of editbox")
             self.editBox:LoseFocus()
         end
     end
@@ -734,7 +819,8 @@ function TableInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, al
         local typeValue = type(value)
         if MouseIsOver(row.cVal) then
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
             if self:canEditValue(data) then
                 if typeValue == "boolean" then

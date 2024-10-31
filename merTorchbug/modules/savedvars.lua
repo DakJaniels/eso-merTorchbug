@@ -43,9 +43,9 @@ local defaults =
 
     enableMouseRightAndLeftAndSHIFTInspector = true,
     enableMouseRightAndLeftAndSHIFTInspectorDuringCombat = false,
-	
+
 	customTemplate = {
-		font = 'ZoFontGameSmall', 
+		font = 'ZoFontGameSmall',
 		height = 24
 	}
 }

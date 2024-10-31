@@ -19,6 +19,8 @@ local tbug_specialKeyToColorType = tbug.specialKeyToColorType
 local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
 local hideContextMenus = tbug.HideContextMenus
 
+local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
+
 --------------------------------
 
 local function runLua(command)
@@ -301,13 +303,14 @@ function ScriptsInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, 
         local typeValue = type(value)
         if MouseIsOver(row.cVal) then
             if sliderCtrl ~= nil then
-                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+                valueSlider_CancelThrottled(sliderCtrl, 50)
             end
             if self:canEditValue(data) then
                 if typeValue == "string" then
                     if value ~= "" and data.dataEntry.typeId == RT.SCRIPTHISTORY_TABLE then
                         --CHAT_SYSTEM.textEntry.system:StartTextEntry("/script " .. data.value)
-                        StartChatInput("/tbug " .. value, CHAT_CHANNEL_SAY, nil, false)
+                        StartChatInput("/tbug " .. value, CHAT_CHANNEL_SAY, nil)
                     end
                 end
             end
@@ -387,4 +390,5 @@ function ScriptsInspectorPanel:testScript(row, data, key, value, runCode)
     if runCode == true then
         runLua(value)
     end
+    return self.scriptEditBox
 end

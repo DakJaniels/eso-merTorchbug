@@ -39,7 +39,13 @@ local FilterFactory = tbug.FilterFactory
 local showTabWindowContextMenu = tbug.ShowTabWindowContextMenu
 local hideContextMenus = tbug.HideContextMenus
 
+local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
+local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
+
 local characterIdToName
+
+local defaultScrollableContextMenuOptions = tbug.defaultScrollableContextMenuOptions
+local hideLoadingSpinner = tbug.hideLoadingSpinner
 
 ------------------------------------------------------------------------------------------------------------------------
 local function resetTabControlData(tabControl)
@@ -91,7 +97,6 @@ local function onMouseExitHideTooltip(ctrl)
     ctrl.hideTooltip = true
     ZO_Tooltips_HideTextTooltip()
 end
-
 
 local function buildTabTitleOrTooltip(tabControl, keyText, isGeneratingTitle)
      isGeneratingTitle = isGeneratingTitle or false
@@ -427,14 +432,14 @@ local function updateSearchHistoryContextMenu(editControl, inspectorObject, isGl
     if searchHistoryForPanelAndMode ~= nil and #searchHistoryForPanelAndMode > 0 then
         --Search history
         local filterModeStr = filterModes[filterMode]
-        if MENU_ADD_OPTION_HEADER ~= nil then
-            AddCustomMenuItem(strformat("- Search history \'%s\' -", tos(filterModeStr)), function() end, MENU_ADD_OPTION_HEADER)
+        if LSM_ENTRY_TYPE_HEADER ~= nil then
+            AddCustomScrollableMenuEntry(strformat("- Search history \'%s\' -", tos(filterModeStr)), function() end, LSM_ENTRY_TYPE_HEADER)
         else
-            AddCustomMenuItem("-", function() end)
+            AddCustomScrollableMenuEntry("-", function() end)
         end
         for _, searchTerm in ipairs(searchHistoryForPanelAndMode) do
             if searchTerm ~= nil and searchTerm ~= "" then
-                AddCustomMenuItem(searchTerm, function()
+                AddCustomScrollableMenuEntry(searchTerm, function()
                     editControl.doNotRunOnChangeFunc = true
                     editControl:SetText(searchTerm)
                     inspectorObject:updateFilter(editControl, filterMode, nil, 0)
@@ -442,9 +447,9 @@ local function updateSearchHistoryContextMenu(editControl, inspectorObject, isGl
             end
         end
         --Actions
-        AddCustomMenuItem("-", function() end)
-        if MENU_ADD_OPTION_HEADER ~= nil then
-            AddCustomMenuItem(strformat("Actions", tos(filterModeStr)), function() end, MENU_ADD_OPTION_HEADER)
+        AddCustomScrollableMenuEntry("-", function() end)
+        if LSM_ENTRY_TYPE_HEADER ~= nil then
+            AddCustomScrollableMenuEntry(strformat("Actions", tos(filterModeStr)), function() end, LSM_ENTRY_TYPE_HEADER)
         end
         --Delete entry
         local subMenuEntriesForDeletion = {}
@@ -458,11 +463,11 @@ local function updateSearchHistoryContextMenu(editControl, inspectorObject, isGl
             }
             table.insert(subMenuEntriesForDeletion, entryForDeletion)
         end
-        AddCustomSubMenuItem("Delete entry", subMenuEntriesForDeletion)
+        AddCustomScrollableSubMenuEntry("Delete entry", subMenuEntriesForDeletion)
         --Clear whole search history
-        AddCustomMenuItem("Clear whole history", function() tbug.clearSearchHistory(activeTabName, filterMode) end)
+        AddCustomScrollableMenuEntry("Clear whole history", function() tbug.clearSearchHistory(activeTabName, filterMode) end)
         --Show the context menu
-        ShowMenu(editControl)
+        ShowCustomScrollableMenu(editControl, defaultScrollableContextMenuOptions)
         return true
     end
     return false
@@ -495,17 +500,19 @@ local function hideEditAndSliderControls(selfVar, activeTabPanel)
 --tbug._activeTabPanelResizeStart = activeTabPanel
         local editBox = activeTabPanel.editBox
         if editBox then
-            editBox:LoseFocus()
+            --editBox:LoseFocus()
+            valueEdit_CancelThrottled(editBox, 50)
         end
         local sliderCtrl = activeTabPanel.sliderControl
         if sliderCtrl then
 --d(">found slider control")
-            sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+            --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+            valueSlider_CancelThrottled(sliderCtrl, 50)
         end
     end
 end
 
-
+--[[
 local function getTabWindowPanelScrollBar(selfVar, activeTabPanel)
     activeTabPanel = activeTabPanel or getActiveTabPanel(selfVar)
     if activeTabPanel then
@@ -518,6 +525,7 @@ local function getTabWindowPanelScrollBar(selfVar, activeTabPanel)
     end
     return
 end
+]]
 
 
 
@@ -591,9 +599,9 @@ function TabWindow:__init__(control, id)
         if tbug.doDebug then d("[tbug]FilterEditBox:OnTextChanged-doNotRunOnChangeFunc: " ..tos(editControl.doNotRunOnChangeFunc)) end
         --local filterMode = self.filterModeButton:getText()
         if editControl.doNotRunOnChangeFunc == true then return end
-        local mode = self.filterModeButton:getId()
+        local mode = selfVar.filterModeButton:getId()
         local delay = (editControl.reApplySearchTextInstantly == true and 0) or nil
-        self:updateFilter(editControl, mode, nil, delay)
+        selfVar:updateFilter(editControl, mode, nil, delay)
         editControl.reApplySearchTextInstantly = false
     end)
 
@@ -603,18 +611,18 @@ function TabWindow:__init__(control, id)
             hideContextMenus()
             local showMenuNow = false
             if editControl:GetText() ~= "" then
-                AddCustomMenuItem("Clear search", function()
+                AddCustomScrollableMenuEntry("Clear search", function()
                     editControl.doNotRunOnChangeFunc = true
                     editControl:SetText("")
-                    self:updateFilter(editControl, getFilterMode(self), nil, 0)
-                end, MENU_ADD_OPTION_LABEL)
+                    selfVar:updateFilter(editControl, getFilterMode(selfVar), nil, 0)
+                end, LSM_ENTRY_TYPE_NORMAL)
                 showMenuNow = true
             end
 
             --Show context menu with the last saved searches (search history)
-            if not updateSearchHistoryContextMenu(editControl, self, self.control.isGlobalInspector, showMenuNow) then
+            if not updateSearchHistoryContextMenu(editControl, selfVar, selfVar.control.isGlobalInspector, showMenuNow) then
                 if showMenuNow then
-                    ShowMenu(editControl)
+                    ShowCustomScrollableMenu(editControl, defaultScrollableContextMenuOptions)
                 end
             end
         end
@@ -627,11 +635,11 @@ function TabWindow:__init__(control, id)
 
     local function updateFilterModeButton(newMode, filterModeButton)
         --d(">updateFilterModeButton-newMode: " ..tos(newMode))
-        filterModeButton = filterModeButton or self.filterModeButton
-        self.filterMode = newMode
+        filterModeButton = filterModeButton or selfVar.filterModeButton
+        selfVar.filterMode = newMode
         filterModeButton:fitText(filterModes[newMode])
         filterModeButton:setId(newMode)
-        local activeTab = self.activeTab
+        local activeTab = selfVar.activeTab
         if activeTab ~= nil then
             activeTab.filterModeButtonLastMode = newMode
         end
@@ -640,23 +648,23 @@ function TabWindow:__init__(control, id)
     updateFilterModeButton(mode, self.filterModeButton)
 
     self.filterModeButton.onClicked[MOUSE_BUTTON_INDEX_LEFT] = function()
-        mode = self.filterMode
+        mode = selfVar.filterMode
         mode = mode < #filterModes and mode + 1 or 1
         local filterModeStr = filterModes[mode]
         --self.filterModeButton:fitText(filterModeStr, 4)
         --self.filterModeButton:setId(mode)
-        updateFilterModeButton(mode, self.filterModeButton)
-        self:updateFilter(self.filterEdit, mode, filterModeStr, nil)
+        updateFilterModeButton(mode, selfVar.filterModeButton)
+        selfVar:updateFilter(selfVar.filterEdit, mode, filterModeStr, nil)
     end
     self.filterModeButton:enableMouseButton(MOUSE_BUTTON_INDEX_RIGHT)
     self.filterModeButton.onClicked[MOUSE_BUTTON_INDEX_RIGHT] = function()
-        mode = self.filterMode
+        mode = selfVar.filterMode
         mode = mode > 1 and mode - 1 or #filterModes
         local filterModeStr = filterModes[mode]
         --self.filterModeButton:fitText(filterModeStr, 4)
         --self.filterModeButton:setId(mode)
-        updateFilterModeButton(mode, self.filterModeButton)
-        self:updateFilter(self.filterEdit, mode, filterModeStr, nil)
+        updateFilterModeButton(mode, selfVar.filterModeButton)
+        selfVar:updateFilter(selfVar.filterEdit, mode, filterModeStr, nil)
     end
 
     --The filter combobox at the global inspector
@@ -675,7 +683,7 @@ function TabWindow:__init__(control, id)
     --self.filterComboBoxDropdown = dropdown
     --TBUG._globalInspectorFilterComboboxDropdown = self.filterComboBoxDropdown
     local function onFilterComboBoxChanged()
-        self:OnFilterComboBoxChanged()
+        selfVar:OnFilterComboBoxChanged()
     end
     comboBox:SetHideDropdownCallback(onFilterComboBoxChanged) --Calls the filter function as the multiselection combobox's dropdown hides
     self:SetSelectedFilterText()
@@ -731,7 +739,7 @@ function TabWindow:__init__(control, id)
 
     local closeButton = TextButton(control, "CloseButton")
     closeButton.onClicked[MOUSE_BUTTON_INDEX_LEFT] = function()
-        self:release()
+        selfVar:release()
         onMouseExitHideTooltip(closeButton.control)
     end
     closeButton:fitText("x", 12)
@@ -759,7 +767,7 @@ function TabWindow:__init__(control, id)
 
             local sv
             local globalInspector = tbug.getGlobalInspector()
-            local isGlobalInspectorWindow = (self == globalInspector) or false
+            local isGlobalInspectorWindow = (selfVar == globalInspector) or false
             if not isGlobalInspectorWindow then
                 sv = tbug.savedTable("objectInspector" .. id)
             else
@@ -787,28 +795,28 @@ function TabWindow:__init__(control, id)
             end
             if width and height then
                 --d("TBUG >width: " ..tos(width) .. ", height: " ..tos(height))
-                self.bg:ClearAnchors()
-                self.bg:SetDimensions(width, height)
-                self.control:ClearAnchors()
-                self.control:SetDimensions(width, height)
+                selfVar.bg:ClearAnchors()
+                selfVar.bg:SetDimensions(width, height)
+                selfVar.control:ClearAnchors()
+                selfVar.control:SetDimensions(width, height)
                 --Call the resize handler as if it was manually resized
-                local panel = getActiveTabPanel(self)
+                local panel = getActiveTabPanel(selfVar)
                 if panel and panel.onResizeUpdate then
                     panel:onResizeUpdate(height)
                 end
-                self.contents:SetHidden(buttonCtrl.toggleState)
-                self.contentsBg:SetHidden(buttonCtrl.toggleState)
-                self.tabScroll:SetHidden(buttonCtrl.toggleState)
-                self.bg:SetHidden(buttonCtrl.toggleState)
-                self.activeBg:SetHidden(buttonCtrl.toggleState)
-                self.contents:SetMouseEnabled(not buttonCtrl.toggleState)
-                self.contentsBg:SetMouseEnabled(not buttonCtrl.toggleState)
-                self.tabScroll:SetMouseEnabled(not buttonCtrl.toggleState)
-                self.activeBg:SetMouseEnabled(not buttonCtrl.toggleState)
-                if self.contentsCount then self.contentsCount:SetHidden(buttonCtrl.toggleState) end
+                selfVar.contents:SetHidden(buttonCtrl.toggleState)
+                selfVar.contentsBg:SetHidden(buttonCtrl.toggleState)
+                selfVar.tabScroll:SetHidden(buttonCtrl.toggleState)
+                selfVar.bg:SetHidden(buttonCtrl.toggleState)
+                selfVar.activeBg:SetHidden(buttonCtrl.toggleState)
+                selfVar.contents:SetMouseEnabled(not buttonCtrl.toggleState)
+                selfVar.contentsBg:SetMouseEnabled(not buttonCtrl.toggleState)
+                selfVar.tabScroll:SetMouseEnabled(not buttonCtrl.toggleState)
+                selfVar.activeBg:SetMouseEnabled(not buttonCtrl.toggleState)
+                if selfVar.contentsCount then selfVar.contentsCount:SetHidden(buttonCtrl.toggleState) end
 
-                if self.filterButton then
-                    local filterBar = self.filterButton:GetParent()
+                if selfVar.filterButton then
+                    local filterBar = selfVar.filterButton:GetParent()
                     if filterBar then
                         filterBar:SetHidden(buttonCtrl.toggleState)
                         filterBar:SetMouseEnabled(not buttonCtrl.toggleState)
@@ -816,25 +824,27 @@ function TabWindow:__init__(control, id)
                 end
 
                 --control:SetAnchor(AnchorPosition myPoint, object anchorTargetControl, AnchorPosition anchorControlsPoint, number offsetX, number offsetY)
-                self.control:SetAnchor(TOPLEFT, GuiRoot, TOPLEFT, self.control:GetLeft(), self.control:GetTop())
-                self.control:SetDimensions(width, height)
-                self.bg:SetAnchor(TOPLEFT, self.control, nil, 4, 6)
-                self.bg:SetAnchor(BOTTOMRIGHT, self.control, nil, -4, -6)
-                self.bg:SetDrawTier(DT_LOW)
-                self.bg:SetDrawLayer(DL_BACKGROUND)
-                self.bg:SetDrawLevel(0)
-                self.control:SetDrawTier(DT_LOW)
-                self.control:SetDrawLayer(DL_CONTROLS)
-                self.control:SetDrawLevel(1)
-                self.contentsBg:SetDrawTier(DT_LOW)
-                self.contentsBg:SetDrawLayer(DL_BACKGROUND)
-                self.contentsBg:SetDrawLevel(0)
-                self.contents:SetDrawTier(DT_LOW)
-                self.contents:SetDrawLayer(DL_BACKGROUND)
-                self.contents:SetDrawLevel(1)
+                selfVar.control:SetAnchor(TOPLEFT, GuiRoot, TOPLEFT, selfVar.control:GetLeft(), selfVar.control:GetTop())
+                selfVar.control:SetDimensions(width, height)
+                selfVar.bg:SetAnchor(TOPLEFT, selfVar.control, nil, 4, 6)
+                selfVar.bg:SetAnchor(BOTTOMRIGHT, selfVar.control, nil, -4, -6)
+                selfVar.bg:SetDrawTier(DT_LOW)
+                selfVar.bg:SetDrawLayer(DL_BACKGROUND)
+                selfVar.bg:SetDrawLevel(0)
+                selfVar.control:SetDrawTier(DT_LOW)
+                selfVar.control:SetDrawLayer(DL_CONTROLS)
+                selfVar.control:SetDrawLevel(1)
+                selfVar.contentsBg:SetDrawTier(DT_LOW)
+                selfVar.contentsBg:SetDrawLayer(DL_BACKGROUND)
+                selfVar.contentsBg:SetDrawLevel(0)
+                selfVar.contents:SetDrawTier(DT_LOW)
+                selfVar.contents:SetDrawLayer(DL_BACKGROUND)
+                selfVar.contents:SetDrawLevel(1)
             end
         end
         onMouseExitHideTooltip(toggleSizeButton.control)
+        local activeTabPanel = getActiveTabPanel(selfVar)
+        hideEditAndSliderControls(selfVar, activeTabPanel)
         tbug.updateTitleSizeInfo(selfVar)
     end
 
@@ -848,9 +858,9 @@ function TabWindow:__init__(control, id)
         --tbug._selfRefreshButtonClicked = self
         if toggleSizeButton.toggleState == false then
             --d("[tbug]Refresh button pressed")
-            local activeTabPanel = getActiveTabPanel(self)
+            local activeTabPanel = getActiveTabPanel(selfVar)
             if activeTabPanel then
-                hideEditAndSliderControls(self, activeTabPanel)
+                hideEditAndSliderControls(selfVar, activeTabPanel)
                 --d(">found activeTab.panel")
                 activeTabPanel:refreshData()
             end
@@ -870,7 +880,7 @@ function TabWindow:__init__(control, id)
         eventsButton.tooltipText = "Enable EVENT tracking"
         eventsButton.onMouseUp = function(buttonCtrl, mouseButton, upInside, ctrl, alt, shift, command)
             if upInside then
-                if LibCustomMenu and mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
+                if LibScrollableMenu and mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
                     tbug.ShowEventsContextMenu(buttonCtrl, nil, nil, true)
 
                 elseif mouseButton == MOUSE_BUTTON_INDEX_LEFT then
@@ -926,31 +936,31 @@ function TabWindow:__init__(control, id)
     --Context menu at the title icon (top left)
     self.titleIcon:SetHandler("OnMouseUp", function(selfCtrl, button, upInside, ctrl, alt, shift, command)
         if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
-            showTabWindowContextMenu(selfCtrl, button, upInside, self)
+            showTabWindowContextMenu(selfCtrl, button, upInside, selfVar)
         end
     end)
 
     --Context menu at the collapse/refresh/close buttons (top right)
     toggleSizeButton.onMouseUp = function(selfCtrl, button, upInside, ctrl, alt, shift, command)
         if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
-            showTabWindowContextMenu(selfCtrl, button, upInside, self)
+            showTabWindowContextMenu(selfCtrl, button, upInside, selfVar)
         end
     end
     refreshButton.onMouseUp = function(selfCtrl, button, upInside, ctrl, alt, shift, command)
         if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
-            showTabWindowContextMenu(selfCtrl, button, upInside, self)
+            showTabWindowContextMenu(selfCtrl, button, upInside, selfVar)
         end
     end
     closeButton.onMouseUp = function(selfCtrl, button, upInside, ctrl, alt, shift, command)
         if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
-            showTabWindowContextMenu(selfCtrl, button, upInside, self)
+            showTabWindowContextMenu(selfCtrl, button, upInside, selfVar)
         end
     end
 
     --Context menu at the count label (bottom right)
     contentsCount:SetHandler("OnMouseUp", function(selfCtrl, button, upInside, ctrl, alt, shift, command)
         if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
-            showTabWindowContextMenu(selfCtrl, button, upInside, self)
+            showTabWindowContextMenu(selfCtrl, button, upInside, selfVar)
         end
     end)
 
@@ -998,7 +1008,6 @@ function TabWindow:_initTab(tabControl)
         function(control, mouseButton, upInside)
             if upInside then
                 if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
-                    ZO_Tooltips_HideTextTooltip()
                     self:selectTab(control)
                 elseif mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
                     ZO_Tooltips_HideTextTooltip()
@@ -1360,6 +1369,7 @@ function TabWindow:removeTab(key)
     --self:updateFilterEdit("", nil, 0)
     -->How can we reset it only at the active tab?
     local activeTab = self.activeTab
+    if not activeTab then return end
     local editControl = self.filterEdit
     activeTab.filterModeButtonLastMode = 1 --str
     activeTab.filterEditLastText = nil
@@ -1378,7 +1388,7 @@ function TabWindow:removeTab(key)
 
     local nextControl = self.tabs[index + 1]
     if nextControl then
---d(">>nextControl found")
+        --d(">>nextControl found")
         nextControl:ClearAnchors()
         if index > 1 then
             local prevControl = self.tabs[index - 1]
@@ -1388,7 +1398,7 @@ function TabWindow:removeTab(key)
         end
     end
     if activeTab == tabControl then
---d(">>activeTab!")
+        --d(">>activeTab!")
         if nextControl then
             self:selectTab(nextControl)
         else
@@ -1407,9 +1417,9 @@ function TabWindow:removeTab(key)
 
     self.tabPool:ReleaseObject(tabControl.pkey)
 
---tbug._selfControl = self.control
+    --tbug._selfControl = self.control
     if not self.tabs or #self.tabs == 0 then
---d(">reset all tabs: Title text = ''")
+        --d(">reset all tabs: Title text = ''")
         self.title:SetText("")
         --No tabs left in this inspector? Hide it then
         --self.control:SetHidden(true)
@@ -1484,16 +1494,21 @@ end
 function TabWindow:selectTab(key, isMOC)
     --TBUG._selectedTab = self
     isMOC = isMOC or false
+    local wasSelected = false
+
     local tabIndex = self:getTabIndex(key)
     if tbug.doDebug then d("[TabWindow:selectTab]tabIndex: " ..tos(tabIndex) .. ", key: " ..tos(key) ..", isMOC: " ..tos(isMOC)) end
-    hideContextMenus()
     ZO_Tooltips_HideTextTooltip()
-    hideEditAndSliderControls(self, nil)
+    hideContextMenus()
     local tabControl = self:getTabControl(key)
     if self.activeTab == tabControl then
         if tbug.doDebug then d("< ABORT: active tab = current tab") end
-        return
+        return true
     end
+    hideEditAndSliderControls(self, nil)
+
+    --local isGlobalInspector = self.control.isGlobalInspector == true
+
     local activeTab = self.activeTab
     if activeTab then
         activeTab.label:SetColor(self.inactiveColor:UnpackRGBA())
@@ -1537,6 +1552,7 @@ function TabWindow:selectTab(key, isMOC)
     end
 
     --Hide the filter dropdown and show it only for allowed tabIndices at the global inspector
+    -->If shown update the last selected entries
     self:connectFilterComboboxToPanel(tabIndex)
 
 --d(">setting activeTab")
@@ -1560,7 +1576,10 @@ function TabWindow:selectTab(key, isMOC)
         self.filterEdit:SetText(activeTab.filterEditLastText)
 
         if tbug.doDebug then d(">ActiveTab: " ..tos(activeTab.tabName) .. ", lastMode: " ..tos(activeTab.filterModeButtonLastMode) ..", filterEditLastText: " ..tos(activeTab.filterEditLastText)) end
+
+        wasSelected = true
     end
+    return wasSelected
 end
 
 function TabWindow:getSavedVariablesCharacterName(characterIdStr, subjectOfNewTab)
@@ -1649,6 +1668,7 @@ end
 --- Filter function
 
 function TabWindow:updateFilter(filterEdit, mode, filterModeStr, searchTextDelay)
+    --d("[tbug]TabWindow:updateFilter - searchTextDelay: " ..tos(searchTextDelay))
     searchTextDelay = searchTextDelay or 500
     hideContextMenus()
     if tbug.doDebug then d("[tbug]TabWindow:updateFilter-mode: " ..tos(mode) .. ", filterModeStr: " ..tos(filterModeStr) .. ", searchTextDelay: " ..tos(searchTextDelay)) end
@@ -1657,44 +1677,54 @@ function TabWindow:updateFilter(filterEdit, mode, filterModeStr, searchTextDelay
         saveNewSearchHistoryContextMenuEntry(p_filterEdit, p_self, p_self.control.isGlobalInspector)
     end
 
-    local function filterEditBoxContentsNow(p_self, p_filterEdit, p_mode, p_filterModeStr)
+    local function filterEditBoxContentsNow(p_self, p_filterEdit, p_currentSearchText, p_mode, p_filterModeStr)
         if tbug.doDebug then d("[tbug]filterEditBoxContentsNow") end
 
---[[
-TBUG._debugFilterEditBoxContentsNow = {
-    self = self,
-    p_self = p_self,
-}
-]]
+        --[[
+        TBUG._debugFilterEditBoxContentsNow = {
+            self = self,
+            p_self = p_self,
+        }
+        ]]
+        --Filter by editBox contents (text)
+        local filterEditText = p_filterEdit:GetText()
+        --> This below should not happen as the function is called throttled (means if one types the last function call get's overwritten by EVENT_MANAGER:RegisterForUpdate)
+        --[[
+        --Compare current text in the editbox with old passed in text
+        --If they differ the user changed the text again, so do not start the search
+        if p_currentSearchText ~= nil and p_currentSearchText ~= filterEditText then
+--d("<ABORT search - Searchtext changed, old: " .. tos(p_currentSearchText) .. ", new: " ..tos(filterEditText))
+            return
+        end
+        ]]
+
+        local activePanel = getActiveTabPanel(p_self)
 
         --Filter by MultiSelect ComboBox dropdown selected entries
         local filterMode = p_self.filterComboBox.filterMode
---TBUG._filterComboboxMode = filterMode
+        --TBUG._filterComboboxMode = filterMode
         if filterMode and filterMode > 0 then
             --local panel = p_self.tabs[filterMode].panel --todo the activated panel is determined via the filterMode -> That would always relate to the 1st tab if filterMode is str (1) and makes no sense at all!
-            local activePanel = getActiveTabPanel(p_self)
             if activePanel then
---d(">filterEditBoxContentsNow dropDownFilterMode: " .. tostring(filterMode))
+                --d(">filterEditBoxContentsNow dropDownFilterMode: " .. tostring(filterMode))
                 local dropdownFilterFunc
                 local selectedDropdownFilters = p_self:GetSelectedFilters()
                 if ZO_IsTableEmpty(selectedDropdownFilters) then
---d("[TBUG]nothing filtered in dropdown")
+                    --d("[TBUG]nothing filtered in dropdown")
                     --Nothing filtered? Re-enable all entries again
                     dropdownFilterFunc = false
                 else
---d("[TBUG]" .. tos(NonContiguousCount(selectedDropdownFilters) .. " entries in dropdown filters"))
+                    --d("[TBUG]" .. tos(NonContiguousCount(selectedDropdownFilters) .. " entries in dropdown filters"))
                     --Apply a filter function for the dropdown box
                     FilterFactory.searchedData["ctrl"] = {}
                     dropdownFilterFunc = FilterFactory["ctrl"](selectedDropdownFilters) --calls filters.lua -> tbug.FilterFactory -> FilterFactory.ctrl function and passes in the selected dropdown entries table
                 end
                 --Set the filter function of the dropdown box
-                activePanel:setDropDownFilterFunc(dropdownFilterFunc)
+                activePanel:setDropDownFilterFunc(dropdownFilterFunc, selectedDropdownFilters)
             end
         end
 
 
-        --Filter by editBox contents (text)
-        local filterEditText = p_filterEdit:GetText()
         local activeTab = p_self:getActiveTab()
         if activeTab ~= nil then
             --d(">set activeTab " .. tos(activeTab.tabName) .. " filterEditLastText to: " ..tos(filterEditText))
@@ -1705,13 +1735,13 @@ TBUG._debugFilterEditBoxContentsNow = {
         if tbug.doDebug then d(">text: " ..tos(filterEditText)) end
 
         p_filterEdit.doNotRunOnChangeFunc = false
-        local expr = strmatch(filterEditText, "(%S+.-)%s*$")
+        local expr = strmatch(filterEditText, "(%S+.-)%s*$") --remove leading and trainling spaces
         local filterFunc
         p_filterModeStr = p_filterModeStr or filterModes[p_mode]
         --d(strformat("[filterEditBoxContentsNow]expr: %s, mode: %s, modeStr: %s", tos(expr), tos(p_mode), tos(p_filterModeStr)))
         if expr then
             FilterFactory.searchedData[p_filterModeStr] = {}
-            filterFunc = FilterFactory[p_filterModeStr](expr)
+            filterFunc = FilterFactory[p_filterModeStr](expr) --run the filter function here, e.g. FilterFactory["str"](expr) -> FilterFactory.str(expr)
         else
             filterFunc = false
         end
@@ -1728,12 +1758,18 @@ TBUG._debugFilterEditBoxContentsNow = {
         }
         ]]
         local gotPanels = (p_self.panels ~= nil and true) or false --at global inspector e.g.
-        local gotActiveTabPanel = (activeTab ~= nil and activeTab.panel ~= nil and true) or false --at other inspectors
+        local gotActiveTabPanel = (activeTab ~= nil and activePanel ~= nil and true) or false --at other inspectors
         local filterFuncValid = (filterFunc ~= nil and true) or false
 
         if tbug.doDebug then d(">gotPanels: " ..tos(gotPanels) ..", gotActiveTabPanel: " ..tos(gotActiveTabPanel) .. ", filterFuncValid: " ..tos(filterFuncValid)) end
 
+
+        --Update all panales now or only 1 activePanel -> via panel:setFilterFunc
+        --[[
         if gotPanels then
+d(">got panels")
+            -->!!!Massive delay on each search as ALL panels update?!!!
+            --> Why should the text search of currently active panel be set to all panels?
             --At the global inspector e.g.
             if filterFuncValid then
                 --Set the filterFunction to all panels -> BasicInspectorPanel:setFilterFunc
@@ -1743,15 +1779,19 @@ TBUG._debugFilterEditBoxContentsNow = {
                     panel:setFilterFunc(filterFunc, false)
                 end
                 p_filterEdit:SetColor(p_self.filterColorGood:UnpackRGBA())
+                -->Only set it to the currently active panel now below
             else
                 p_filterEdit:SetColor(p_self.filterColorBad:UnpackRGBA())
             end
-        elseif gotActiveTabPanel == true then
+        end
+        ]]
+
+        if gotActiveTabPanel == true then
             --No normal panels: But subjectToPanel lookup exists
             if filterFuncValid then
-                local panelToFilter = getActiveTabPanel(p_self)
-                if panelToFilter ~= nil and panelToFilter.setFilterFunc ~= nil then
-                    panelToFilter:setFilterFunc(filterFunc, nil)
+                --d(">gotActiveTabPanel and filterFuncValid")
+                if activePanel ~= nil and activePanel.setFilterFunc ~= nil then
+                    activePanel:setFilterFunc(filterFunc, nil)
                     p_filterEdit:SetColor(p_self.filterColorGood:UnpackRGBA())
                     gotPanels = true
                 else
@@ -1761,12 +1801,22 @@ TBUG._debugFilterEditBoxContentsNow = {
                 p_filterEdit:SetColor(p_self.filterColorBad:UnpackRGBA())
             end
 
+            --Hide the loading spinner again
+            hideLoadingSpinner(p_self.control, not self.g_refreshRunning) --only hide the loading spinner if no _G refresh is currently active
         end
+
+
         return filterFuncValid and gotPanels
     end
 
+    --Show the loading spinner now - But only if the currently shown list is not empty (e.g. no events loaded yet)
+    local activePanel = getActiveTabPanel(self)
+    if activePanel ~= nil and activePanel.masterList and not ZO_IsTableEmpty(activePanel.masterList) then
+        hideLoadingSpinner(self.control, false)
+    end
+
     throttledCall("merTorchbugSearchEditChanged", searchTextDelay,
-        filterEditBoxContentsNow, self, filterEdit, mode, filterModeStr
+            filterEditBoxContentsNow, self, filterEdit, filterEdit:GetText(), mode, filterModeStr
     )
 
     if not filterEdit.doNotSaveToSearchHistory then
@@ -1779,11 +1829,11 @@ TBUG._debugFilterEditBoxContentsNow = {
 end
 
 --Update the current inspector's active tab's panel filterEdit with the search text, or the searchText table,
---set the search modem and optionally search now
+--set the search mode, and optionally search now
 function TabWindow:updateFilterEdit(searchText, searchMode, searchDelay)
     hideContextMenus()
     searchMode = searchMode or getFilterMode(self)
-    --d("[TB]updateFilterEdit -searchText: " ..tos(searchText) .. ", searchMode: " ..tos(searchMode))
+--d("[TB]updateFilterEdit -searchText: " ..tos(searchText) .. ", searchMode: " ..tos(searchMode) .. ", searchDelay: " .. tos(searchDelay))
     if searchText == nil then return end
 
     local activePanel = getActiveTabPanel(self)

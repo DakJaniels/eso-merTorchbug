@@ -15,7 +15,7 @@ local checkForSpecialDataEntryAsKey = tbug.checkForSpecialDataEntryAsKey
 local isAControlOfTypes = tbug.isAControlOfTypes
 
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
-local localizationStringKeyText = rtSpecialReturnValues[RT_local_string]
+local localizationStringKeyText = rtSpecialReturnValues[RT_local_string].replaceName
 
 ------------------------------------------------------------------------------------------------------------------------
 -- Filter and search
@@ -191,7 +191,7 @@ function FilterFactory.str(expr)
                         key = value._eventName
                     end
                     ]]
-                    key = checkForSpecialDataEntryAsKey(data)
+                    key = checkForSpecialDataEntryAsKey(data, nil)
 --if keyOrig ~= key then
 --    tbug_DEBUG[keyOrig].isKeySpecialDataEntry = true
 --    tbug_DEBUG[keyOrig].key = key
