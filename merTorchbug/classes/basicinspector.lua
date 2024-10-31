@@ -205,7 +205,7 @@ end
 
 
 function BasicInspectorPanel:filterScrollList(libAsyncTask)
-d("[TBUG]BasicInspectorPanel:filterScrollList")
+--d("[TBUG]BasicInspectorPanel:filterScrollList")
     local masterList = self.masterList
     local filterFunc = self.filterFunc
     local dropdownFilterFunc = self.dropdownFilterFunc
@@ -229,7 +229,7 @@ end
         local selfVar = self
         if libAS ~= nil then
             local start = GetGameTimeMilliseconds()
-d("[Tbug]LibAsync - BasicInspectorPanel - filterScrollList - Start")
+--d("[Tbug]LibAsync - BasicInspectorPanel - filterScrollList - Start")
 
             libAsyncTask = libAsyncTask or libAS:Create("TBug_task-BasicInspectorPanel-filterScrollList")
             libAsyncTask:For(1, #masterList):Do(function(i)

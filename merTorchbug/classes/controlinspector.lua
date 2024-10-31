@@ -57,7 +57,7 @@ end
 
 
 function ControlInspectorPanel:buildMasterList(libAsyncTask)
-    d("[tbug]ControlInspectorPanel:buildMasterList")
+    --d("[tbug]ControlInspectorPanel:buildMasterList")
     local g_specialProperties = controlInspectorDataTypes.g_specialProperties
     local g_controlPropListRow = controlInspectorDataTypes.g_controlPropListRow
     local td = tbug.td
@@ -83,10 +83,10 @@ function ControlInspectorPanel:buildMasterList(libAsyncTask)
         --Add the _parentControl -> if you are at a __index invoked metatable control
         -->adds the "__Object" name
         libAsyncTask:Call(function(p_task)
-d("[Tbug]LibAsync - ControlInspector - Start")
+--d("[Tbug]LibAsync - ControlInspector - Start")
             if _parentSubject ~= nil then
                 loopBeforeDone = false
-d(">>commonProperties_parentSubject")
+--d(">>commonProperties_parentSubject")
                 p_task:For(ipairs(controlInspectorDataTypes.commonProperties_parentSubject)):Do(function(key, prop)
                     local doAdd = true
                     if prop.checkFunc then
@@ -104,7 +104,7 @@ d(">>commonProperties_parentSubject")
             libAS:WaitUntil(function()
                 return loopBeforeDone == true
             end):Then(function()
-d(">>g_commonProperties")
+--d(">>g_commonProperties")
                 loopBeforeDone = false
                 p_task:For(ipairs(controlInspectorDataTypes.g_commonProperties)):Do(function(key, prop)
                     local doAdd = true
@@ -128,7 +128,7 @@ d(">>g_commonProperties")
                     local _, controlName = pcall(invoke, subject, "GetName")
                     if controlName and controlName ~= "" then
                         if tbug.isSupportedInventoryRowPattern(controlName) == true then
-d(">>controlPropsListRows")
+--d(">>controlPropsListRows")
                             p_task:For(ipairs(controlPropsListRows)):Do(function(key, prop)
                                 n = n + 1
                                 masterList[n] = createPropEntry{prop = prop}
@@ -144,7 +144,7 @@ d(">>controlPropsListRows")
                 return loopBeforeDone == true
             end):Then(function()
                 loopBeforeDone = false
-d(">>g_commonProperties2")
+--d(">>g_commonProperties2")
                 p_task:For(ipairs(controlInspectorDataTypes.g_commonProperties2)):Do(function(key, prop)
                     n = n + 1
                     masterList[n] = createPropEntry{prop = prop}
@@ -158,7 +158,7 @@ d(">>g_commonProperties2")
                     return loopBeforeDone == true
                 end):Then(function()
                     loopBeforeDone = false
-d(">>controlProps")
+--d(">>controlProps")
                     p_task:For(ipairs(controlProps)):Do(function(key, prop)
                         if prop.isChildrenHeader == true then
                             childrenHeaderId = prop.headerId
@@ -177,7 +177,7 @@ d(">>controlProps")
                     return loopBeforeDone == true
                 end):Then(function()
                     loopBeforeDone = false
-d(">>g_specialProperties[CT_CONTROL]")
+--d(">>g_specialProperties[CT_CONTROL]")
                     p_task:For(ipairs(g_specialProperties[CT_CONTROL])):Do(function(key, prop)
                         if prop.isChildrenHeader == true then
                             childrenHeaderId = prop.headerId
@@ -197,7 +197,7 @@ d(">>g_specialProperties[CT_CONTROL]")
                 loopBeforeDone = false
 
                 tbug.tdBuildChildControls = true
-d(">>children")
+--d(">>children")
                 p_task:For(1, ton(numChildren) or 0):Do(function(i)
                     local childProp = td{name = tos(i), get = getControlChild, enum = "CT_names", parentId=childrenHeaderId}
                     n = n + 1
@@ -208,9 +208,9 @@ d(">>children")
                     childrenHeaderId = nil
 
                     loopBeforeDone = true
-        d(">>truncate")
+        --d(">>truncate")
                     tbug.truncate(masterList, n)
-        d("<<<<<<< END - took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
+        --d("<<<<<<< END - took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
                 end)
             end)
         end)

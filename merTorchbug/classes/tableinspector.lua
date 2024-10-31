@@ -144,14 +144,14 @@ end
 
 
 function TableInspectorPanel:bindMasterList(editTable, specialMasterListID)
-d("[tbug]TableInspectorPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
+--d("[tbug]TableInspectorPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
     self.subject = editTable
     self.specialMasterListID = specialMasterListID
 end
 
 
 function TableInspectorPanel:buildMasterList(libAsyncTask)
-d("[tbug]TableInspectorPanel:buildMasterList")
+--d("[tbug]TableInspectorPanel:buildMasterList")
 
     if self:buildMasterListSpecial() then
 --d("<building special!")
@@ -213,7 +213,7 @@ end
 
 
 function TableInspectorPanel:buildMasterListSpecial()
-d("[TBug]TableInspectorPanel:buildMasterList")
+--d("[TBug]TableInspectorPanel:buildMasterList")
 
     local editTable = self.subject
     local specialMasterListID = self.specialMasterListID
