@@ -16,8 +16,6 @@ local isControl = tbug.isControl
 local hideContextMenus = tbug.HideContextMenus
 
 local tbug_isSliderEnabledByRowKey = tbug.isSliderEnabledByRowKey
-local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
-local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 
 local RT= tbug.RT
 local editConfirmAllowedTypes = {
@@ -112,11 +110,9 @@ local function valueEdit_OnEnter(editBox)
     editBox.panel:valueEditConfirm(editBox)
 end
 
+
 local function valueEdit_OnFocusLost(editBox)
-    --2040603 Fix LibScrollableMenu clicked entry having upInside = false -> maybe because the focus of the editbox is lost and then the scrolllist updates and the contextmenu closes?
-    --Delay it a bit so the context menu can work properly
-    -->This throttledCall should get overwritten from context menu's: tbug.setChatEditTextFromContextMenu
-    valueEdit_CancelThrottled(editBox, 75)
+    editBox.panel:valueEditCancel(editBox)
 end
 
 
@@ -132,8 +128,7 @@ end
 
 local function valueSlider_OnFocusLost(sliderCtrl)
 --d("valueSlider_OnFocusLost")
-    valueSlider_CancelThrottled(sliderCtrl, 75)
-    --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
+    sliderCtrl.panel:valueSliderCancel(sliderCtrl)
 end
 
 
@@ -158,7 +153,7 @@ end
 --Edit box control
 function ObjectInspectorPanel:createValueEditBox(parent)
     local editBox = wm:CreateControlFromVirtual("$(parent)ValueEdit", parent,
-            "ZO_DefaultEdit")
+                                                "ZO_DefaultEdit")
     self.editBox = editBox
     self.editData = nil
     self.editBoxActive = nil
@@ -168,7 +163,7 @@ function ObjectInspectorPanel:createValueEditBox(parent)
     editBox:SetMaxInputChars(1024) -- hard limit in ESO 2.1.7
     editBox:SetFont("ZoFontGameSmall")
     editBox:SetHandler("OnEnter", valueEdit_OnEnter)
-    editBox:SetHandler("OnFocusLost",   valueEdit_OnFocusLost)
+    editBox:SetHandler("OnFocusLost", valueEdit_OnFocusLost)
     editBox:SetHandler("OnTextChanged", valueEdit_OnTextChanged)
 end
 
@@ -181,7 +176,7 @@ function ObjectInspectorPanel:anchorEditBoxToListCell(editBox, listCell)
 end
 
 function ObjectInspectorPanel:valueEditCancel(editBox)
---d("[tbug]ObjectInspectorPanel:valueEditCancel - editBox: " ..tos(editBox:GetText()))
+    hideContextMenus()
     local editData = self.editData
     if editData then
         self.editData = nil
@@ -229,7 +224,6 @@ end
 
 
 function ObjectInspectorPanel:valueEditStart(editBox, row, data, cValRow, columnIndex)
---d("[tbug]]ObjectInspectorPanel:valueEditStart - editBoxActive: " ..tos(self.editBoxActive))
 --[[
 tbug._clickedRow = {
     self = self,
@@ -240,18 +234,9 @@ tbug._clickedRow = {
 }
 ]]
     if self.editData ~= data then
-        --todo 20240603 - Why is the 2nd right clicked row's text hiding?
-        if self.editBoxActive then
-            --self:valueSliderCancel(sliderCtrl)
-            --valueEdit_CancelThrottled(editBox, 0)
-            self:valueEditCancel(editBox)
-        end
-
         editBox.updatedColumn = nil
         editBox.updatedColumnIndex = nil
-
         editBox:LoseFocus()
-
 
         --df("tbug: edit start")
         if MouseIsOver(row.cVal) then
@@ -266,14 +251,12 @@ tbug._clickedRow = {
             local key = data.key
             local sliderData = (prop ~= nil and prop.sliderData) or nil
             if sliderData == nil then sliderData = (key ~= nil and tbug_isSliderEnabledByRowKey[data.key]) or nil end
-
             --The row should show a number slider to change the values?
             if (sliderData ~= nil and self.sliderData ~= data) then
                 --Slider is currently active? Cancel it
                 local sliderCtrl = self.sliderControl
                 if self.sliderCtrlActive then
-                    --self:valueSliderCancel(sliderCtrl)
-                    valueSlider_CancelThrottled(sliderCtrl, 0)
+                    self:valueSliderCancel(sliderCtrl)
                 end
 
                 --sliderData={min=0, max=1, step=0.1}
@@ -295,16 +278,11 @@ tbug._clickedRow = {
                 self:anchorSliderControlToListCell(sliderCtrl, cValRow)
                 self.sliderData = data
             end
-
-            --Normal editbox
             if not self.sliderCtrlActive == true then
-                self.editBoxActive = true
                 editBox.updatedColumn = cValRow
                 editBox.updatedColumnIndex = columnIndex
---d(">cValRow:GetText(): " ..tos(cValRow:GetText()))
                 editBox:SetText(cValRow:GetText())
                 editBox:SetHidden(false)
---d(">editBox:TakeFocus()")
                 editBox:TakeFocus()
                 self:anchorEditBoxToListCell(editBox, cValRow)
                 self.editData = data
@@ -316,7 +294,6 @@ end
 
 
 function ObjectInspectorPanel:valueEditUpdate(editBox)
-    --d("[tbug]ObjectInspectorPanel:valueEditUpdate - editBox: " ..tos(editBox:GetText()))
     hideContextMenus()
 
     local expr = editBox:GetText()
@@ -324,10 +301,6 @@ function ObjectInspectorPanel:valueEditUpdate(editBox)
         if self.editData and self.editData.dataEntry and editConfirmAllowedTypes[self.editData.dataEntry.typeId] then
             return
         end
-    end
-
-    if expr == nil then
-        expr = tos(expr)
     end
     local func, err = zo_loadstring("return " .. expr)
     -- syntax check only, no evaluation yet
@@ -361,7 +334,7 @@ function ObjectInspectorPanel:createValueSliderControl(parent)
         end
     end)
     self.sliderCancelButton = GetControl(sliderControl, "CancelButton")
-    self.sliderCancelButton:SetHandler("OnMouseUp", function(sliderCancelButtonCtrl, mouseButton, upInside, shift, ctrl, alt, command)
+    self.sliderCancelButton:SetHandler("OnMouseUp", function(sliderSaveButtonControl, mouseButton, upInside, shift, ctrl, alt, command)
         --Cancel teh value slider update
         if mouseButton == MOUSE_BUTTON_INDEX_LEFT and upInside then
             valueSlider_OnFocusLost(sliderControl)
@@ -385,7 +358,6 @@ function ObjectInspectorPanel:anchorSliderControlToListCell(sliderControl, listC
 end
 
 function ObjectInspectorPanel:valueSliderConfirm(sliderCtrl)
---d("[tbug]ObjectInspectorPanel:valueSliderConfirm")
     if not self.sliderCtrlActive then return end
     hideContextMenus()
     local expr = tos(sliderCtrl:GetValue())
@@ -424,7 +396,6 @@ end
 
 
 function ObjectInspectorPanel:valueSliderUpdate(sliderCtrl)
---d("[tbug]ObjectInspectorPanel:valueSliderUpdate")
     if not self.sliderCtrlActive then return end
     hideContextMenus()
     ZO_Tooltips_HideTextTooltip()
@@ -459,14 +430,13 @@ function ObjectInspectorPanel:valueSliderConfirmed(sliderControl, evalResult)
 end
 
 function ObjectInspectorPanel:valueSliderCancel(sliderCtrl)
---d("[tbug]ObjectInspectorPanel:valueSliderCancel")
     if not self.sliderCtrlActive then return end
 --d("tbug: slider cancel")
+    hideContextMenus()
     local sliderData = self.sliderData
     if sliderData then
         self.sliderData = nil
         ZO_ScrollList_RefreshVisible(self.list, sliderData)
-        --hideContextMenus()
     end
     sliderCtrl:SetHidden(true)
     sliderCtrl.updatedColumn = nil

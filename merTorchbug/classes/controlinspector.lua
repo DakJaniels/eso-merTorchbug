@@ -4,8 +4,6 @@ local tos = tostring
 local ton = tonumber
 local strformat = string.format
 
-local libAS = LibAsync1
-
 local typeColors = tbug.cache.typeColors
 
 local rowTypes = tbug.RowTypes
@@ -24,7 +22,6 @@ local getControlName = tbug.getControlName
 local getControlType = tbug.getControlType
 
 local hideContextMenus = tbug.HideContextMenus
-local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 
 ---------------------------------
 -- class ControlInspectorPanel --
@@ -56,8 +53,8 @@ local function getControlChild(data, control)
 end
 
 
-function ControlInspectorPanel:buildMasterList(libAsyncTask)
-    d("[tbug]ControlInspectorPanel:buildMasterList")
+function ControlInspectorPanel:buildMasterList()
+    --d("[tbug]ControlInspectorPanel:buildMasterList")
     local g_specialProperties = controlInspectorDataTypes.g_specialProperties
     local g_controlPropListRow = controlInspectorDataTypes.g_controlPropListRow
     local td = tbug.td
@@ -69,171 +66,11 @@ function ControlInspectorPanel:buildMasterList(libAsyncTask)
     if numChildren == nil then numChildren = 0 end
     local childrenHeaderId
 
+    --Add the _parentControl -> if you are at a __index invoked metatable control
+    -->adds the "__Object" name
     local _parentSubject = self._parentSubject
-    local controlPropsListRows = g_controlPropListRow[controlType]
-    local controlProps = g_specialProperties[controlType]
-
-    local loopBeforeDone = true
-
-    if libAS ~= nil then
-        local start = GetGameTimeMilliseconds()
-
-        libAsyncTask = libAsyncTask or libAS:Create("TBug_task-ControlInspectorPanel-builMasterList")
-
-        --Add the _parentControl -> if you are at a __index invoked metatable control
-        -->adds the "__Object" name
-        libAsyncTask:Call(function(p_task)
-d("[Tbug]LibAsync - ControlInspector - Start")
-            if _parentSubject ~= nil then
-                loopBeforeDone = false
-d(">>commonProperties_parentSubject")
-                p_task:For(ipairs(controlInspectorDataTypes.commonProperties_parentSubject)):Do(function(key, prop)
-                    local doAdd = true
-                    if prop.checkFunc then
-                        doAdd = prop.checkFunc(subject)
-                    end
-                    if doAdd == true then
-                        n = n + 1
-                        masterList[n] = createPropEntry{prop = prop}
-                    end
-                end)
-                loopBeforeDone = true
-            end
-
-            --Common properties (e.g. name, type, parent) added to the inspector list
-            libAS:WaitUntil(function()
-                return loopBeforeDone == true
-            end):Then(function()
-d(">>g_commonProperties")
-                loopBeforeDone = false
-                p_task:For(ipairs(controlInspectorDataTypes.g_commonProperties)):Do(function(key, prop)
-                    local doAdd = true
-                    if prop.checkFunc then
-                        doAdd = prop.checkFunc(subject)
-                    end
-                    if doAdd == true then
-                        n = n + 1
-                        masterList[n] = createPropEntry{prop = prop}
-                    end
-                end)
-                loopBeforeDone = true
-            end)
-
-            --CT_* control properties added to the inspector list
-            if controlPropsListRows then
-                libAS:WaitUntil(function()
-                    return loopBeforeDone == true
-                end):Then(function()
-                    loopBeforeDone = false
-                    local _, controlName = pcall(invoke, subject, "GetName")
-                    if controlName and controlName ~= "" then
-                        if tbug.isSupportedInventoryRowPattern(controlName) == true then
-d(">>controlPropsListRows")
-                            p_task:For(ipairs(controlPropsListRows)):Do(function(key, prop)
-                                n = n + 1
-                                masterList[n] = createPropEntry{prop = prop}
-                            end)
-                        end
-                    end
-                    loopBeforeDone = true
-                end)
-            end
-
-            --Common properties part 2 (e.g. anchors, dimensions) added to the inspector list
-            libAS:WaitUntil(function()
-                return loopBeforeDone == true
-            end):Then(function()
-                loopBeforeDone = false
-d(">>g_commonProperties2")
-                p_task:For(ipairs(controlInspectorDataTypes.g_commonProperties2)):Do(function(key, prop)
-                    n = n + 1
-                    masterList[n] = createPropEntry{prop = prop}
-                end)
-                loopBeforeDone = true
-            end)
-
-            --Special properties (e.g. bagId/slotIndex/itemLink) added to the inspector list
-            if controlProps then
-                libAS:WaitUntil(function()
-                    return loopBeforeDone == true
-                end):Then(function()
-                    loopBeforeDone = false
-d(">>controlProps")
-                    p_task:For(ipairs(controlProps)):Do(function(key, prop)
-                        if prop.isChildrenHeader == true then
-                            childrenHeaderId = prop.headerId
-                            prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
-                        end
-                        n = n + 1
-                        masterList[n] = createPropEntry{prop = prop}
-                    end)
-                    loopBeforeDone = true
-                end)
-            end
-
-            --Explicit CT_CONTROL properties added to the inspector list
-            if controlType ~= CT_CONTROL then
-                libAS:WaitUntil(function()
-                    return loopBeforeDone == true
-                end):Then(function()
-                    loopBeforeDone = false
-d(">>g_specialProperties[CT_CONTROL]")
-                    p_task:For(ipairs(g_specialProperties[CT_CONTROL])):Do(function(key, prop)
-                        if prop.isChildrenHeader == true then
-                            childrenHeaderId = prop.headerId
-                            prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
-                        end
-                        n = n + 1
-                        masterList[n] = createPropEntry{prop = prop}
-                    end)
-                    loopBeforeDone = true
-                end)
-            end
-
-            --Child controls
-            libAS:WaitUntil(function()
-                return loopBeforeDone == true
-            end):Then(function()
-                loopBeforeDone = false
-
-                tbug.tdBuildChildControls = true
-d(">>children")
-                p_task:For(1, ton(numChildren) or 0):Do(function(i)
-                    local childProp = td{name = tos(i), get = getControlChild, enum = "CT_names", parentId=childrenHeaderId}
-                    n = n + 1
-                    masterList[n] = createPropEntry{prop = childProp, childIndex = i}
-                end)
-                :Then(function()
-                    tbug.tdBuildChildControls = false
-                    childrenHeaderId = nil
-
-                    loopBeforeDone = true
-        d(">>truncate")
-                    tbug.truncate(masterList, n)
-        d("<<<<<<< END - took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
-                end)
-            end)
-        end)
-
-    ------------------------------------------------------------------------------------------------------------------------
-    else
-        --Add the _parentControl -> if you are at a __index invoked metatable control
-        -->adds the "__Object" name
-        if _parentSubject ~= nil then
-            for _, prop in ipairs(controlInspectorDataTypes.commonProperties_parentSubject) do
-                local doAdd = true
-                if prop.checkFunc then
-                    doAdd = prop.checkFunc(subject)
-                end
-                if doAdd == true then
-                    n = n + 1
-                    masterList[n] = createPropEntry{prop = prop}
-                end
-            end
-        end
-
-        --Common properties (e.g. name, type, parent) added to the inspector list
-        for _, prop in ipairs(controlInspectorDataTypes.g_commonProperties) do
+    if _parentSubject ~= nil then
+        for _, prop in ipairs(controlInspectorDataTypes.commonProperties_parentSubject) do
             local doAdd = true
             if prop.checkFunc then
                 doAdd = prop.checkFunc(subject)
@@ -243,63 +80,77 @@ d(">>children")
                 masterList[n] = createPropEntry{prop = prop}
             end
         end
+    end
 
-        --CT_* control properties added to the inspector list
-        if controlPropsListRows then
-            local _, controlName = pcall(invoke, subject, "GetName")
-            if controlName and controlName ~= "" then
-                if tbug.isSupportedInventoryRowPattern(controlName) == true then
-                    for _, prop in ipairs(controlPropsListRows) do
-                        n = n + 1
-                        masterList[n] = createPropEntry{prop = prop}
-                    end
-        --else
-                end
-            end
+    --Common properties (e.g. name, type, parent) added to the inspector list
+    for _, prop in ipairs(controlInspectorDataTypes.g_commonProperties) do
+        local doAdd = true
+        if prop.checkFunc then
+            doAdd = prop.checkFunc(subject)
         end
-
-        --Common properties part 2 (e.g. anchors, dimensions) added to the inspector list
-        for _, prop in ipairs(controlInspectorDataTypes.g_commonProperties2) do
+        if doAdd == true then
             n = n + 1
             masterList[n] = createPropEntry{prop = prop}
         end
-
-        --Special properties (e.g. bagId/slotIndex/itemLink) added to the inspector list
-        if controlProps then
-            for _, prop in ipairs(controlProps) do
-                if prop.isChildrenHeader == true then
-                    childrenHeaderId = prop.headerId
-                    prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
-                end
-                n = n + 1
-                masterList[n] = createPropEntry{prop = prop}
-            end
-        end
-
-        --Explicit CT_CONTROL properties added to the inspector list
-        if controlType ~= CT_CONTROL then
-            for _, prop in ipairs(g_specialProperties[CT_CONTROL]) do
-                if prop.isChildrenHeader == true then
-                    childrenHeaderId = prop.headerId
-                    prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
-                end
-                n = n + 1
-                masterList[n] = createPropEntry{prop = prop}
-            end
-        end
-
-        --Child controls
-        tbug.tdBuildChildControls = true
-        for i = 1, ton(numChildren) or 0 do
-            local childProp = td{name = tos(i), get = getControlChild, enum = "CT_names", parentId=childrenHeaderId}
-            n = n + 1
-            masterList[n] = createPropEntry{prop = childProp, childIndex = i}
-        end
-        tbug.tdBuildChildControls = false
-        childrenHeaderId = nil
-
-        tbug.truncate(masterList, n)
     end
+
+    --CT_* control properties added to the inspector list
+    local controlPropsListRows = g_controlPropListRow[controlType]
+    if controlPropsListRows then
+        local _, controlName = pcall(invoke, subject, "GetName")
+        if controlName and controlName ~= "" then
+            if tbug.isSupportedInventoryRowPattern(controlName) == true then
+                for _, prop in ipairs(controlPropsListRows) do
+                    n = n + 1
+                    masterList[n] = createPropEntry{prop = prop}
+                end
+                --else
+            end
+        end
+    end
+
+    --Common properties part 2 (e.g. anchors, dimensions) added to the inspector list
+    for _, prop in ipairs(controlInspectorDataTypes.g_commonProperties2) do
+        n = n + 1
+        masterList[n] = createPropEntry{prop = prop}
+    end
+
+    --Special properties (e.g. bagId/slotIndex/itemLink) added to the inspector list
+    local controlProps = g_specialProperties[controlType]
+    if controlProps then
+        for _, prop in ipairs(controlProps) do
+            if prop.isChildrenHeader == true then
+                childrenHeaderId = prop.headerId
+                prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
+            end
+            n = n + 1
+            masterList[n] = createPropEntry{prop = prop}
+        end
+    end
+
+    --Explicit CT_CONTROL properties added to the inspector list
+    if controlType ~= CT_CONTROL then
+        for _, prop in ipairs(g_specialProperties[CT_CONTROL]) do
+            if prop.isChildrenHeader == true then
+                childrenHeaderId = prop.headerId
+                prop.name = strformat(childrenNumberHeaderStr, tos(numChildren))
+            end
+            n = n + 1
+            masterList[n] = createPropEntry{prop = prop}
+        end
+    end
+
+    --Child controls
+    tbug.tdBuildChildControls = true
+    for i = 1, ton(numChildren) or 0 do
+        local childProp = td{name = tos(i), get = getControlChild, enum = "CT_names", parentId=childrenHeaderId}
+        n = n + 1
+        masterList[n] = createPropEntry{prop = childProp, childIndex = i}
+    end
+    tbug.tdBuildChildControls = false
+    childrenHeaderId = nil
+
+    tbug.truncate(masterList, n)
 end
 
 
@@ -386,9 +237,15 @@ function ControlInspectorPanel:initScrollList(control)
             self.editBox:SetAnchor(BOTTOMRIGHT, nil, TOPRIGHT, 0, -20)
         end
     end
-
-    self:addDataType(rowTypes.ROW_TYPE_HEADER,   "tbugTableInspectorHeaderRow",  24, setupHeader, hideCallback)
-    self:addDataType(rowTypes.ROW_TYPE_PROPERTY, "tbugTableInspectorRow",        24, setupSimple, hideCallback)
+	
+	-- tbug.savedVars.CustomTemplate.font
+	-- tbug.savedVars.CustomTemplate.height or 25
+	
+	local template = tbug.savedVars.customTemplate
+ --   self:addDataType(rowTypes.ROW_TYPE_HEADER,   "tbugTableInspectorHeaderRow",  template.height, setupHeader, hideCallback)
+ --   self:addDataType(rowTypes.ROW_TYPE_PROPERTY, "tbugTableInspectorRow",        template.height, setupSimple, hideCallback)
+    self:addDataType(rowTypes.ROW_TYPE_HEADER,   "tbugTableInspectorHeaderRow",  nil, setupHeader, hideCallback)
+    self:addDataType(rowTypes.ROW_TYPE_PROPERTY, "tbugTableInspectorRow",        nil, setupSimple, hideCallback)
 end
 
 function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shift)
@@ -400,15 +257,12 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
             self = self,
         }
     end
-    tbug.setLastRowClickedData("control", self, nil, nil)
-
     hideContextMenus()
     local sliderCtrl = self.sliderControl
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         self.editBox:LoseFocus()
         if sliderCtrl ~= nil then
-            --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
-            valueSlider_CancelThrottled(sliderCtrl, 50)
+            sliderCtrl.panel:valueSliderCancel(sliderCtrl)
         end
 
         if MouseIsOver(row.cKeyRight) then
@@ -452,8 +306,6 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
                     data._parentSubject = subject
                 end
             end
-
-            tbug.setLastRowClickedData("control", self, row, data)
             if shift then
                 --object, tabTitle, winTitle, recycleActive, objectParent, currentResultIndex, allResults, data
                 local inspector = tbug_inspect(data.value, title, nil, false, nil, nil, nil, data, nil)
@@ -465,29 +317,24 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
             end
         end
     elseif mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
-        self.editBox:LoseFocus()
-        local mouseIsOverRightKey = MouseIsOver(row.cKeyRight)
         if MouseIsOver(row.cVal) then
             if sliderCtrl ~= nil then
-                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
-                valueSlider_CancelThrottled(sliderCtrl, 50)
+                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
             end
             if self:canEditValue(data) then
                 self:valueEditStart(self.editBox, row, data)
             end
-            tbug_buildRowContextMenuData(self, row, data, false, nil)
-        elseif mouseIsOverRightKey or MouseIsOver(row.cKeyLeft) then
+            tbug_buildRowContextMenuData(self, row, data, false)
+        elseif MouseIsOver(row.cKeyLeft) or MouseIsOver(row.cKeyRight) then
             self.editBox:LoseFocus()
             if sliderCtrl ~= nil then
-                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
-                valueSlider_CancelThrottled(sliderCtrl, 50)
+                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
             end
-            tbug_buildRowContextMenuData(self, row, data, true, mouseIsOverRightKey)
+            tbug_buildRowContextMenuData(self, row, data, true)
         else
             self.editBox:LoseFocus()
             if sliderCtrl ~= nil then
-                --sliderCtrl.panel:valueSliderCancel(sliderCtrl)
-                valueSlider_CancelThrottled(sliderCtrl, 50)
+                sliderCtrl.panel:valueSliderCancel(sliderCtrl)
             end
         end
     end

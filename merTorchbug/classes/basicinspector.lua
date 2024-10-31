@@ -7,10 +7,6 @@ local strformat = string.format
 local strlow = string.lower
 local tos = tostring
 
-local osdate = os.date
-
-local libAS = LibAsync1
-
 local UPDATE_NONE = 0
 local UPDATE_SCROLL = 1
 local UPDATE_SORT = 2
@@ -21,15 +17,7 @@ local earliestTimeStamp = 1
 local latestTimeStamp = 2147483647
 
 local RT = tbug.RT
-local panelNames = tbug.panelNames
 local possibleTranslationTextKeys = tbug.possibleTranslationTextKeys
-
-local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
-local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
-
-local hideContextMenus = tbug.HideContextMenus
-local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
-local getGlobalInspector = tbug.getGlobalInspector
 
 local function createPanelFunc(inspector, panelClass)
     local function createPanel(pool)
@@ -96,7 +84,8 @@ function BasicInspectorPanel:__init__(control, inspector, pool)
     end
 end
 
-function BasicInspectorPanel:addDataType(typeId, templateName, ...)
+-- height, showCallback, hideCallback
+function BasicInspectorPanel:addDataType(typeId, templateName, controlHeight, showCallback, hideCallback)
     local list = self.list
 
     local function rowMouseEnter(row)
@@ -133,14 +122,24 @@ function BasicInspectorPanel:addDataType(typeId, templateName, ...)
         return row
     end
 
-    ZO_ScrollList_AddDataType(list, typeId, templateName, ...)
+	
+	-- local instanceData = ZO_ScrollList_GetData(control)
+	-- local instanceData = dataEntry.data
+	controlHeight = controlHeight or function(instanceData)
+		return tbug.savedVars.customTemplate.height or 25
+	end
+	-- Cannot be nil or "ScrollTemplates.lua:1063: operator + is not supported for number + nil"
+	local spacingX, spacingY, indentX = 0, 0, 0
+	ZO_ScrollList_AddControlOperation(list, typeId, templateName, controlWidth, controlHeight, ZO_ObjectPool_DefaultResetControl, showCallback, hideCallback, spacingX, spacingY, indentX, selectable, centerEntries)
+
+--	ZO_ScrollList_AddDataType(list, typeId, templateName, ...)
 
     local dataTypeTable = ZO_ScrollList_GetDataTypeTable(list, typeId)
     dataTypeTable.pool = ZO_ObjectPool:New(rowCreate, ZO_ObjectPool_DefaultResetControl) --add reset function
 end
 
 --Will be overwritten at the other classes, e.g. ControlInspectorPanel:buildMasterList(), or GlobalInspectorPanel:buildMasterList() ...
-function BasicInspectorPanel:buildMasterList(libAsyncTask)
+function BasicInspectorPanel:buildMasterList()
 end
 
 
@@ -193,8 +192,8 @@ function BasicInspectorPanel:UpdateContentsCount()
 end
 
 
-function BasicInspectorPanel:filterScrollList(libAsyncTask)
-d("[TBUG]BasicInspectorPanel:filterScrollList")
+function BasicInspectorPanel:filterScrollList()
+--d("[TBUG]BasicInspectorPanel:filterScrollList")
     local masterList = self.masterList
     local filterFunc = self.filterFunc
     local dropdownFilterFunc = self.dropdownFilterFunc
@@ -205,7 +204,7 @@ d("[TBUG]BasicInspectorPanel:filterScrollList")
     if filterFunc ~= nil or dropdownFilterFunc ~= nil then
         local filterFuncIsFunc = (filterFunc ~= nil and type(filterFunc) == "function" and true) or false
         local dropdownFilterFuncIsFunc = (dropdownFilterFunc ~= nil and type(dropdownFilterFunc) == "function" and true) or false
---d(">filterFuncIsFunc: " .. tos(filterFuncIsFunc) .. ", dropdownFilterFuncIsFunc: " ..tos(dropdownFilterFuncIsFunc))
+--d(">dropdownFilterFuncIsFunc: " ..tos(dropdownFilterFuncIsFunc))
         local j = 1
 --[[
 if TBUG._debugNow then
@@ -215,57 +214,27 @@ if TBUG._debugNow then
 end
 ]]
 
-        local selfVar = self
-        if libAS ~= nil then
-            local start = GetGameTimeMilliseconds()
-d("[Tbug]LibAsync - BasicInspectorPanel - filterScrollList - Start")
+        for i = 1, #masterList do
+            local dataEntry = masterList[i]
 
-            libAsyncTask = libAsyncTask or libAS:Create("TBug_task-BasicInspectorPanel-filterScrollList")
-            libAsyncTask:For(1, #masterList):Do(function(i)
-                local dataEntry = masterList[i]
-                local data = dataEntry.data
+            local dropdownFilterResult = (dropdownFilterFuncIsFunc == true and dropdownFilterFunc(dataEntry.data, self)) or false --comboBox dropdown filter
+            if dropdownFilterResult == false and dropdownFilterFunc == false then dropdownFilterResult = true end
 
-                local dropdownFilterResult = (dropdownFilterFuncIsFunc == true and dropdownFilterFunc(data, selfVar)) or false --comboBox dropdown filter
-                if dropdownFilterResult == false and dropdownFilterFunc == false then dropdownFilterResult = true end
+            local textFilterResult = (filterFuncIsFunc == true and filterFunc(dataEntry.data)) or false                   --text editbox filter
+            if textFilterResult == false and filterFunc == false then textFilterResult = true end
 
-                local textFilterResult = (dropdownFilterResult == true and (filterFuncIsFunc == true and filterFunc(data))) or false --text editbox filter
-                if textFilterResult == false and filterFunc == false then textFilterResult = true end
-
-                if dropdownFilterResult == true and textFilterResult == true then
-                    dataList[j] = dataEntry
-                    j = j + 1
-                end
-            end):Then(function()
-d("<<<<LibAsync BasicInspectorPanel - filterScrollList - End - Took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
-                self:UpdateContentsCount()
-            end)
-
-        else
-            for i = 1, #masterList do
-                local dataEntry = masterList[i]
-                local data = dataEntry.data
-
-                local dropdownFilterResult = (dropdownFilterFuncIsFunc == true and dropdownFilterFunc(data, self)) or false --comboBox dropdown filter
-                if dropdownFilterResult == false and dropdownFilterFunc == false then dropdownFilterResult = true end
-
-                local textFilterResult = (dropdownFilterResult == true and (filterFuncIsFunc == true and filterFunc(data))) or false --text editbox filter
-                if textFilterResult == false and filterFunc == false then textFilterResult = true end
-
-                if dropdownFilterResult == true and textFilterResult == true then
-                    dataList[j] = dataEntry
-                    j = j + 1
-                end
+            if dropdownFilterResult == true and textFilterResult == true then
+                dataList[j] = dataEntry
+                j = j + 1
             end
-            self:UpdateContentsCount()
         end
-
-
     else
         for i = 1, #masterList do
             dataList[i] = masterList[i]
         end
-        self:UpdateContentsCount()
     end
+
+    self:UpdateContentsCount()
 end
 
 
@@ -279,7 +248,6 @@ function BasicInspectorPanel:initScrollList(control)
     self.compareFunc = false
     self.filterFunc = false
     self.dropdownFilterFunc = false
-    self.dropdownFiltersSelected = {}
     self.masterList = {}
 
     ZO_ScrollList_AddResizeOnScreenResize(list)
@@ -303,8 +271,8 @@ function BasicInspectorPanel:initScrollList(control)
 
     local function onScrollBarMouseUp(selfScrollbarVar, mouseButton, upInside)
         if upInside then
-            valueEdit_CancelThrottled(self.editBox, 100)
-            valueSlider_CancelThrottled(self.sliderControl, 100)
+            self:valueEditCancel(self.editBox)
+            self:valueSliderCancel(self.sliderControl)
         end
     end
     local scrollBarOnMouseUpHandler = scrollBar:GetHandler("OnMouseUp")
@@ -312,19 +280,6 @@ function BasicInspectorPanel:initScrollList(control)
         ZO_PostHookHandler(scrollBar, "OnMouseUp", onScrollBarMouseUp)
     else
         scrollBar:SetHandler("OnMouseUp", onScrollBarMouseUp)
-    end
-
-    local function onScrollBarMouseDown(selfScrollbarVar, mouseButton)
---d("[tbug]onScrollBarMouseDown")
-        valueEdit_CancelThrottled(self.editBox, 100)
-        valueSlider_CancelThrottled(self.sliderControl, 100)
-        hideContextMenus()
-    end
-    local scrollBarOnMouseDownHandler = scrollBar:GetHandler("OnMouseDown")
-    if scrollBarOnMouseDownHandler ~= nil then
-        ZO_PostHookHandler(scrollBar, "OnMouseDown", onScrollBarMouseDown)
-    else
-        scrollBar:SetHandler("OnMouseDown", onScrollBarMouseDown)
     end
 end
 
@@ -366,30 +321,21 @@ local function isMouseCursorRow(row, cursorConstant)
     return false
 end
 
-local blockedTimeStampKeys = {
-    ["_frametime"] = true
-}
-local function isNotBlockedTimeStampKeyOrProp(keyOrProp)
-    if type(keyOrProp) == "string" then
-        local keyLow = strlow(keyOrProp)
-        if not blockedTimeStampKeys[keyLow] and keyLow ~= nil and ((keyLow:match('time') ~= nil or keyLow:match('date') ~= nil)) then
-            return true
-        end
-    end
-    return false
-end
-
 local function isTimeStampRow(row, data, value)
     if row._isTimeStamp then return true end
     local key = data.key
     local prop = data.prop
     local propName = prop and prop.name
 --d(">isTimeStampRow: " ..tos(value) .. ", key: " ..tos(key) .. ", propName: " ..tos(propName))
-    if type(value) == "number" and (value >= earliestTimeStamp and value <= latestTimeStamp) then
-        if isNotBlockedTimeStampKeyOrProp(key) then
-            return true
-        else
-            if isNotBlockedTimeStampKeyOrProp(propName) then
+    if value and type(value) == "number" and (value >= earliestTimeStamp and value <= latestTimeStamp) then
+        if key ~= nil and type(key) == "string" then
+            local keyLow = strlow(key)
+            if keyLow ~= nil and ((keyLow:match('time') ~= nil or keyLow:match('date') ~= nil)) then
+                return true
+            end
+        elseif propName ~= nil and type(propName) == "string"  then
+            local propNameLow = strlow(propName)
+            if propNameLow ~= nil and ((propNameLow:match('time') ~= nil or propNameLow:match('date') ~= nil)) then
                 return true
             end
         end
@@ -484,7 +430,7 @@ tbug._BasicInspectorPanel_onRowMouseEnter = {
                 if height > tbug.maxInspectorTexturePreviewHeight then
                     height = tbug.maxInspectorTexturePreviewHeight
                 end
-                local textureText = zo_iconTextFormatNoSpace(tostring(value), width, height, "", nil)
+                local textureText = zo_iconTextFormatNoSpace(tostring(value, width, height, "", nil))
                 if textureText and textureText ~= "" then
                     ZO_Tooltips_ShowTextTooltip(row, RIGHT, textureText)
                 end
@@ -496,24 +442,15 @@ tbug._BasicInspectorPanel_onRowMouseEnter = {
             elseif isTimeStampRow(row, data, value) then
                 row._isTimeStamp = true
                 --Show formated timestamp text tooltip
-                local noError, resultStr = pcall(function() return osdate("%c", value) end)
-                if noError == true and resultStr ~= nil then
-                    ZO_Tooltips_ShowTextTooltip(row, RIGHT, resultStr)
+                local noError, resultStr = pcall(function() return os.date("%c", value) end)
+                if noError == true then
+
                 end
                 --Add a translation text to descriptor or other relevant SI* constants
             elseif isTranslationTextRow(row, data, value) then
                 local translatedText = GetString(value)
                 if translatedText and translatedText ~= "" then
                     ZO_Tooltips_ShowTextTooltip(row, RIGHT, translatedText)
-                end
-            else
-                --Show table's # of entries as tooltip
-                if type(value) == "table" and value ~= _G then
-                    local tableEntries = NonContiguousCount(value)
-                    if tableEntries ~= nil then
-                        InitializeTooltip(InformationTooltip, row, LEFT, 20, 0, RIGHT)
-                        InformationTooltip:AddLine("#" .. tos(tableEntries) .." entries", "", ZO_TOOLTIP_DEFAULT_COLOR:UnpackRGB())
-                    end
                 end
             end
         end
@@ -560,62 +497,19 @@ end
 
 
 function BasicInspectorPanel:refreshData()
-d("BasicInspectorPanel:refreshData")
+    local dropdownFilterFunc = self.dropdownFilterFunc
+--d("BasicInspectorPanel:refreshData-dropdownFilterFunc: " ..tos(dropdownFilterFunc))
+
+
     if self:readyForUpdate(UPDATE_MASTER) then
-        local doRefreshDirectly = true
-        if libAS ~= nil then
-            local currentPanel = self.currentPanel
-            if currentPanel and currentPanel.control.isGlobalInspector then
-                local currentPanelTabId = getTBUGGlobalInspectorPanelIdByName(currentPanel)
-                if currentPanelTabId ~= nil and panelNames[currentPanelTabId].async == true then
-                    getGlobalInspector = getGlobalInspector or tbug.getGlobalInspector
-                    local globalInspector = getGlobalInspector(true)
-                    if globalInspector ~= nil then
-                        doRefreshDirectly = false
-                        globalInspector:UpdateLoadingState(false)
-
-                        local selfVar = self
-
-                        local start = GetGameTimeMilliseconds()
-
-                        --Use LibAsync tasks to call the functions
-                        local task = libAS:Create("TBug_task-BasicInspector_refreshData")
-                        task:Call(function(p_task)
-d("[Tbug]LibAsync - BasicInspectorPanel - refreshData - Start")
-                            ---First task
-                            d(">MasterList")
-                            selfVar:buildMasterList(p_task)
-
-                        end):Then(function(p_task)
-                            --Then:
-                            d(">>FilterScrollList")
-                            selfVar:filterScrollList(p_task)
-                        end):Then(function(p_task)
-                            --Then
-                            d(">>SortScrollList")
-                            selfVar:sortScrollList()
-                        end):Then(function(p_task)
-                            --Final task
-                            d(">>CommitScrollList")
-                            selfVar:commitScrollList()
-                            globalInspector:UpdateLoadingState(true)
-                        end):Then(function()
-d("<<<<<LibAsync - BasicInspectorPanel - refreshData - End, took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
-                        end)
-                    end
-                end
-            end
-        end
-        if doRefreshDirectly then
-            --d(">MasterList")
-            self:buildMasterList()
-            --d(">>FilterScrollList")
-            self:filterScrollList()
-            --d(">>SortScrollList")
-            self:sortScrollList()
-            --d(">>CommitScrollList")
-            self:commitScrollList()
-        end
+--d(">MasterList")
+        self:buildMasterList()
+--d(">>FilterScrollList")
+        self:filterScrollList()
+--d(">>SortScrollList")
+        self:sortScrollList()
+--d(">>CommitScrollList")
+        self:commitScrollList()
     end
 end
 
@@ -669,24 +563,18 @@ end
 function BasicInspectorPanel:setFilterFunc(filterFunc, forceRefresh)
     forceRefresh = forceRefresh or false
     if tbug.doDebug then d("[TBUG]BasicInspectorPanel:setFilterFunc: " ..tos(filterFunc) .. ", forceRefresh: " ..tos(forceRefresh)) end
---d("[TBUG]BasicInspectorPanel:setFilterFunc: " ..tos(filterFunc) .. ", forceRefresh: " ..tos(forceRefresh))
     if forceRefresh == true or self.filterFunc ~= filterFunc then
---d(">filterFunc change")
         self.filterFunc = filterFunc
         self:refreshFilter(true)
     end
 end
 
-function BasicInspectorPanel:setDropDownFilterFunc(dropdownFilterFunc, selectedDropdownFilters)
+function BasicInspectorPanel:setDropDownFilterFunc(dropdownFilterFunc)
     if tbug.doDebug then d("[TBUG]BasicInspectorPanel:setDropDownFilterFunc: " ..tos(dropdownFilterFunc)) end
 
---tbug._debug = tbug._debug or {}
---tbug._debug.dropdownFiltersSelected = selectedDropdownFilters
-
---d("[TBUG]BasicInspectorPanel:setDropDownFilterFunc: " ..tos(dropdownFilterFunc) .. ", #selectedDropdownFilters: " ..tos(selectedDropdownFilters))
+--d("[TBUG]BasicInspectorPanel:setDropDownFilterFunc: " ..tos(dropdownFilterFunc))
     if self.dropdownFilterFunc ~= dropdownFilterFunc then
         self.dropdownFilterFunc = dropdownFilterFunc
-        self.dropdownFiltersSelected = selectedDropdownFilters
 --d(">refreshing the filters")
         self:refreshFilter(true)
     end

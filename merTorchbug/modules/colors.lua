@@ -121,7 +121,7 @@ function tbug.initColorTable(tableName, callbackName)
             local color = tbug.parseColorDef(val)
             if not color then
                 val = tbug.svDefaults[tableName][key]
-                color = tbug.parseColorDef(val) or ZO_ColorDef:New(val)
+                color = tbug.parseColorDef(val) or ZO_ColorDef:New()
             end
             rawset(tab, key, color)
             return color
@@ -219,7 +219,7 @@ function tbug.parseColorDef(...)
         local hex = strmatch(..., "^ *#(%x+) *$")
         if hex then
             local val = tonumber(hex, 16)
-            local a, r, g, b = 1, 1, 1, 1
+            local a, r, g, b = 1
             if #hex <= 4 then
                 b = 17 * (val % 16) / 255
                 g = 17 * (floor(val / 16) % 16) / 255

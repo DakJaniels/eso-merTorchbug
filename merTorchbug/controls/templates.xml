@@ -1,4 +1,4 @@
-<GuiXml>
+<GuiXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sir.insidi.at/or/schema/esoui.xsd">
 	<Font name="TbugFontGameSmall" font="$(MEDIUM_FONT)|$(KB_13)|soft-shadow-thin" />
 	<Font name="TbugFontGameSmaller" font="$(MEDIUM_FONT)|$(KB_12)|soft-shadow-thin" />
 	<Font name="TbugFontGameSmallerBold" font="$(BOLD_FONT)|$(KB_12)|soft-shadow-thin" />
@@ -23,7 +23,7 @@
 						mouseOver="/esoui/art/buttons/edit_save_over.dds"
 					/>
 					<OnMouseEnter>
-						InitializeTooltip(InformationTooltip, self, BOTTOM, 0, -5, TOP)
+						InitializeTooltip(InformationTooltip, self, TOP, 0, -15)
 						SetTooltipText(InformationTooltip, "Save value")
 					</OnMouseEnter>
 					<OnMouseExit>
@@ -39,7 +39,7 @@
 						mouseOver="/esoui/art/buttons/cancel_over.dds"
 					/>
 					<OnMouseEnter>
-						InitializeTooltip(InformationTooltip, self, BOTTOM, 0, -5, TOP)
+						InitializeTooltip(InformationTooltip, self, TOP, 0, -15)
 						SetTooltipText(InformationTooltip, "Cancel")
 					</OnMouseEnter>
 					<OnMouseExit>
@@ -145,6 +145,10 @@
 			<OnInitialized>
 				self.label = self:GetNamedChild("Label")
 			</OnInitialized>
+			
+			<OnEffectivelyShown>
+				TBUG.SetTemplate(self, self.label)
+			</OnEffectivelyShown>
 			<Controls>
 				<Label name="$(parent)Label" font="ZoFontGameSmall" verticalAlignment="CENTER" tier="LOW" layer="CONTROLS" level="1">
 					<Dimensions y="20" />
@@ -165,10 +169,16 @@
 		</Texture>
 
 		<Control name="tbugTableInspectorHeaderRow" virtual="true" mouseEnabled="true" tier="LOW" layer="CONTROLS" level="1">
-			<Dimensions y="24" />
+			<Dimensions y="24"/>
 			<OnInitialized>
 				self.label = self:GetNamedChild("Label")
 			</OnInitialized>
+			
+			
+			<OnEffectivelyShown>
+				TBUG.SetTemplate(self, self.label)
+			</OnEffectivelyShown>
+			
 			<Controls>
 				<Texture name="$(parent)LabelBg" tier="LOW" layer="BACKGROUND" level="1" color="33666666">
 					<AnchorFill />
@@ -181,12 +191,16 @@
 		</Control>
 
 		<Control name="tbugTableInspectorRow" virtual="true" mouseEnabled="true" tier="LOW" layer="CONTROLS" level="1">
-			<Dimensions y="24" />
+			<Dimensions y="24"/>
 			<OnInitialized>
 				self.cKeyLeft = self:GetNamedChild("KeyLeft")
 				self.cKeyRight = self:GetNamedChild("KeyRight")
 				self.cVal = self:GetNamedChild("Val")
 			</OnInitialized>
+			
+			<OnEffectivelyShown>
+				TBUG.SetTemplate(self, self.cKeyLeft, self.cKeyRight, self.cVal)
+			</OnEffectivelyShown>
 			<Controls>
 				<Texture name="$(parent)HiBg"  tier="LOW" layer="BACKGROUND" level="2">
 					<AnchorFill />
@@ -244,6 +258,9 @@
 				self.cKeyRight = self:GetNamedChild("KeyRight")
 				self.cVal = self:GetNamedChild("Val")
 			</OnInitialized>
+			<OnEffectivelyShown>
+				TBUG.SetTemplate(self, self.cKeyLeft, self.cKeyRight, self.cVal)
+			</OnEffectivelyShown>
 		</Control>
 
 		<Control name="tbugTableInspectorRowScriptHistory" virtual="true" mouseEnabled="true" tier="LOW" layer="CONTROLS" level="1">
@@ -254,6 +271,11 @@
 				self.cVal = self:GetNamedChild("Val")
 				self.cVal2 = self:GetNamedChild("Val2")
 			</OnInitialized>
+
+			
+			<OnEffectivelyShown>
+				TBUG.SetTemplate(self, self.cKeyLeft, self.cKeyRight, self.cVal, self.cVal2)
+			</OnEffectivelyShown>
 			<Controls>
 				<Texture name="$(parent)HiBg" tier="LOW" layer="BACKGROUND" level="2">
 					<AnchorFill />
@@ -263,7 +285,26 @@
 						self:SetVertexColors(VERTEX_POINTS_TOPRIGHT,    0.00, 0.00, 0.00, 0.6)
 						self:SetVertexColors(VERTEX_POINTS_BOTTOMRIGHT, 0.00, 0.00, 0.00, 0.4)
 						self:SetVertexColors(VERTEX_POINTS_BOTTOMLEFT,  0.00, 0.00, 0.00, 0.4)
+						
+						self.cKeyLeft = self:GetNamedChild("KeyLeft")
+						self.cKeyRight = self:GetNamedChild("KeyRight")
+						self.cVal = self:GetNamedChild("Val")
 					</OnInitialized>
+
+					<OnEffectivelyShown>
+						local template = {}
+						if TBUG.savedVars then
+							template = TBUG.savedVars.customTemplate
+						end
+						
+						local font = template.font or 'ZoFontGameSmall'
+						
+						self.cKeyLeft:SetFont(font)
+						self.cKeyRight:SetFont(font)
+						self.cVal:SetFont(font)
+						
+						self:SetHeight(template.height or 25)
+					</OnEffectivelyShown>
 				</Texture>
 				<Texture name="$(parent)KeyBg" color="33666666" tier="LOW" layer="BACKGROUND" level="1">
 					<Anchor point="TOPLEFT" relativePoint="TOPLEFT" />
@@ -334,6 +375,11 @@
 				self.cVal = self:GetNamedChild("Val")
 				self.cVal2 = self:GetNamedChild("Val2")
 			</OnInitialized>
+
+			
+			<OnEffectivelyShown>
+				TBUG.SetTemplate(self, self.cKeyLeft, self.cKeyRight, self.cVal, self.cVal2)
+			</OnEffectivelyShown>
 			<Controls>
 				<Texture name="$(parent)HiBg" tier="LOW" layer="BACKGROUND" level="2">
 					<AnchorFill />
@@ -458,15 +504,6 @@
 					<Dimensions y="20" x="100" />
 					<Anchor point="BOTTOMRIGHT" relativeTo="$(parent)EventsButton" relativePoint="TOPLEFT" />
 				</Label>
-				<!-- Loading spinner -->
-				<Control name="$(parent)LoadingSpinner" inherits="ZO_Loading" tier="DT_CONTROLS" layer="DL_OVERLAY" level="99" resizeToFitConstrains="X" hidden="true">
-					<Anchor point="CENTER" relativeTo="$(parent)Title" relativePoint="CENTER" offsetY="5"/>
-					<Dimensions y="20" />
-					<OnInitialized>
-						ZO_Loading_Initialize(self, GetString(SI_INTERFACE_OPTIONS_DEFERRED_LOADING_TEXT))
-					</OnInitialized>
-				</Control>
-
 				<!--
 				<Control name="$(parent)ContentsTop" tier="LOW" layer="CONTROLS" level="1">
 					<Anchor point="BOTTOMLEFT" relativeTo="$(parent)TitleBg" relativePoint="BOTTOMLEFT" offsetY="2" />
@@ -514,6 +551,7 @@
 				</Label>
 			</Controls>
 		</TopLevelControl>
+
 
 	</Controls>
 </GuiXml>

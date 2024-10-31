@@ -43,6 +43,11 @@ local defaults =
 
     enableMouseRightAndLeftAndSHIFTInspector = true,
     enableMouseRightAndLeftAndSHIFTInspectorDuringCombat = false,
+	
+	customTemplate = {
+		font = 'ZoFontGameSmall', 
+		height = 24
+	}
 }
 tbug.svDefaults = defaults
 

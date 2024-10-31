@@ -8,10 +8,10 @@ local GlobalInspector = classes.GlobalInspector .. BasicInspector
 
 local panelClassName2panelClass = tbug.panelClassNames
 local panelNames = tbug.panelNames
-local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
 
 local checkIfItemLinkFunc = tbug.checkIfItemLinkFunc
-local sortItemLinkFunctions = tbug.sortItemLinkFunctions
+local functionsItemLink = tbug.functionsItemLink
+local functionsItemLinkSorted = tbug.functionsItemLinkSorted
 
 --------------------------------
 
@@ -40,8 +40,7 @@ tbug.panelClassNames["globalInspector"] = GlobalInspectorPanel
 local RT = tbug.RT
 
 
-function GlobalInspectorPanel:buildMasterList(libAsyncTask)
-d("[TBug]GlobalInspector:buildMasterList")
+function GlobalInspectorPanel:buildMasterList()
     self:buildMasterListSpecial()
 end
 
@@ -59,28 +58,13 @@ function GlobalInspector:__init__(id, control)
     self.title:SetText("GLOBALS")
 
     self.panels = {}
-
-    self.loadingSpinner = control:GetNamedChild("LoadingSpinner")
-    self:UpdateLoadingState(not self.g_refreshRunning)
-
     self:connectPanels(nil, false, false, nil)
     self:selectTab(1)
 end
 
-function GlobalInspector:UpdateLoadingState(doHide)
-    if self.loadingSpinner == nil then return end
---d("[tbug]GlobalInspector:UpdateLoadingState - doHide: " ..tostring(doHide))
-    if doHide then
-        self.loadingSpinner:Hide()
-    else
-        self.loadingSpinner:Show()
-    end
-    self.loading = not doHide
-end
-
 
 function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
---d("[TBUG]GlobalInspector:connectFilterComboboxToPanel-tabIndex: " ..tostring(tabIndex))
+--d("[TBUG]GlobalInspector:connectFilterComboboxToPanel-tabIndex:" ..tostring(tabIndex))
     --Prepare the combobox filters at the panel
     local comboBoxCtrl = self.filterComboBox
     local comboBox = ZO_ComboBox_ObjectFromContainer(comboBoxCtrl)
@@ -98,8 +82,13 @@ function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
     if tabIndexType == "number" then
         --All okay
     elseif tabIndexType == "string" then
-        --Get pael's tabIndex number
-        tabIndex = getTBUGGlobalInspectorPanelIdByName(tabIndex)
+        --Get number
+        for k,v in ipairs(panelNames) do
+            if v.key == tabIndex or v.name == tabIndex then
+                tabIndex = k
+                break
+            end
+        end
     else
         --Error
         return
@@ -110,29 +99,15 @@ function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
     if not panelData then return end
 
     if panelData.comboBoxFilters == true then
-        --Get the filter data to add to the combobox - TOOD: Different filters, by panel!
+        --Get the filter data to add to the combobox - TOOD: Different filtrs by panel!
         local filterDataToAdd = tbug.filterComboboxFilterTypesPerPanel[tabIndex]
 --TBUG._filterDataToAdd = filterDataToAdd
-        if not ZO_IsTableEmpty(filterDataToAdd) then
-            --Add the filter data to the combobox's dropdown
-            for controlType, controlTypeName in pairs(filterDataToAdd) do
-                if type(controlType) == "number" and controlType > -1 then
-                    local entry = comboBox:CreateItemEntry(controlTypeName)
-                    entry.filterType = controlType
-                    comboBox:AddItem(entry)
-                end
-            end
-        end
-        --Update the (last) selected entries (if any filtered before)
-        local panelOfComboboxFilter = self.panels[panelData.key] --Get the panel of the tab with tabIndex
-        local dropdownFiltersSelected = panelOfComboboxFilter.dropdownFiltersSelected
-        local ignoreCallback = true
-        if not ZO_IsTableEmpty(dropdownFiltersSelected) then
-            for selectedFilterType, wasSelected in pairs(dropdownFiltersSelected) do
-                if wasSelected then
---d(">selected comboboxFilter filterType before: " ..tostring(selectedFilterType))
-                    comboBox:SetSelectedItemByEval(function(item) return item.filterType == selectedFilterType end, ignoreCallback)
-                end
+        --Add the filter data to the combobox's dropdown
+        for controlType, controlTypeName in pairs(filterDataToAdd) do
+            if type(controlType) == "number" and controlType > -1 then
+                local entry = comboBox:CreateItemEntry(controlTypeName)
+                entry.filterType = controlType
+                comboBox:AddItem(entry)
             end
         end
         comboBoxCtrl:SetHidden(false)
@@ -162,7 +137,6 @@ function GlobalInspector:makePanel(title, panelData)
 end
 
 function GlobalInspector:connectPanels(panelName, rebuildMasterList, releaseAllTabs, tabIndex)
-d("[TBug]GlobalInspector:connectPanels - panelName: " .. tostring(panelName) ..", rebuildMasterList: " .. tostring(rebuildMasterList))
     rebuildMasterList = rebuildMasterList or false
     releaseAllTabs = releaseAllTabs or false
     if not self.panels then return end
@@ -178,23 +152,17 @@ d("[TBug]GlobalInspector:connectPanels - panelName: " .. tostring(panelName) .."
             --d(">connectPanels-panelName: " ..tos(panelName) .. ", tabIndex: " ..tos(tabIndex))
             --d(">>make panel for v.key: " ..tos(v.key) .. ", v.name: " ..tos(v.name))
             self.panels[v.key] = self:makePanel(v.name, v)
-            --[[
-            --Do not refresh ALL panels in the loop each time!
             if rebuildMasterList == true then
                 self:refresh()
             end
-            ]]
         --Use the tab's name / or at creation of all tabs -> we will get here
         else
             if panelName and panelName ~= "" then
                 if v.name == panelName then
                     self.panels[v.key] = self:makePanel(v.name, v)
-                    --[[
-                    --Do not refresh ALL panels here. They should be refreshed either way as their tab gets selected?!
                     if rebuildMasterList == true then
                         self:refresh()
                     end
-                    ]]
                     return
                 end
             else
@@ -205,69 +173,73 @@ d("[TBug]GlobalInspector:connectPanels - panelName: " .. tostring(panelName) .."
     end
 
     if rebuildMasterList == true then
-d(">[TBug]GlobalInspector:connectPanels -> Calling refresh of all tabs!")
         self:refresh()
     end
 end
 
-local function pushToMasterlist(masterList, dataType, key, value)
-    local data = {key = key, value = value}
-    local n = #masterList + 1
-    masterList[n] = ZO_ScrollList_CreateDataEntry(dataType, data)
-end
-
 function GlobalInspector:refresh()
-d("[TBug]GlobalInspector:refresh")
-
     local panels       = self.panels
-    local panelClasses = panels.classes:clearMasterList(_G) --Set's the subject to _G
-    local controls     = panels.controls:clearMasterList(_G)  --Set's the subject to _G
-    local fonts = panels.fonts:clearMasterList(_G)  --Set's the subject to _G
-    local functions = panels.functions:clearMasterList(_G)  --Set's the subject to _G
-    local objects = panels.objects:clearMasterList(_G)  --Set's the subject to _G
-    local constants = panels.constants:clearMasterList(_G)  --Set's the subject to _G
+    local panelClasses = panels.classes:clearMasterList(_G)
+    local controls     = panels.controls:clearMasterList(_G)
+    local fonts = panels.fonts:clearMasterList(_G)
+    local functions = panels.functions:clearMasterList(_G)
+    functionsItemLink = {}
+    functionsItemLinkSorted = {}
+    local objects = panels.objects:clearMasterList(_G)
+    local constants = panels.constants:clearMasterList(_G)
 
-    local itemLinkFunctionsUpdated = false
+    local function push(masterList, dataType, key, value)
+        local data = {key = key, value = value}
+        local n = #masterList + 1
+        masterList[n] = ZO_ScrollList_CreateDataEntry(dataType, data)
+    end
 
-    --Refresh ALL tab's data!
     for k, v in zo_insecureNext, _G do
         local tv = type(v)
         if tv == "userdata" then
             if v.IsControlHidden then
-                pushToMasterlist(controls, RT.GENERIC, k, v)
+                push(controls, RT.GENERIC, k, v)
             elseif v.GetFontInfo then
-                pushToMasterlist(fonts, RT.FONT_OBJECT, k, v)
+                push(fonts, RT.FONT_OBJECT, k, v)
             else
-                pushToMasterlist(objects, RT.GENERIC, k, v)
+                push(objects, RT.GENERIC, k, v)
             end
         elseif tv == "table" then
             if rawget(v, "__index") then
-                pushToMasterlist(panelClasses, RT.GENERIC, k, v)
+                push(panelClasses, RT.GENERIC, k, v)
             else
-                pushToMasterlist(objects, RT.GENERIC, k, v)
+                push(objects, RT.GENERIC, k, v)
             end
         elseif tv == "function" then
-            pushToMasterlist(functions, RT.GENERIC, k, v)
-            --Check if functionName is starting with IsItemLink or GetItemLink or CheckItemLink or *Itemlink*
+            push(functions, RT.GENERIC, k, v)
+            --Check if functionName is starting with IsItemLink or GetItemLink or CheckItemLink
             --and add them to the itemLinkFunctions table for later context menu usage
             -->Will add it to tbug.functionsItemLink
-            local l_updated = checkIfItemLinkFunc(k, v) --> Should have been filled in glookup.lua already while parsing the _G table. Only adding missing ones here
-            if l_updated == true then itemLinkFunctionsUpdated = true end
+            checkIfItemLinkFunc(k, v)
         elseif tv ~= "string" or type(k) ~= "string" then
-            pushToMasterlist(constants, RT.GENERIC, k, v)
+            push(constants, RT.GENERIC, k, v)
         elseif IsPrivateFunction(k) then
-            pushToMasterlist(functions, RT.GENERIC, k, "function: private")
+            push(functions, RT.GENERIC, k, "function: private")
         elseif IsProtectedFunction(k) then
-            pushToMasterlist(functions, RT.GENERIC, k, "function: protected")
+            push(functions, RT.GENERIC, k, "function: protected")
         else
-            pushToMasterlist(constants, RT.GENERIC, k, v)
+            push(constants, RT.GENERIC, k, v)
         end
     end
 
-    if itemLinkFunctionsUpdated == true then
-        sortItemLinkFunctions()
+    --functions panel: ItemLink functions were found? Sort them by name now
+    functionsItemLink = tbug.functionsItemLink
+    if not ZO_IsTableEmpty(functionsItemLink) then
+--d("[tbug]found itemLink functions: " ..tostring(NonContiguousCount(functionsItemLink)))
+        local entryCount = 0
+        functionsItemLinkSorted = tbug.functionsItemLinkSorted
+        for k, _ in pairs(functionsItemLink) do
+            entryCount = entryCount + 1
+--d(">entryCount added: " ..tostring(entryCount) .. " - name: " ..tostring(k))
+            functionsItemLinkSorted[entryCount] = k
+        end
+        tsort(functionsItemLinkSorted)
     end
-
 
     --Also check TableInspectorPanel:buildMasterListSpecial() for the special types of masterLists!
     panels.dialogs:bindMasterList(_G.ESO_Dialogs, RT.GENERIC)

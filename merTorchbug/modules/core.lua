@@ -1,10 +1,5 @@
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
-local strfind = string.find
-local strlower = string.lower
-local strlen = string.len
-local strsub = string.sub
-
 --Mouse over control (MOC) - Number of opened tabs
 tbug.numMOCTabs = 0
 
@@ -27,32 +22,28 @@ local tostring = tostring
 local strupper = string.upper
 local strgmatch = string.gmatch
 local tins = table.insert
-local tsort = table.sort
-
-local osdate = os.date
-
-local prefixForLeftKey = tbug.prefixForLeftKey
-local prefixForLeftKeyLen = strlen(prefixForLeftKey)
 
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
 local excludeTypes = { [CT_INVALID_TYPE] = true }
-local panelNames = tbug.panelNames
-
 local getControlType
 local doNotGetParentInvokerNameAttributes = tbug.doNotGetParentInvokerNameAttributes
 local tbug_glookup = tbug.glookup
 local tbug_glookupEnum = tbug.glookupEnum
-local functionsItemLink = tbug.functionsItemLink
-local functionsItemLinkSorted = tbug.functionsItemLinkSorted
-
 
 ------------------------------------------------------------------------------------------------------------------------
 local function throttledCall(callbackName, timer, callback, ...)
     if not callbackName or callbackName == "" or not callback then return end
-    local args = ... ~= nil and  {...} or {}
+    local args
+    if ... ~= nil then
+        args = {...}
+    end
     local function Update()
         EM:UnregisterForUpdate(callbackName)
-        callback(unpack(args))
+        if args then
+            callback(unpack(args))
+        else
+            callback()
+        end
     end
     EM:UnregisterForUpdate(callbackName)
     EM:RegisterForUpdate(callbackName, timer, Update)
@@ -67,18 +58,6 @@ local function hideContextMenus()
 end
 tbug.HideContextMenus = hideContextMenus
 
-local function hideLoadingSpinner(control, doHide)
-    if control and control.isGlobalInspector == true then
-        --d("[Tbug]hideLoadingSpinner - isGlobalInspector: true, doHide: " ..tostring(doHide))
-        --Show the loading spinner at the global inspector
-        local globalInspector = tbug.getGlobalInspector()
-        if globalInspector ~= nil then
-            globalInspector:UpdateLoadingState(doHide)
-        end
-    end
-end
-tbug.hideLoadingSpinner = hideLoadingSpinner
-
 local function strsplit(inputstr, sep)
    sep = sep or "%s" --whitespace
    local t={}
@@ -90,7 +69,6 @@ end
 tbug.strSplit = strsplit
 
 local function isSplittableString(str, sepparator)
-    if type(str) ~= "string" then return false, nil end
     local splitTab = strsplit(str, sepparator)
     local isSplittable = (splitTab ~= nil and #splitTab > 1 and true) or false
     return isSplittable, splitTab
@@ -103,11 +81,11 @@ local function findUpperCaseCharsAndReturnOffsetsTab(str)
     local counter = 20
 
     local foundPos = 1
-    local strLen = strlen(str)
+    local strLen = string.len(str)
 
     while counter >= 1 do
         local startPos, endPos
-        startPos, endPos = strfind(str, "%u+", foundPos)
+        startPos, endPos = string.find(str, "%u+", foundPos)
         --d("startPos: " ..tostring(startPos) .. ", endPos: " ..tostring(endPos))
         if startPos ~= nil and endPos  ~= nil then
             --Check if the offsets of any uppercase found characters are directly after the before one
@@ -204,24 +182,6 @@ function tbug.getControlType(control, enumType)
 end
 getControlType = tbug.getControlType
 
-local function getGlobalInspectorPanelTabName(tabName)
-    if type(tabName) ~= "string" then return end
-    for k, globalInspectrTabData in ipairs(panelNames) do
-        if globalInspectrTabData.key == tabName or globalInspectrTabData.name == tabName then
-            return globalInspectrTabData.key
-        end
-    end
-    return
-end
-tbug.getGlobalInspectorPanelTabName = getGlobalInspectorPanelTabName
-
-local function getTBUGGlobalInspectorPanelIdByName(tabKeyOrName)
-    for panelId, panelData in ipairs(panelNames) do
-        if panelData.key == tabKeyOrName or panelData.name == tabKeyOrName then return panelId end
-    end
-    return
-end
-tbug.getTBUGGlobalInspectorPanelIdByName = getTBUGGlobalInspectorPanelIdByName
 
 function tbug.bind1(func, arg1)
     return function(...)
@@ -470,13 +430,7 @@ function tbug.isSupportedInventoryRowPattern(controlName)
 end
 
 function tbug.formatTime(timeStamp)
-    if type(timeStamp) ~= "number" then return end
-    return osdate("%F %T.%%03.0f %z", timeStamp / 1000):format(timeStamp % 1000)
-end
-
-function tbug.formatTimestamp(timeStamp)
-    if type(timeStamp) ~= "number" then return end
-    return osdate("%c", timeStamp)
+    return os.date("%F %T.%%03.0f %z", timeStamp / 1000):format(timeStamp % 1000)
 end
 
 --Get the zone and subZone string from the given map's tile texture (or the current's map's tile texture name)
@@ -509,51 +463,23 @@ function tbug.getZoneInfo(mapTileTextureName, patternToUse)
 end
 
 --Check if not the normal data.key should be returned (and used for e.g. a string search or the RAW string copy context
--- menu), but any other of the data entries (e.g. data.value._eventName for the "Events" tab)
-local function checkForSpecialDataEntryAsKey(data, isRightKey)
-    --Use the left key's text
+-- menu) but any other of the data entries (e.g. data.value._eventName for the "Events" tab)
+local function checkForSpecialDataEntryAsKey(data)
     local key = data.key
---d("[TBub]checkForSpecialDataEntryAsKey - key: " ..tostring(key) .. ", isRightKey: " ..tostring(isRightKey))
     local dataEntry = data.dataEntry
-    if isRightKey == nil then
-        local typeId = dataEntry.typeId
-        local specialReturnValue = rtSpecialReturnValues[typeId]
-        local specialPlaceWhereTheStringsIsFound = (specialReturnValue ~= nil and specialReturnValue.replaceName) or nil
-        if specialPlaceWhereTheStringsIsFound ~= nil then
-            local funcToGetStr, err = zo_loadstring("return data." .. specialPlaceWhereTheStringsIsFound)
-            if err ~= nil or not funcToGetStr then
---d(">err or funcToGetStr is nil")
-                return key
-            else
-                local filterEnv = setmetatable({}, {__index = tbug.env})
-                setfenv(funcToGetStr, filterEnv)
-                filterEnv.data = data
-                local isOkay
-                isOkay, key = pcall(funcToGetStr)
---d(">isOkay: " ..tostring(isOkay) .. ", key: " ..tostring(key))
-                if not isOkay then return key end
-
-                local typeReplaceFunc = type(specialReturnValue.replaceFunc)
-                if typeReplaceFunc == "function" then
-                    local replaceFunc = specialReturnValue.replaceFunc() --get tbug.formatTime
---d(">specialReturnValue.replaceFunc CALL")
-                    key = replaceFunc(key)
-                end
-            end
-        end
-    else
-        --Copy the right's key text
-        if isRightKey == true then
-            local rowCtrl = dataEntry.control
-            local cKeyRight = rowCtrl and rowCtrl.cKeyRight
-            if cKeyRight and cKeyRight.GetText then
-                key = cKeyRight:GetText()
-
-                --Strip the <-- prefix for a rightKey that shows the value of the leftKey, and not for the value
-                if strfind(key, prefixForLeftKey, 1, true) == 1 then
-                    key = strsub(key, prefixForLeftKeyLen-1)
-                end
-            end
+    local typeId = dataEntry.typeId
+    local specialPlaceWhereTheStringsIsFound = rtSpecialReturnValues[typeId]
+    if specialPlaceWhereTheStringsIsFound ~= nil then
+        local funcToGetStr, err = zo_loadstring("return data." .. specialPlaceWhereTheStringsIsFound)
+        if err ~= nil or not funcToGetStr then
+            return key
+        else
+            local filterEnv = setmetatable({}, {__index = tbug.env})
+            setfenv(funcToGetStr, filterEnv)
+            filterEnv.data = data
+            local isOkay
+            isOkay, key = pcall(funcToGetStr)
+            if not isOkay then return key end
         end
     end
     return key
@@ -631,36 +557,21 @@ function tbug.getRelevantNameForCall(refVar)
     return relevantNameForCallOfRefVar
 end
 
-
---Check if the key/value is any itemLink API function like GetItemLink*. or IsItemLink* or CheckItemLink*
-local function checkIfItemLinkFunc(key, value)
---d("[tbug]checkIfItemLinkFunc-k: " ..tos(key) ..", value: " .. tos(value))
-    --Already in the table?
-    if functionsItemLink[key] == nil then
-        --Does the function name contain any itemlink?
-        if strfind(strlower(key), "itemlink", 1, true) then
-            functionsItemLink[key] = value
-            return true
-        end
+function tbug.SetTemplate(control, ...)
+	local template = tbug.savedVars.customTemplate
+	
+	local font = template.font[index or 1] or 'ZoFontGameSmall'
+	local font = template.font or 'ZoFontGameSmall'
+	
+    for i = 1, select("#", ...) do
+        local label = select(i, ...)
+		label:SetFont(font)
     end
-    return false
-end
-tbug.checkIfItemLinkFunc = checkIfItemLinkFunc
 
-local function sortItemLinkFunctions()
-    --functions panel: ItemLink functions were found? Sort them by name now
-    if not ZO_IsTableEmpty(functionsItemLink) then
---d("[tbug]found itemLink functions: " ..tostring(NonContiguousCount(functionsItemLink)))
-        local entryCount = 0
-        for k, _ in pairs(functionsItemLink) do
-            entryCount = entryCount + 1
---d(">entryCount added: " ..tostring(entryCount) .. " - name: " ..tostring(k))
-            functionsItemLinkSorted[entryCount] = k
-        end
-        tsort(functionsItemLinkSorted)
-    end
+	control:SetHeight(template.height or 25)
 end
-tbug.sortItemLinkFunctions = sortItemLinkFunctions
+
+
 
 ------------------------------------------------------------------------------------------------------------------------
 
