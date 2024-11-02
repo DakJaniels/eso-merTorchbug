@@ -313,6 +313,13 @@ tbug.textureNamesSupported = {
     ["iconFile"] = true,
 }
 
+--Table inspector row key's string which relate to timestamps -> Should show the timestamp value as cKeyRight date formatted then
+tbug.timeStampKeyPatterns = {
+    [1] = "timestamp",
+    --[2] = "gametime",
+    --[3] = "frametime",
+}
+
 --The inspector title constants/patterns
 tbug.titlePatterns = {
     --Inspector title templates

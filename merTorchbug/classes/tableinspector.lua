@@ -4,6 +4,7 @@ local ton = tonumber
 local strformat = string.format
 local strsub = string.sub
 local strfind = string.find
+local strlow = string.lower
 local type = type
 local osdate = os.date
 
@@ -12,6 +13,8 @@ local prefixForLeftKey = tbug.prefixForLeftKey
 local RT = tbug.RT
 local rtSpecialReturnValues = tbug.RTSpecialReturnValues
 local localizationStringKeyText = rtSpecialReturnValues[RT.LOCAL_STRING].replaceName
+local tbEvents = tbug.Events
+local lookupEventName = tbEvents.eventList
 
 local typeColors = tbug.cache.typeColors
 local typeSafeLess = tbug.typeSafeLess
@@ -290,6 +293,18 @@ function TableInspectorPanel:initScrollList(control)
 
     local inspector = self.inspector
 
+    local timeStampKeyPatterns = tbug.timeStampKeyPatterns
+    local function checkForTimeStampKey(k, v)
+        local isKeyTimeStamp = false
+        if v >= -2147483647 and v <= 2147483647 then
+            for _, timeStampKeyPattern in ipairs(timeStampKeyPatterns) do
+                isKeyTimeStamp = (strfind(strlow(k), strlow(timeStampKeyPattern), 1, true) ~= nil and true) or false
+                if isKeyTimeStamp == true then return true end
+            end
+        end
+        return isKeyTimeStamp
+    end
+
     --Check for special key colors!
     local function checkSpecialKeyColor(keyValue)
         if keyValue == "event" or not tbug_specialKeyToColorType then return end
@@ -379,12 +394,15 @@ function TableInspectorPanel:initScrollList(control)
                     setupValue(row.cVal, tv, v .. " |r|cFFFFFF(\""..valueGetString.."\")|r", false)
                 end
             else
-                if isNumber and tk == "string" then
-                    local isKeyTimeStamp = (string.find(string.lower(k), "timestamp", 1, true) ~= nil and true) or false
+                if isNumber and tk == "string" and row.cKeyRight then
+                    local isKeyTimeStamp = checkForTimeStampKey(k, v)
                     if isKeyTimeStamp == true then
-                        if row.cKeyRight then
-                            row.cKeyRight:SetText(osdate("%c", v))
-                            isKeyRightUsed = true
+                        row.cKeyRight:SetText(osdate("%c", v))
+                        isKeyRightUsed = true
+                    else
+                        lookupEventName = lookupEventName or tbEvents.eventList
+                        if lookupEventName ~= nil and lookupEventName[v] ~= nil and strfind(strlow(k), "eventid", 1, true) ~= nil then
+                            setupValue(row.cKeyRight, "event", lookupEventName[v])
                         end
                     end
                 end
