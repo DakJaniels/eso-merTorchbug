@@ -371,7 +371,6 @@ function TableInspectorPanel:initScrollList(control)
 
 --d("[tbug]setupGeneric-k: " ..tos(k) ..", v: " ..tos(v) ..", tk: " ..tos(tk) ..", tv: " ..tos(tv) .. ", rightKey: " .. tos(row.cKeyRight))
 
-
         if v == nil or tv == "boolean" or isNumber then
             --Key is "text" and value is number? Show the GetString() for the text
             if k and isNumber and k ~= 0 and isGetStringKey(k)==true then
@@ -380,6 +379,15 @@ function TableInspectorPanel:initScrollList(control)
                     setupValue(row.cVal, tv, v .. " |r|cFFFFFF(\""..valueGetString.."\")|r", false)
                 end
             else
+                if isNumber and tk == "string" then
+                    local isKeyTimeStamp = (string.find(string.lower(k), "timestamp", 1, true) ~= nil and true) or false
+                    if isKeyTimeStamp == true then
+                        if row.cKeyRight then
+                            row.cKeyRight:SetText(osdate("%c", v))
+                            isKeyRightUsed = true
+                        end
+                    end
+                end
                 setupValue(row.cVal, tv, v)
             end
         elseif tv == "string" then
