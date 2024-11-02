@@ -696,11 +696,32 @@ function tbug.checkIfInspectorPanelIsShown(inspectorName, panelName)
 end
 local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
 
+local function refreshTitleAndTabs(selfVar)
+    if selfVar == nil then return end
+    local titleCtrl = selfVar.title
+    if titleCtrl ~= nil then
+        tbug_SetTemplate(titleCtrl, titleCtrl)
+    end
+    tbug_SetTemplate(selfVar.tabs)
+end
+tbug.RefreshTitleAndTabs = refreshTitleAndTabs
+
 local totalRefreshFunc = function(totalRefresh, selfVar)
     totalRefresh = totalRefresh or false
     if totalRefresh == true and selfVar ~= nil then
+        refreshTitleAndTabs(selfVar)
+
+        selfVar.contents:SetHidden(true)
+        selfVar.contentsBg:SetHidden(true)
+        selfVar.bg:SetHidden(true)
+        selfVar.activeBg:SetHidden(true)
         selfVar.tabScroll:SetHidden(true)
         selfVar.title:SetHidden(true)
+
+        selfVar.contents:SetHidden(false)
+        selfVar.contentsBg:SetHidden(false)
+        selfVar.bg:SetHidden(false)
+        selfVar.activeBg:SetHidden(false)
         selfVar.tabScroll:SetHidden(false)
         selfVar.title:SetHidden(false)
     end
@@ -789,22 +810,7 @@ local function refreshVisibleInspectors(globalInspectorToo, totalRefresh)
 end
 tbug.RefreshVisibleInspectors = refreshVisibleInspectors
 
-tbug._titleAndTabs = {}
-local function refreshTitleAndTabs(selfVar)
-    if selfVar == nil then return end
 
-tbug._titleAndTabs[selfVar] = {
-    title = selfVar.title,
-    tabs = selfVar.tabs,
-}
-
-    local titleCtrl = selfVar.title
-    if titleCtrl ~= nil then
-        tbug_SetTemplate(titleCtrl, titleCtrl)
-    end
-    tbug_SetTemplate(selfVar.tabs)
-end
-tbug.RefreshTitleAndTabs = refreshTitleAndTabs
 
 
 --Select the tab at the global inspector
