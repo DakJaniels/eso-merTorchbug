@@ -32,6 +32,7 @@ local typeColors = tbug.cache.typeColors
 
 local getControlName = tbug.getControlName
 local tbug_glookup = tbug.glookup
+local tbug_SetTemplate = tbug.SetTemplate
 
 local throttledCall = tbug.throttledCall
 local FilterFactory = tbug.FilterFactory
@@ -1298,6 +1299,7 @@ function TabWindow:insertTab(name, panel, index, inspectorTitle, useInspectorTit
     tabControl.label:SetColor(self.inactiveColor:UnpackRGBA())
     tabControl.label:SetText(useInspectorTitle == true and inspectorTitle or name)
 
+
     panel.control:SetHidden(true)
     panel.control:SetParent(self.contents)
     panel.control:ClearAnchors()
@@ -1318,6 +1320,7 @@ function TabWindow:insertTab(name, panel, index, inspectorTitle, useInspectorTit
         nextControl:SetAnchor(BOTTOMLEFT, tabControl, BOTTOMRIGHT)
     end
 
+    tbug_SetTemplate(tabControl, tabControl)
     return tabControl
 end
 
@@ -1531,6 +1534,7 @@ function TabWindow:selectTab(key, isMOC)
         self.activeBg:SetAnchor(TOPLEFT, tabControl)
         self.activeBg:SetAnchor(BOTTOMRIGHT, tabControl)
         self.activeBg:SetHidden(false)
+        tbug_SetTemplate(tabControl, tabControl)
         self:scrollToTab(tabControl)
 
         local firstInspector = tabControl.panel.inspector
@@ -1547,6 +1551,7 @@ function TabWindow:selectTab(key, isMOC)
                     tabControl.titleText = titleText
                 end
                 title:SetText(titleText)
+                tbug_SetTemplate(title, title)
             end
         end
     else
@@ -1664,6 +1669,7 @@ end
 function TabWindow:setTabTitle(key, title)
     local tabControl = self:getTabControl(key)
     tabControl.label:SetText(title)
+    tbug_SetTemplate(tabControl, tabControl)
 end
 
 
