@@ -59,6 +59,8 @@ local tbug_getKeyOfObject = tbug.getKeyOfObject
 local getControlName = tbug.getControlName
 local isControl = tbug.isControl
 local throttledCall = tbug.throttledCall
+local tbug_SetTemplate = tbug.SetTemplate
+local tbug_getActiveTabPanel = tbug.GetActiveTabPanel
 
 
 local tbug_inspect
@@ -694,46 +696,43 @@ function tbug.checkIfInspectorPanelIsShown(inspectorName, panelName)
 end
 local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
 
+local totalRefreshFunc = function(totalRefresh, selfVar)
+    totalRefresh = totalRefresh or false
+    if totalRefresh == true and selfVar ~= nil then
+        selfVar.tabScroll:SetHidden(true)
+        selfVar.title:SetHidden(true)
+        selfVar.tabScroll:SetHidden(false)
+        selfVar.title:SetHidden(false)
+    end
+end
 
-local function iterateInspectorsWithCallback(globalInspectorToo, firstInspectorSeparate, callbackFunc)
+
+local function iterateInspectorsWithCallback(globalInspectorToo, firstInspectorSeparate, callbackFunc, totalRefresh)
+    if type(callbackFunc) ~= "function" then return end
     globalInspectorToo = globalInspectorToo or false
     firstInspectorSeparate = firstInspectorSeparate or false
-    if type(callbackFunc) ~= "function" then return end
+    totalRefresh = totalRefresh or false
 
     local globalInspector, firstInspector
     if globalInspectorToo == true then
         globalInspector = tbug.getGlobalInspector(true)
         callbackFunc(globalInspector, nil, nil, nil)
+        totalRefreshFunc(totalRefresh, globalInspector)
     end
 
     if firstInspectorSeparate == true then
         firstInspector = tbug.firstInspector
         callbackFunc(firstInspector, nil, nil, nil)
+        totalRefreshFunc(totalRefresh, firstInspector)
     end
 
     local inspectorWindows = tbug.inspectorWindows
     if inspectorWindows ~= nil and #inspectorWindows > 0 then
         for windowIdx, windowData in ipairs(inspectorWindows) do
             callbackFunc(windowData, windowIdx, globalInspector, firstInspector)
+            totalRefreshFunc(totalRefresh, windowData)
         end
     end
-end
-
-local callbackFuncForInspectorsBase = function(callbackFunc, inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
-    if inspectorData == nil then return end
-    if type(callbackFunc) ~= "function" then return end
-
-    if inspectorWindowIndex == nil and globalInspector == nil and firstInspector == nil then
-        return callbackFunc(inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
-    elseif inspectorWindowIndex ~= nil then
-        if (firstInspector == nil or (firstInspector ~= nil and inspectorData ~= firstInspector))
-                and (globalInspector == nil or (globalInspector ~= nil and inspectorData ~= globalInspector)) then
-            if inspectorData.control ~= nil and not inspectorData.control:IsHidden() then
-                return callbackFunc(inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
-            end
-        end
-    end
-    return false
 end
 
 local callbackFuncForClose = function(inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
@@ -758,8 +757,8 @@ end
 local callbackFuncForRefresh = function(inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
     if inspectorData == nil then return end
     if inspectorWindowIndex == nil and globalInspector == nil and firstInspector == nil then
-        if inspectorData.refreh ~= nil then
-            inspectorData.refreh()
+        if inspectorData.refresh ~= nil then
+            inspectorData:refresh()
             return true
         end
     elseif inspectorWindowIndex ~= nil then
@@ -767,11 +766,12 @@ local callbackFuncForRefresh = function(inspectorData, inspectorWindowIndex, glo
                 and (globalInspector == nil or (globalInspector ~= nil and inspectorData ~= globalInspector)) then
             if inspectorData.control ~= nil and not inspectorData.control:IsHidden() then
                 if inspectorData.control.refresh ~= nil then
-                    inspectorData.control:refreh()
-                elseif inspectorData.control.refresh ~= nil then
+                    inspectorData.control:refresh()
+                    return true
+                elseif inspectorData.refresh ~= nil then
                     inspectorData:refresh()
+                    return true
                 end
-                return true
             end
         end
     end
@@ -783,11 +783,28 @@ local function closeAllInspectors(globalInspectorToo)
 end
 tbug.closeAllInspectors = closeAllInspectors
 
-local function refreshVisibleInspectors(globalInspectorToo)
+local function refreshVisibleInspectors(globalInspectorToo, totalRefresh)
     --Loop over the inspectors shown and refresh them
-    iterateInspectorsWithCallback(globalInspectorToo, true, callbackFuncForRefresh)
+    iterateInspectorsWithCallback(globalInspectorToo, true, callbackFuncForRefresh, totalRefresh)
 end
 tbug.RefreshVisibleInspectors = refreshVisibleInspectors
+
+tbug._titleAndTabs = {}
+local function refreshTitleAndTabs(selfVar)
+    if selfVar == nil then return end
+
+tbug._titleAndTabs[selfVar] = {
+    title = selfVar.title,
+    tabs = selfVar.tabs,
+}
+
+    local titleCtrl = selfVar.title
+    if titleCtrl ~= nil then
+        tbug_SetTemplate(titleCtrl, titleCtrl)
+    end
+    tbug_SetTemplate(selfVar.tabs)
+end
+tbug.RefreshTitleAndTabs = refreshTitleAndTabs
 
 
 --Select the tab at the global inspector

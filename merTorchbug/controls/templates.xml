@@ -455,6 +455,15 @@
 
 		<TopLevelControl name="tbugTabWindow" virtual="true" mouseEnabled="true" movable="true" resizeHandleSize="6" tier="LOW" layer="CONTROLS" level="1">
 			<Dimensions x="600" y="800" />
+			<OnInitialized>
+				self.title = self:GetNamedChild("Title")
+				self.tabs = self:GetNamedChild("Tabs")
+			</OnInitialized>
+
+			<OnEffectivelyShown>
+				TBUG.RefreshTitleAndTabs(self)
+			</OnEffectivelyShown>
+
 			<Anchor point="TOPLEFT" offsetX="10" offsetY="50" />
 			<HitInsets left="0" top="0" right="0" bottom="0" />
 			<Controls>

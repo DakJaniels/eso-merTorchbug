@@ -100,6 +100,8 @@ tbug.isSplittableString = isSplittableString
 
 local function findUpperCaseCharsAndReturnOffsetsTab(str)
     local retTab = {}
+    if type(str) ~= "string" then return retTab end
+
     --Only repeat the string.find 20 times at max (prevent endless loop)
     local counter = 20
 
@@ -668,33 +670,46 @@ tbug.sortItemLinkFunctions = sortItemLinkFunctions
 function tbug.GetDefaultTemplate()
     return uiTemplates[1] --default
 end
-local getDefaultTemplate = tbug.GetDefaultTemplate
+local tbug_getDefaultTemplate = tbug.GetDefaultTemplate
 
 function tbug.GetTemplate()
-	local template = tbug.savedVars.customTemplate or getDefaultTemplate()
+	local template = tbug.savedVars.customTemplate or tbug_getDefaultTemplate()
     return template
 end
-local getTemplate = tbug.GetTemplate
+local tbug_getTemplate = tbug.GetTemplate
 
 function tbug.GetTemplateFontAndHeight()
-    local template = getTemplate()
+    local template = tbug_getTemplate()
     if template == nil then return 'ZoFontGameSmall', 23 end
     local font = template.font or 'ZoFontGameSmall'
     local height = template.height or 23
     return font, height
 end
+local tbug_GetTemplateFontAndHeight = tbug.GetTemplateFontAndHeight
 
 function tbug.SetTemplate(control, ...)
 	--local template = tbug.savedVars.customTemplate or getDefaultTemplate()
-    local font, height = tbug.GetTemplateFontAndHeight()
-    for i = 1, select("#", ...) do
-        local label = select(i, ...)
-        if label ~= nil and label.SetFont ~= nil then
-            label:SetFont(font)
+    local font, height = tbug_GetTemplateFontAndHeight()
+    local numEntries = select("#", ...) or 0
+    if numEntries > 0 then
+        for i = 1, numEntries do
+            local label = select(i, ...)
+            if label ~= nil and label.SetFont ~= nil then
+                label:SetFont(font)
+            end
         end
     end
-
-	control:SetHeight(height)
+    if control ~= nil then
+        if control.SetHeight ~= nil and height ~= nil then
+            control:SetHeight(height)
+        elseif type(control) == "table" then
+            for _, ctrl in ipairs(control) do
+                if ctrl ~= nil and ctrl.label ~= nil and ctrl.label.SetFont ~= nil then
+                    ctrl.label:SetFont(font)
+                end
+            end
+        end
+    end
 end
 
 

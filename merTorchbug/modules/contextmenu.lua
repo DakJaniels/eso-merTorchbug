@@ -65,6 +65,7 @@ local eventsInspector
 local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
 local tbug_refreshInspectorPanel = tbug.refreshInspectorPanel
 local refreshVisibleInspectors = tbug.RefreshVisibleInspectors
+local refreshTitleAndTabs = tbug.RefreshTitleAndTabs
 local clickToIncludeAgainStr = " (Click to include)"
 
 local tbug_endsWith = tbug.endsWith
@@ -2157,7 +2158,8 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
                         --d("[tbug]buttonGroupOnSelectionChangedCallback")
 						setTemplateFont(selectedTemplate)
                         --Refresh the visible inspectors so the font's update, and the table rows update their height
-                        refreshVisibleInspectors(true)
+                        refreshTitleAndTabs(selfInspector)
+                        refreshVisibleInspectors(true, true)
 					end,
                     additionalData = { UItemplate = templateData } --pass in the currrntly looped templateData to the item
 				})

@@ -359,6 +359,7 @@ local function getActiveTabPanel(selfVar)
     if not selfVar or not selfVar.activeTab then return end
     return selfVar.activeTab.panel
 end
+tbug.GetActiveTabPanel = getActiveTabPanel
 
 ------------------------------------------------------------------------------------------------------------------------
 -- Search history
@@ -755,15 +756,17 @@ function TabWindow:__init__(control, id)
     toggleSizeButton.onClicked[MOUSE_BUTTON_INDEX_LEFT] = function(buttonCtrl)
         if buttonCtrl then
             buttonCtrl.toggleState = not buttonCtrl.toggleState
-            if not buttonCtrl.toggleState then
+
+            local toggleState = buttonCtrl.toggleState
+            if not toggleState then
                 toggleSizeButton:fitText("^", 12)
                 toggleSizeButton:setMouseOverBackgroundColor(0.4, 0.4, 0, 0.4)
             else
                 toggleSizeButton:fitText("v", 12)
                 toggleSizeButton:setMouseOverBackgroundColor(0.4, 0.4, 0, 0.4)
             end
-            refreshButton:setEnabled(not buttonCtrl.toggleState)
-            refreshButton:setMouseEnabled(not buttonCtrl.toggleState)
+            refreshButton:setEnabled(not toggleState)
+            refreshButton:setMouseEnabled(not toggleState)
 
             local sv
             local globalInspector = tbug.getGlobalInspector()
@@ -780,7 +783,7 @@ function TabWindow:__init__(control, id)
                 widthDefault    = 800
                 heightDefault   = 600
             end
-            if not buttonCtrl.toggleState == true then
+            if not toggleState == true then
                 if sv and sv.winWidth and sv.winHeight then
                     width, height = sv.winWidth, sv.winHeight
                 else
@@ -804,22 +807,22 @@ function TabWindow:__init__(control, id)
                 if panel and panel.onResizeUpdate then
                     panel:onResizeUpdate(height)
                 end
-                selfVar.contents:SetHidden(buttonCtrl.toggleState)
-                selfVar.contentsBg:SetHidden(buttonCtrl.toggleState)
-                selfVar.tabScroll:SetHidden(buttonCtrl.toggleState)
-                selfVar.bg:SetHidden(buttonCtrl.toggleState)
-                selfVar.activeBg:SetHidden(buttonCtrl.toggleState)
-                selfVar.contents:SetMouseEnabled(not buttonCtrl.toggleState)
-                selfVar.contentsBg:SetMouseEnabled(not buttonCtrl.toggleState)
-                selfVar.tabScroll:SetMouseEnabled(not buttonCtrl.toggleState)
-                selfVar.activeBg:SetMouseEnabled(not buttonCtrl.toggleState)
-                if selfVar.contentsCount then selfVar.contentsCount:SetHidden(buttonCtrl.toggleState) end
+                selfVar.contents:SetHidden(toggleState)
+                selfVar.contentsBg:SetHidden(toggleState)
+                selfVar.tabScroll:SetHidden(toggleState)
+                selfVar.bg:SetHidden(toggleState)
+                selfVar.activeBg:SetHidden(toggleState)
+                selfVar.contents:SetMouseEnabled(not toggleState)
+                selfVar.contentsBg:SetMouseEnabled(not toggleState)
+                selfVar.tabScroll:SetMouseEnabled(not toggleState)
+                selfVar.activeBg:SetMouseEnabled(not toggleState)
+                if selfVar.contentsCount then selfVar.contentsCount:SetHidden(toggleState) end
 
                 if selfVar.filterButton then
                     local filterBar = selfVar.filterButton:GetParent()
                     if filterBar then
-                        filterBar:SetHidden(buttonCtrl.toggleState)
-                        filterBar:SetMouseEnabled(not buttonCtrl.toggleState)
+                        filterBar:SetHidden(toggleState)
+                        filterBar:SetMouseEnabled(not toggleState)
                     end
                 end
 
