@@ -702,9 +702,9 @@ local function refreshTitleAndTabs(selfVar)
     if selfVar == nil then return end
     local titleCtrl = selfVar.title
     if titleCtrl ~= nil then
-        tbug_SetTemplate(titleCtrl, titleCtrl)
+        tbug_SetTemplate(nil, titleCtrl)
     end
-    tbug_SetTemplate(selfVar.tabs)
+    tbug_SetTemplate(selfVar.tabs, nil)
 end
 tbug.RefreshTitleAndTabs = refreshTitleAndTabs
 

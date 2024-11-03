@@ -696,16 +696,27 @@ function tbug.SetTemplate(control, ...)
             local label = select(i, ...)
             if label ~= nil and label.SetFont ~= nil then
                 label:SetFont(font)
+                if label.SetHeight ~= nil then
+                    label:SetHeight(height)
+                end
             end
         end
     end
+
+    --Update the controls's height and if it's no control check if it's a table and apply the height to all of it entries (if these are controls -> e.g. tabScroll's tabs)
     if control ~= nil then
-        if control.SetHeight ~= nil and height ~= nil then
+        if height ~= nil and control.SetHeight ~= nil then
             control:SetHeight(height)
         elseif type(control) == "table" then
             for _, ctrl in ipairs(control) do
-                if ctrl ~= nil and ctrl.label ~= nil and ctrl.label.SetFont ~= nil then
-                    ctrl.label:SetFont(font)
+                local label = ctrl.label or ctrl
+                if label ~= nil then
+                    if label.SetHeight ~= nil then
+                        label:SetHeight(height)
+                    end
+                    if label.SetFont ~= nil then
+                        label:SetFont(font)
+                    end
                 end
             end
         end
