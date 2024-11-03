@@ -9,7 +9,7 @@ local tos = tostring
 
 local osdate = os.date
 
-local libAS = LibAsync1
+local libAS = nil --LibAsync --> Disabled 20241103
 
 local UPDATE_NONE = 0
 local UPDATE_SCROLL = 1
@@ -26,6 +26,8 @@ local possibleTranslationTextKeys = tbug.possibleTranslationTextKeys
 
 local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
 local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
+
+local tbug_SetTemplate = tbug.SetTemplate
 
 local hideContextMenus = tbug.HideContextMenus
 local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
@@ -130,6 +132,7 @@ function BasicInspectorPanel:addDataType(typeId, templateName, controlHeight, sh
         row:SetHandler("OnMouseExit", rowMouseExit)
         row:SetHandler("OnMouseUp", rowMouseUp)
         row:SetHandler("OnMouseDoubleClick", rowMouseDoubleClick)
+        --tbug_SetTemplate(self, self.cKeyLeft, self.cKeyRight, self.cVal, self.cVal2) --> See templates.xml <OnEffectivelyShown>
         return row
     end
 
