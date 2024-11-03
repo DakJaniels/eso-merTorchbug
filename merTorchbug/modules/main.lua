@@ -705,6 +705,7 @@ local function refreshTitleAndTabs(selfVar)
         tbug_SetTemplate(nil, titleCtrl)
     end
     tbug_SetTemplate(selfVar.tabs, nil)
+    tbug_SetTemplate(selfVar.tabScroll, nil)
 end
 tbug.RefreshTitleAndTabs = refreshTitleAndTabs
 
