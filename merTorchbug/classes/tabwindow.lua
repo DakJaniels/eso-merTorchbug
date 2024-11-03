@@ -1296,8 +1296,10 @@ function TabWindow:insertTab(name, panel, index, inspectorTitle, useInspectorTit
     end
     tabControl.pKeyStr = tabKeyStr
 
-    tabControl.label:SetColor(self.inactiveColor:UnpackRGBA())
-    tabControl.label:SetText(useInspectorTitle == true and inspectorTitle or name)
+    local tabLabel = tabControl.label
+    tabLabel:SetColor(self.inactiveColor:UnpackRGBA())
+    tabLabel:SetText(useInspectorTitle == true and inspectorTitle or name)
+    tbug_SetTemplate(tabLabel, tabLabel)
 
 
     panel.control:SetHidden(true)
@@ -1320,7 +1322,6 @@ function TabWindow:insertTab(name, panel, index, inspectorTitle, useInspectorTit
         nextControl:SetAnchor(BOTTOMLEFT, tabControl, BOTTOMRIGHT)
     end
 
-    tbug_SetTemplate(tabControl, tabControl)
     return tabControl
 end
 
@@ -1534,7 +1535,9 @@ function TabWindow:selectTab(key, isMOC)
         self.activeBg:SetAnchor(TOPLEFT, tabControl)
         self.activeBg:SetAnchor(BOTTOMRIGHT, tabControl)
         self.activeBg:SetHidden(false)
-        tbug_SetTemplate(tabControl, tabControl)
+
+        local tabLabel = tabControl.label
+        tbug_SetTemplate(tabLabel, tabLabel)
         self:scrollToTab(tabControl)
 
         local firstInspector = tabControl.panel.inspector
@@ -1668,8 +1671,9 @@ end
 
 function TabWindow:setTabTitle(key, title)
     local tabControl = self:getTabControl(key)
-    tabControl.label:SetText(title)
-    tbug_SetTemplate(tabControl, tabControl)
+    local tabLabel = tabControl.label
+    tabLabel:SetText(title)
+    tbug_SetTemplate(tabLabel, tabLabel)
 end
 
 
