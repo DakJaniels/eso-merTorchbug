@@ -1558,6 +1558,8 @@ function tbug.UpdateAddOnsAndLibraries()
                 local libWasAdded = false
                 for _, nameToCheckInGlobal in ipairs(checkNameTable) do
                     if _G[nameToCheckInGlobal] ~= nil then
+                        local isFunction = (type(_G[nameToCheckInGlobal]) == "function" and true) or false
+
                         --d(">>>global was found!")
                         tbug.LibrariesData[addonName] = {
                             name = addonName,
@@ -1565,8 +1567,11 @@ function tbug.UpdateAddOnsAndLibraries()
                             dir = addonData.dir,
                             globalVarName = nameToCheckInGlobal,
                             globalVar = _G[nameToCheckInGlobal],
+                            globalVarIsFunction = (isFunction == true and true) or nil,
                         }
-                        _G[nameToCheckInGlobal]._directory = addonData.dir
+                        if not isFunction then
+                            _G[nameToCheckInGlobal]._directory = addonData.dir
+                        end
                         libWasAdded = true
                         break -- exit the loop
                     end
