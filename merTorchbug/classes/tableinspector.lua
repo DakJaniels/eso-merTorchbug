@@ -98,7 +98,7 @@ d(">getSpecialTabTitleCleanAtInspectorKeyConstant - tabTitleClean: " ..tos(tabTi
     --Actual tab was maybe the "last one" as code here was run before the new got updated
     --So check the saved data of last clicked row
     local lastRowClickedDataOfTableInspector = getLastRowClickedData("table")
-    if lastRowClickedDataOfTableInspector ~= nil then
+    if lastRowClickedDataOfTableInspector ~= nil and lastRowClickedDataOfTableInspector.data ~= nil then
         local clickedKey = lastRowClickedDataOfTableInspector.data.key
 --d(">getSpecialTabTitleCleanAtInspectorKeyConstant - clickedKey: " ..tos(clickedKey))
         if clickedKey ~= nil and clickedKey ~= "" then
