@@ -39,8 +39,10 @@ local strlen = string.len
 local zo_ls = zo_loadstring
 local tins = table.insert
 local trem = table.remove
+local tsort = table.sort
 local tcon = table.concat
 local zo_strf = zo_strformat
+local zo_strspl = zo_strsplit
 
 local firstToUpper = tbug.firstToUpper
 local startsWith = tbug.startsWith
@@ -1526,7 +1528,7 @@ function tbug.UpdateAddOnsAndLibraries()
         end
         --Update library data for output in tbug "Libs" globalInspector tab
         if libs and #libs > 0 then
-            table.sort(libs, compareBySubTablesKeyName)
+            tsort(libs, compareBySubTablesKeyName)
             --Check if a global variable exists with the same name as the librarie's name
             for _, addonData in ipairs(libs) do
                 local addonName = addonData.name
@@ -1541,7 +1543,7 @@ function tbug.UpdateAddOnsAndLibraries()
                     if addonName ~= firstCharUpperCaseName then
                         tins(checkNameTable, firstCharUpperCaseName)
                     end
-                    local nameStr, versionNumber = zo_strsplit("-", addonName)
+                    local nameStr, versionNumber = zo_strspl("-", addonName)
                     if versionNumber and versionNumber ~= "" then
                         versionNumber = ton(versionNumber)
                         local nameStrWithVersion = nameStr .. tos(versionNumber)
@@ -1626,7 +1628,7 @@ function tbug.refreshScenes()
     for fragmentName, fragmentData in pairs(fragments) do
         table.insert(orderFragmentsTab, fragmentName)
     end
-    table.sort(orderFragmentsTab)
+    tsort(orderFragmentsTab)
     for _, fragmentName in ipairs(orderFragmentsTab) do
         tbug.FragmentsOutput[fragmentName] = fragments[fragmentName]
     end

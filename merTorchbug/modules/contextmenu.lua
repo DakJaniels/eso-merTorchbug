@@ -1294,7 +1294,12 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     keyStr = p_data.keyText
                         or (
                                 (isSpecialTableKeySoUseKeyNumber and valueIsTable == true and tos(key))
-                            or  (not isSpecialTableKeySoUseKeyNumber and ((p_data.value ~= nil and ((valueIsTable == true and (p_data.value.name or (p_data.value._timeStamp ~= nil and tbug.formatTimestamp(p_data.value._timeStamp)))) or p_data.value))))
+                            or  (not isSpecialTableKeySoUseKeyNumber and (
+                                    (p_data.value ~= nil and (
+                                            ( valueIsTable == true and (p_data.value.name or (p_data.value._timeStamp ~= nil and tbug.formatTimestamp(p_data.value._timeStamp))))
+                                            or (not valueIsTable and p_data.value) )
+                                    )  )
+                                )
                     ) or tos(key)
                 end
 
