@@ -10,6 +10,9 @@
 		<Button name="tbugTextButton" virtual="true" inherits="ZO_DefaultTextButton"
 				font="ZoFontGameSmall" horizontalAlignment="CENTER" verticalAlignment="CENTER" tier="LOW" layer="CONTROLS" level="1">
 			<Dimensions x="20" y="20" />
+			<OnEffectivelyShown>
+				TBUG.SetTemplate(self, self)
+			</OnEffectivelyShown>
 		</Button>
 
 		<Slider name="tbugValueSlider" inherits="ZO_Slider" virtual="true" tier="LOW" layer="CONTROLS" level="1">
