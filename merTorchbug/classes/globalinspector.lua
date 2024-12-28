@@ -242,8 +242,10 @@ function GlobalInspector:refresh()
             end
         elseif tv == "table" then
             if rawget(v, "__index") then
+                v.__isClass = true
                 pushToMasterlist(panelClasses, RT.GENERIC, k, v)
             else
+                v.__isObject = true
                 pushToMasterlist(objects, RT.GENERIC, k, v)
             end
         elseif tv == "function" then

@@ -470,6 +470,19 @@ local possibleTranslationTextKeys = {
 }
 tbug.possibleTranslationTextKeys = possibleTranslationTextKeys
 
+local classIdentifierKeys = {
+    ["__isClass"] = true, -- added by tbug in global inspector buildMasterList
+    ["__isAbstractClass"] = true,
+    ["__parentClasses"] = true,
+}
+tbug.classIdentifierKeys = classIdentifierKeys
+
+local objectIdentifierKeys = {
+    ["__isObject"] = true, -- added by tbug in global inspector buildMasterList
+}
+tbug.objectIdentifierKeys = objectIdentifierKeys
+
+
 --LibScrollableMenu context menu default options
 tbug.defaultScrollableContextMenuOptions = {
     visibleRowsDropdown =   15,

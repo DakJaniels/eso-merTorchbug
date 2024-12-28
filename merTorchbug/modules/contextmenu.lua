@@ -15,6 +15,8 @@ local EM = EVENT_MANAGER
 local searchURLs              = tbug.searchURLs
 local tbug_GetDefaultTemplate = tbug.GetDefaultTemplate
 local tbug_GetTemplate        = tbug.GetTemplate
+local tbug_getControlName     = tbug.getControlName
+local tbug_glookup
 
 --LibScrollableMenu
 --local headerEntryColor = ZO_ColorDef:New(GetInterfaceColor(INTERFACE_COLOR_TYPE_TEXT_COLORS, INTERFACE_TEXT_COLOR_GAMEPAD_CATEGORY_HEADER))
@@ -32,6 +34,9 @@ local tbug_inspectorSelectTabByName = tbug.inspectorSelectTabByName
 
 local globalInspectorDialogTabKey = getGlobalInspectorPanelTabName("dialogs")
 local globalInspectorFunctionsTabKey = getGlobalInspectorPanelTabName("functions")
+
+local classIdentifierKeys = tbug.classIdentifierKeys
+local objectIdentifierKeys = tbug.objectIdentifierKeys
 
 --local throttledCall = tbug.throttledCall
 local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
@@ -344,25 +349,39 @@ local searchExternalURL = tbug.searchExternalURL
 
 
 --Show the "Scripts" tab and put the key/value, and if it's a function an opening and closing () behind it, to the "test script" editbox
-function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType)
+function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, isClass, isObject)
     if not p_self or not p_row or not p_data or isKey == nil then return end
     isFunctionsDataType = isFunctionsDataType or false
+    isClass = isClass or false
+    isObject = isObject or false
+
     local scriptStr = ""
+    local key, value = p_data.key, p_data.value
     if isKey then
         --Key
-        local key = p_data.key
         scriptStr = tos(key)
     else
         --Value
-        local value = p_data.value
         scriptStr = tos(value)
     end
     if scriptStr == "" then return end
 
+
+    tbug_glookup = tbug_glookup or tbug.glookup
+    if isClass or isObject then
+        local lookupName = ((p_self.subjectName ~= nil and p_self.subjectName) or (p_self.subject ~= nil and tbug_glookup(p_self.subject))) or nil
+        if lookupName ~= nil and lookupName ~= "_G" then
+            scriptStr = tos(lookupName) .. ":" .. scriptStr
+        end
+    end
+
+    if not isFunctionsDataType and value ~= nil and type(value) == "function" then
+        isFunctionsDataType = true
+    end
     if isFunctionsDataType then
         scriptStr = scriptStr .. "( )"
     end
---d("[tbug]useForScript - scriptStr: " .. tos(scriptStr) .. ", isFunction: " .. tos(isFunctionsDataType))
+    --d("[tbug]useForScript - scriptStr: " .. tos(scriptStr) .. ", isFunction: " .. tos(isFunctionsDataType))
 
     globalInspector = globalInspector or tbug.getGlobalInspector()
     local panels = globalInspector ~= nil and globalInspector.panels
@@ -1170,6 +1189,28 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
+local function  addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, p_self, p_row, p_data, p_isFunctionsDataType)
+    tbug._debugAddScriptContextMenu = {
+        p_key, p_self, p_row, p_data, p_isFunctionsDataType
+    }
+
+    local subject = p_self.subject
+    if subject == nil then return end
+
+    for key, _ in zo_insecureNext, subject do
+        if classIdentifierKeys[key] then
+            AddCustomScrollableMenuEntry("Use class:key as script", function() useForScript(p_self, p_row, p_data, true, p_isFunctionsDataType, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+            return
+        elseif objectIdentifierKeys[key] then
+            AddCustomScrollableMenuEntry("Use object:key as script", function() useForScript(p_self, p_row, p_data, true, p_isFunctionsDataType, false, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+            return
+        end
+    end
+
+
+end
+
+
 --Row context menu at inspectors
 --Custom context menu entry creation for inspector rows / LibScrollableMenu support as of version 1.7
 function tbug.buildRowContextMenuData(p_self, p_row, p_data, p_contextMenuForKey, mouseIsOverRightKey)
@@ -1242,7 +1283,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
             if key == nil and rightKey ~= nil then
                 if (mouseIsOverRightKey ~= nil and mouseIsOverRightKey == true) or rightKey.GetText then
                     local rightKeyText = rightKey:GetText()
---d(">1right key found - text: " ..tos(rightKeyText))
+                    --d(">1right key found - text: " ..tos(rightKeyText))
                     if rightKeyText ~= "" then
                         AddCustomScrollableMenuEntry("Copy right key RAW to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, true, nil, true, nil, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                         doShowMenu = true --to show right key entries
@@ -1250,8 +1291,8 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 end
 
 
-            ------------------------------------------------------------------------------------------------------------------------
-            ------------------------------------------------------------------------------------------------------------------------
+                ------------------------------------------------------------------------------------------------------------------------
+                ------------------------------------------------------------------------------------------------------------------------
             elseif key ~= nil then
                 local rowActionsSuffix = ""
                 local keyNumber = ton(key)
@@ -1273,7 +1314,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 ---if mouseIsOverRightKey then
                 if (mouseIsOverRightKey ~= nil and mouseIsOverRightKey == true) or (rightKey ~= nil and rightKey.GetText) then
                     local rightKeyText = rightKey:GetText()
---d(">2right key found - text: " ..tos(rightKeyText))
+                    --d(">2right key found - text: " ..tos(rightKeyText))
                     if rightKeyText ~= "" then
                         AddCustomScrollableMenuEntry("-", noCallbackFunc, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
                         AddCustomScrollableMenuEntry("Copy right key RAW to chat", function() setChatEditTextFromContextMenu(p_self, p_row, p_data, true, nil, true, nil, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
@@ -1290,7 +1331,8 @@ tbug._contextMenuLast.canEditValue =  canEditValue
 
                 --Use as script entries
                 AddCustomScrollableMenuEntry("Script actions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
-                AddCustomScrollableMenuEntry("Use key as script", function() useForScript(p_self, p_row, p_data, true, isFunctionsDataType) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                AddCustomScrollableMenuEntry("Use key as script", function() useForScript(p_self, p_row, p_data, true, isFunctionsDataType, false) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                addScriptContextMenuEntriesForClassOrObjectIdentifierKey(key, p_self, p_row, p_data, isFunctionsDataType)
 
                 --Search entries
                 local searchValuesAdded = {}
