@@ -286,21 +286,45 @@ function ScriptsInspectorPanel:BuildWindowTitleForTableKey(data)
     return winTitle
 end
 
+local wasDoubleClicked = false
+local function resetDoubleClick(delay)
+    --d("[tbug]resetDoubleClick-wasDoubleClicked: " ..tos(wasDoubleClicked))
+    delay = delay or 10
+    if not wasDoubleClicked then return end
+    zo_callLater(function()
+        --d(">>resetDoubleClick-wasDoubleClicked: " ..tos(wasDoubleClicked))
+        wasDoubleClicked = false
+    end, delay)
+end
+
+local function doubleClickedCheckForScriptLoad(selfVar, row, data)
+    zo_callLater(function()
+        --d("[tbug]doubleClickedCheckForScriptLoad-wasDoubleClicked: " ..tos(wasDoubleClicked))
+        if wasDoubleClicked == true then
+            --Reset next frame so the next left click (2nd click of the double click) is not executing anything
+            resetDoubleClick(10)
+            return
+        end
+        loadScriptIntoScriptEditBoxNow(selfVar, row, data)
+    end, 200)
+end
+
 function ScriptsInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shift)
---d("[tbug]ScriptsInspectorPanel:onRowClicked")
+    --d("[tbug]ScriptsInspectorPanel:onRowClicked-wasDoubleClicked: " .. tos(wasDoubleClicked))
     if mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
         TableInspectorPanel.onRowClicked(self, row, data, mouseButton, ctrl, alt, shift)
     else
         if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
+            if wasDoubleClicked then return end
             --Is the script editbox empty? If not we need to press SHIFT to load the script into it and overwrite the text
             local scriptEditBox = self.scriptEditBox
             if scriptEditBox ~= nil then
                 if scriptEditBox:GetText() ~= "" then
                     if shift == true then
-                        loadScriptIntoScriptEditBoxNow(self, row, data)
+                        doubleClickedCheckForScriptLoad(self, row, data)
                     end
                 else
-                    loadScriptIntoScriptEditBoxNow(self, row, data)
+                    doubleClickedCheckForScriptLoad(self, row, data)
                 end
             end
         end
@@ -308,13 +332,11 @@ function ScriptsInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
 end
 
 function ScriptsInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, alt, shift)
-    ctrl = ctrl or IsControlKeyDown()
-    alt = alt or IsAltKeyDown()
-    shift = shift or IsShiftKeyDown()
-
-df("tbug:ScriptsInspectorPanel:onRowDoubleClicked - shift: " .. tos(shift))
+--("tbug:ScriptsInspectorPanel:onRowDoubleClicked - shift: " .. tos(shift) .. ", wasDoubleClicked: " .. tos(wasDoubleClicked))
     hideContextMenus()
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
+        wasDoubleClicked = true
+
         local sliderCtrl = self.sliderControl
 
         local value = data.value
@@ -342,6 +364,8 @@ df("tbug:ScriptsInspectorPanel:onRowDoubleClicked - shift: " .. tos(shift))
                 end
             end
         end
+
+        resetDoubleClick(250)
     end
 end
 

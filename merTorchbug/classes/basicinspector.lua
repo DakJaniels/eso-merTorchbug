@@ -119,9 +119,10 @@ function BasicInspectorPanel:addDataType(typeId, templateName, controlHeight, sh
         self:onRowMouseUp(row, data, ...)
     end
 
-    local function rowMouseDoubleClick(row, ...)
+    local function rowMouseDoubleClick(row, button, ctrl, alt, shift)
+--df("[tbug]rowMouseDoubleClick-button: %s, upInside: %s, ctrl: %s, alt: %s, shift: %s", tos(button), tos(ctrl), tos(alt), tos(shift))
         local data = ZO_ScrollList_GetData(row)
-        self:onRowMouseDoubleClick(row, data, ...)
+        self:onRowMouseDoubleClick(row, data, button, ctrl, alt, shift)
     end
 
     local function rowCreate(pool)
@@ -555,7 +556,7 @@ function BasicInspectorPanel:onRowMouseUp(row, data, mouseButton, upInside, ...)
     end
 end
 
-function BasicInspectorPanel:onRowMouseDoubleClick(row, data, mouseButton, upInside, ...)
+function BasicInspectorPanel:onRowMouseDoubleClick(row, data, mouseButton, ...)
     self:onRowDoubleClicked(row, data, mouseButton, ...)
 end
 
