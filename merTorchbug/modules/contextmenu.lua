@@ -354,6 +354,7 @@ function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, is
     isFunctionsDataType = isFunctionsDataType or false
     isClass = isClass or false
     isObject = isObject or false
+    tbug_glookup = tbug_glookup or tbug.glookup
 
     local scriptStr = ""
     local key, value = p_data.key, p_data.value
@@ -366,18 +367,17 @@ function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, is
     end
     if scriptStr == "" then return end
 
-
-    tbug_glookup = tbug_glookup or tbug.glookup
-    if isClass or isObject then
-        local lookupName = ((p_self.subjectName ~= nil and p_self.subjectName) or (p_self.subject ~= nil and tbug_glookup(p_self.subject))) or nil
-        if lookupName ~= nil and lookupName ~= "_G" then
-            scriptStr = tos(lookupName) .. ":" .. scriptStr
-        end
-    end
-
     if not isFunctionsDataType and value ~= nil and type(value) == "function" then
         isFunctionsDataType = true
     end
+
+    if isClass or isObject then
+        local lookupName = ((p_self.subjectName ~= nil and p_self.subjectName) or (p_self.subject ~= nil and tbug_glookup(p_self.subject))) or nil
+        if lookupName ~= nil and lookupName ~= "_G" then
+            scriptStr = tos(lookupName) .. (isFunctionsDataType and ":" or ".") .. scriptStr
+        end
+    end
+
     if isFunctionsDataType then
         scriptStr = scriptStr .. "( )"
     end
@@ -1195,14 +1195,14 @@ local function  addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, 
     }
 
     local subject = p_self.subject
-    if subject == nil then return end
+    if subject == nil or subject == _G then return end
 
     for key, _ in zo_insecureNext, subject do
         if classIdentifierKeys[key] then
-            AddCustomScrollableMenuEntry("Use class:key as script", function() useForScript(p_self, p_row, p_data, true, p_isFunctionsDataType, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+            AddCustomScrollableMenuEntry("Use class[key] as script", function() useForScript(p_self, p_row, p_data, true, p_isFunctionsDataType, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
             return
         elseif objectIdentifierKeys[key] then
-            AddCustomScrollableMenuEntry("Use object:key as script", function() useForScript(p_self, p_row, p_data, true, p_isFunctionsDataType, false, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+            AddCustomScrollableMenuEntry("Use object[key] as script", function() useForScript(p_self, p_row, p_data, true, p_isFunctionsDataType, false, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
             return
         end
     end
