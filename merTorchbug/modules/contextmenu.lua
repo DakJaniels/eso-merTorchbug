@@ -1195,7 +1195,7 @@ local function  addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, 
     }
 
     local subject = p_self.subject
-    if subject == nil or subject == _G then return end
+    if subject == nil or subject == _G and subject ~= EsoStrings then return end
 
     for key, _ in zo_insecureNext, subject do
         if classIdentifierKeys[key] then
