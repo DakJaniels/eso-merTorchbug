@@ -1005,6 +1005,7 @@ local function getPrefixOfItemLinkFunctionNames(functionNamesTab, prefixDepth, p
                             upperCaseFunctionNameSubmenuEntriesIndex = upperCaseFunctionNameSubmenuEntriesIndex + 1
                             upperCaseFunctionNamePrefixes[subStrName] = upperCaseFunctionNameSubmenuEntriesIndex
     --d(">>index NEW: " ..tos(upperCaseFunctionNameSubmenuEntriesIndex))
+                            local a, b, c = p_self, p_row, p_data
                             upperCaseFunctionNameSubmenuEntries[upperCaseFunctionNameSubmenuEntriesIndex] = {
                                 submenuName = subStrName,
                                 submenuEntries = {
@@ -1013,12 +1014,14 @@ local function getPrefixOfItemLinkFunctionNames(functionNamesTab, prefixDepth, p
                                         label = itemLinkFuncName,
                                         callback = function() --start chat input with that func name and an itemLink of the bagId and slotIndex of the context menu
 --d(">callback itemlink func: " ..tos(itemLinkFuncName))
-                                            setChatEditTextFromContextMenu(p_self, p_row, p_data, false, itemLinkFuncName, false, true)
+                                            setChatEditTextFromContextMenu(a, b, c, false, itemLinkFuncName, false, true)
                                         end,
                                     }
                                 },
                             }
                         else
+                            local a, b, c = p_self, p_row, p_data
+
                             local indexOfSubmenuEntry = upperCaseFunctionNamePrefixes[subStrName]
     --d(">>EXISTING index: " ..tos(indexOfSubmenuEntry))
                             local currentSubmenuEntries = upperCaseFunctionNameSubmenuEntries[indexOfSubmenuEntry].submenuEntries
@@ -1028,7 +1031,7 @@ local function getPrefixOfItemLinkFunctionNames(functionNamesTab, prefixDepth, p
                                 label = itemLinkFuncName,
                                 callback = function() --start chat input with that func name and an itemLink of the bagId and slotIndex of the context menu
 --d(">callback2 itemlink func: " ..tos(itemLinkFuncName))
-                                    setChatEditTextFromContextMenu(p_self, p_row, p_data, false, itemLinkFuncName, false, true)
+                                    setChatEditTextFromContextMenu(a, b, c, false, itemLinkFuncName, false, true)
                                 end,
                             }
 
@@ -1043,12 +1046,13 @@ local function getPrefixOfItemLinkFunctionNames(functionNamesTab, prefixDepth, p
         else
 --d("!!!! >No Uppercase function name!")
             --No uppercase characters in the function name? Directly add it
+            local a, b, c = p_self, p_row, p_data
             noUpperCaseFunctionNameSubmenuEntries[#noUpperCaseFunctionNameSubmenuEntries + 1] = {
                 name = itemLinkFuncName,
                 label = itemLinkFuncName,
                 callback = function() --start chat input with that func name and an itemLink of the bagId and slotIndex of the context menu
 --d(">callback3 itemlink func: " ..tos(itemLinkFuncName))
-                    setChatEditTextFromContextMenu(p_self, p_row, p_data, false, itemLinkFuncName, false, true)
+                    setChatEditTextFromContextMenu(a, b, c , false, itemLinkFuncName, false, true)
                 end,
             }
         end
@@ -1059,6 +1063,9 @@ local function buildItemLinkContextMenuEntries(p_self, p_row, p_data, prefixDept
     prefixDepth = prefixDepth or 3
     local functionsItemLinkSorted = tbug.functionsItemLinkSorted
     if ZO_IsTableEmpty(functionsItemLinkSorted) then return end
+
+    --Needs to reset on each call as p_self, p_row and p_data change ... else the itemLink will be the old (first one)
+    itemLinkPrefixesSubmenuTab = {}
 
     if ZO_IsTableEmpty(itemLinkPrefixesSubmenuTab) then
         upperCaseFunctionNamePrefixes = {}
@@ -1096,7 +1103,6 @@ local function buildItemLinkContextMenuEntries(p_self, p_row, p_data, prefixDept
                             for _, submenuEntryData in ipairs(currentSubmenuPrefixData.submenuEntries) do
                                 functionNamesTab[#functionNamesTab + 1] = submenuEntryData.label
                             end
-
                             getPrefixOfItemLinkFunctionNames(functionNamesTab, l_prefixDepth, maxSubmenuEntries, p_self, p_row, p_data)
                         end
                     end
