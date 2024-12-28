@@ -55,6 +55,14 @@ local function loadScriptByClick(selfVar, row, data)
     end
 end
 
+local function loadScriptIntoScriptEditBoxNow(selfVar, row, data)
+    if MouseIsOver(row.cKeyLeft) then
+        loadScriptByClick(selfVar, row, data)
+    elseif MouseIsOver(row.cVal) then
+        loadScriptByClick(selfVar, row, data)
+    end
+end
+
 --Get a script comment from the script history
 function tbug.getScriptHistoryComment(scriptRowId)
     if scriptRowId == nil then return end
@@ -113,6 +121,7 @@ function tbug.changeScriptHistory(scriptRowId, editBox, scriptOrCommentText, doN
     end
 end
 local changeScriptHistory = tbug.changeScriptHistory
+
 
 -------------------------------
 -- class ScriptsInspectorPanel --
@@ -277,24 +286,33 @@ function ScriptsInspectorPanel:BuildWindowTitleForTableKey(data)
     return winTitle
 end
 
-
 function ScriptsInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shift)
 --d("[tbug]ScriptsInspectorPanel:onRowClicked")
     if mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
         TableInspectorPanel.onRowClicked(self, row, data, mouseButton, ctrl, alt, shift)
     else
         if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
-            if MouseIsOver(row.cKeyLeft) then
-                loadScriptByClick(self, row, data)
-            elseif MouseIsOver(row.cVal) then
-                loadScriptByClick(self, row, data)
+            --Is the script editbox empty? If not we need to press SHIFT to load the script into it and overwrite the text
+            local scriptEditBox = self.scriptEditBox
+            if scriptEditBox ~= nil then
+                if scriptEditBox:GetText() ~= "" then
+                    if shift == true then
+                        loadScriptIntoScriptEditBoxNow(self, row, data)
+                    end
+                else
+                    loadScriptIntoScriptEditBoxNow(self, row, data)
+                end
             end
         end
     end
 end
 
 function ScriptsInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, alt, shift)
---df("tbug:ScriptsInspectorPanel:onRowDoubleClicked")
+    ctrl = ctrl or IsControlKeyDown()
+    alt = alt or IsAltKeyDown()
+    shift = shift or IsShiftKeyDown()
+
+df("tbug:ScriptsInspectorPanel:onRowDoubleClicked - shift: " .. tos(shift))
     hideContextMenus()
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         local sliderCtrl = self.sliderControl
@@ -309,8 +327,17 @@ function ScriptsInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, 
             if self:canEditValue(data) then
                 if typeValue == "string" then
                     if value ~= "" and data.dataEntry.typeId == RT.SCRIPTHISTORY_TABLE then
-                        --CHAT_SYSTEM.textEntry.system:StartTextEntry("/script " .. data.value)
-                        StartChatInput("/tbug " .. value, CHAT_CHANNEL_SAY, nil)
+                        local chatEditBox = CHAT_SYSTEM.textEntry
+                        if chatEditBox ~= nil then
+                            if chatEditBox:GetText() ~= "" then
+                                if shift == true then
+                                    StartChatInput("/tbug " .. value, CHAT_CHANNEL_SAY, nil)
+                                end
+                            else
+                                StartChatInput("/tbug " .. value, CHAT_CHANNEL_SAY, nil)
+                            end
+                        end
+
                     end
                 end
             end

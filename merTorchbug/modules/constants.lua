@@ -2,7 +2,7 @@ TBUG = {}
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
 --Version and name of the AddOn
-tbug.version =  "1.72"
+tbug.version =  "1.73"
 tbug.name =     "merTorchbug"
 tbug.author =   "merlight, current: Baertram"
 
@@ -38,8 +38,6 @@ tbug.author =   "merlight, current: Baertram"
 ]]
 
 -- [Known bugs]
---LibScrollableMenu submenu entries only having data.label won't render -> need data.name too!
---Events context menus does not show anymore if LibScrollableMenu is registered
 
 
 -- [Planned features]
@@ -49,7 +47,7 @@ tbug.author =   "merlight, current: Baertram"
 --
 
 
---------------------------------------- Version 1.70 - Baertram (last updated 2024-05-08)
+--------------------------------------- Version 1.73 - Baertram (last updated 2024-12-28)
 ---- [Added]
 
 

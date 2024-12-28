@@ -249,7 +249,7 @@ end
                     j = j + 1
                 end
             end):Then(function()
-d("<<<<LibAsync BasicInspectorPanel - filterScrollList - End - Took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
+--d("<<<<LibAsync BasicInspectorPanel - filterScrollList - End - Took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
                 self:UpdateContentsCount()
             end)
 
