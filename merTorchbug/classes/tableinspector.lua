@@ -33,8 +33,9 @@ local specialTabTitleCleanAtInspectorLists = tbug.specialTabTitleCleanAtInspecto
 local tbug_buildRowContextMenuData = tbug.buildRowContextMenuData
 local tbug_setEditValueFromContextMenu = tbug.setEditValueFromContextMenu
 
-local keyToSpecialEnum = tbug.keyToSpecialEnum
 local isSpecialInspectorKey = tbug.isSpecialInspectorKey
+local keyToSpecialEnum = tbug.keyToSpecialEnum
+local keyToSpecialRightKeyFunc = tbug.keyToSpecialRightKeyFunc
 local enums = tbug.enums
 --local tmpGroups = tbug.tmpGroups
 
@@ -47,10 +48,19 @@ local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 local getLastRowClickedData = tbug.getLastRowClickedData
 
 --------------------------------
+local function getSpecialInspectorRightKeyValue(key, value, row, data)
+    local specialRightKeyValueFunc = keyToSpecialRightKeyFunc[key]
+    if type(specialRightKeyValueFunc) ~= "function" then return end
+    local rightKeyValue = specialRightKeyValueFunc(value)
+--d(">key: " .. tos(key) ..", rightKeyValue: " .. tos(rightKeyValue))
+    return rightKeyValue
+end
+
 
 local function getSpecialInspectorKeyConstant(key, value, row, data)
     local enumNameForConstants = keyToSpecialEnum[key]
-    if not enumNameForConstants then return end
+    if not enumNameForConstants then return getSpecialInspectorRightKeyValue(key, value, row, data) end
+
     local enumNameForConstantsWithoutUnderscoreSuffix = enumNameForConstants
     if strsub(enumNameForConstants, -1) == "_" then
         enumNameForConstantsWithoutUnderscoreSuffix = strsub(enumNameForConstants, 1, -2) --remove _ at the end

@@ -420,8 +420,17 @@ local keyToSpecialEnum = {
 }
 tbug.keyToSpecialEnum = keyToSpecialEnum
 
+local keyToSpecialRightKeyFunc = {
+    --Special key entries at tableInspector: Value is a fucntion which returns the value for the right key
+    ["uniqueId"]                = zo_getSafeId64Key,
+}
+tbug.keyToSpecialRightKeyFunc = keyToSpecialRightKeyFunc
+
 local isSpecialInspectorKey = {}
 for k,_ in pairs(keyToSpecialEnum) do
+    isSpecialInspectorKey[k] = true
+end
+for k,_ in pairs(keyToSpecialRightKeyFunc) do
     isSpecialInspectorKey[k] = true
 end
 tbug.isSpecialInspectorKey = isSpecialInspectorKey
