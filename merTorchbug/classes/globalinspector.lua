@@ -229,6 +229,11 @@ function GlobalInspector:refresh()
 
     local itemLinkFunctionsUpdated = false
 
+    local svTabsObjects = tbug.SavedVariablesObjectsTabs
+    if ZO_IsTableEmpty(svTabsObjects) then
+        tbug.refreshSavedVariablesTable()
+    end
+
     --Refresh ALL tab's data!
     for k, v in zo_insecureNext, _G do
         local tv = type(v)
@@ -245,7 +250,10 @@ function GlobalInspector:refresh()
                 v.__isClass = true
                 pushToMasterlist(panelClasses, RT.GENERIC, k, v)
             else
-                v.__isObject = true
+                --Do not add __isObject = true to a SavedVariables table
+                if not svTabsObjects[v] then
+                    v.__isObject = true
+                end
                 pushToMasterlist(objects, RT.GENERIC, k, v)
             end
         elseif tv == "function" then

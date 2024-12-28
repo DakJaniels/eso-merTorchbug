@@ -1675,8 +1675,10 @@ function tbug.refreshSavedVariablesTable()
     --Code taken from addon zgoo. All rights and thanks to the authors!
     tbug.SavedVariablesOutput = {}
     tbug.SavedVariablesTabs = {}
+    tbug.SavedVariablesObjectsTabs = {}
     local svFound = tbug.SavedVariablesOutput
     local svTabs = tbug.SavedVariablesTabs
+    local svTabsObjects = tbug.SavedVariablesObjectsTabs
     local svSuffix = tbug.svSuffix
     local specialAddonSVTableNames = tbug.svSpecialTableNames
     local servers = tbug.servers
@@ -1751,9 +1753,13 @@ function tbug.refreshSavedVariablesTable()
         svFound[k] = rawget(_G, k)
     end
 
-    --Lookup table where the found SV table is the key
     for _, v in pairs(svFound) do
+        --Lookup table where the found SV table name is the key
         svTabs[v] = true
+        --Lookup table where the found SV table object is the key
+        if _G[v] ~= nil then
+            svTabsObjects[_G[v]] = true
+        end
     end
 
     return svFound
