@@ -597,20 +597,20 @@ function BasicInspectorPanel:refreshData()
                         task:Call(function(p_task)
 --d("[Tbug]LibAsync - BasicInspectorPanel - refreshData - Start")
                             ---First task
-                            d(">MasterList")
+                            --d(">MasterList")
                             selfVar:buildMasterList(p_task)
 
                         end):Then(function(p_task)
                             --Then:
-                            d(">>FilterScrollList")
+                            --d(">>FilterScrollList")
                             selfVar:filterScrollList(p_task)
                         end):Then(function(p_task)
                             --Then
-                            d(">>SortScrollList")
+                            --d(">>SortScrollList")
                             selfVar:sortScrollList()
                         end):Then(function(p_task)
                             --Final task
-                            d(">>CommitScrollList")
+                            --d(">>CommitScrollList")
                             selfVar:commitScrollList()
                             globalInspector:UpdateLoadingState(true)
                         end):Then(function()

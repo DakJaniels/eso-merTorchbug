@@ -13,6 +13,8 @@ local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdBy
 local checkIfItemLinkFunc = tbug.checkIfItemLinkFunc
 local sortItemLinkFunctions = tbug.sortItemLinkFunctions
 
+local customKeysForInspectorRows = tbug.customKeysForInspectorRows
+
 --------------------------------
 
 function tbug.getGlobalInspector(doNotCreate)
@@ -234,6 +236,9 @@ function GlobalInspector:refresh()
         tbug.refreshSavedVariablesTable()
     end
 
+    local isClassKey = customKeysForInspectorRows.__isClass
+    local isObjectKey = customKeysForInspectorRows.__isObject
+
     --Refresh ALL tab's data!
     for k, v in zo_insecureNext, _G do
         local tv = type(v)
@@ -247,12 +252,12 @@ function GlobalInspector:refresh()
             end
         elseif tv == "table" then
             if rawget(v, "__index") then
-                v.__isClass = true
+                v[isClassKey] = true
                 pushToMasterlist(panelClasses, RT.GENERIC, k, v)
             else
                 --Do not add __isObject = true to a SavedVariables table
                 if svTabs[v] == nil then
-                    v.__isObject = true
+                    v[isObjectKey] = true
                 --else
 --d(">found SV table - k: " .. tostring(k) .. ", v: " .. tostring(v))
                 end

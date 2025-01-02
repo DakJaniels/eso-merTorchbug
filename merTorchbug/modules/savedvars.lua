@@ -31,6 +31,8 @@ local defaults =
         ["comment"]  = "hsl(0, 0, 100)", --white
         ["object"]  = "hsl(248, 53, 58)", --lila
         ["sceneName"]= "hsla(319, 100, 50)", --pink
+        ["__isClass"] = "hsl(0, 0, 100)", --white
+        ["__isObject"] = "hsl(0, 0, 100)", --white
     },
     scriptHistory = {},
     scriptHistoryComments = {},

@@ -162,14 +162,19 @@ tbug.specialEntriesAtInspectorLists = specialEntriesAtInspectorLists
 local customKeysForInspectorRows = {
     ["object"] =        "__Object",
     ["usedInScenes"] =  "__usedInScenes",
+    ["__isClass"] =     "__isClass",
+    ["__isObject"] =    "__isObject",
 }
 tbug.customKeysForInspectorRows = customKeysForInspectorRows
 
 --Special colors for some entries in the object inspector (key)
+-->See file savedvars.lua, table defaults.typeColors
 local specialKeyToColorType = {
     ["LibStub"] = "obsolete",
     [customKeysForInspectorRows.object] = "object",
     [customKeysForInspectorRows.usedInScenes] = "sceneName",
+    [customKeysForInspectorRows.__isClass] = "__isClass",
+    [customKeysForInspectorRows.__isObject] = "__isObject",
 }
 tbug.specialKeyToColorType = specialKeyToColorType
 
