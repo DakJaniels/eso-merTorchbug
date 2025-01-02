@@ -27,7 +27,7 @@ local possibleTranslationTextKeys = tbug.possibleTranslationTextKeys
 local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
 local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 
-local tbug_SetTemplate = tbug.SetTemplate
+--local tbug_SetTemplate = tbug.SetTemplate
 
 local hideContextMenus = tbug.HideContextMenus
 local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
@@ -595,7 +595,7 @@ function BasicInspectorPanel:refreshData()
                         --Use LibAsync tasks to call the functions
                         local task = libAS:Create("TBug_task-BasicInspector_refreshData")
                         task:Call(function(p_task)
-d("[Tbug]LibAsync - BasicInspectorPanel - refreshData - Start")
+--d("[Tbug]LibAsync - BasicInspectorPanel - refreshData - Start")
                             ---First task
                             d(">MasterList")
                             selfVar:buildMasterList(p_task)
@@ -614,7 +614,7 @@ d("[Tbug]LibAsync - BasicInspectorPanel - refreshData - Start")
                             selfVar:commitScrollList()
                             globalInspector:UpdateLoadingState(true)
                         end):Then(function()
-d("<<<<<LibAsync - BasicInspectorPanel - refreshData - End, took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
+--d("<<<<<LibAsync - BasicInspectorPanel - refreshData - End, took: " .. tostring(GetGameTimeMilliseconds() - start) .. "ms")
                         end)
                     end
                 end

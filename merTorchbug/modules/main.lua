@@ -1676,9 +1676,8 @@ function tbug.refreshSavedVariablesTable()
     tbug.SavedVariablesOutput = {}
     tbug.SavedVariablesTabs = {}
     tbug.SavedVariablesObjectsTabs = {}
-    local svFound = tbug.SavedVariablesOutput
-    local svTabs = tbug.SavedVariablesTabs
-    local svTabsObjects = tbug.SavedVariablesObjectsTabs
+    local svOutput = tbug.SavedVariablesOutput
+    local svTabs   = tbug.SavedVariablesTabs
     local svSuffix = tbug.svSuffix
     local specialAddonSVTableNames = tbug.svSpecialTableNames
     local servers = tbug.servers
@@ -1717,11 +1716,11 @@ function tbug.refreshSavedVariablesTable()
                     if addSVTable > 0 and possibleSVTable ~= nil then
                         addonsSVTabFound = true
                         if addSVTable == 1 and possibeSVName ~= nil then
-                            svFound[possibeSVName] = rawget(_G, possibeSVName)
+                            svOutput[possibeSVName] = rawget(_G, possibeSVName)
                         elseif addSVTable == 2 and possibeSVNameLower ~= nil then
-                            svFound[possibeSVNameLower] = rawget(_G, possibeSVNameLower)
+                            svOutput[possibeSVNameLower] = rawget(_G, possibeSVNameLower)
                         elseif addSVTable == 3 and possibeSVNameUpper ~= nil then
-                            svFound[possibeSVNameUpper] = rawget(_G, possibeSVNameUpper)
+                            svOutput[possibeSVNameUpper] = rawget(_G, possibeSVNameUpper)
                         end
                     end
                 else
@@ -1733,15 +1732,15 @@ function tbug.refreshSavedVariablesTable()
 
     --Then check all other global tables for the "Default"/"EU/NA Megaserver/PTS" subtable with a value "version = <number>"
     for k, v in zo_insecureNext, _G do
-        if svFound[k] == nil and type(v) == "table" then
+        if svOutput[k] == nil and type(v) == "table" then
             --"Default" entry
             if hasMember(rawget(v, "Default"), patternVersion, patternNumber, 4) then
-                svFound[k] = v
+                svOutput[k] = v
             else
                 --EU/NA Megaserveror PTS
                 for _, serverName in ipairs(servers) do
                     if hasMember(rawget(v, serverName), patternVersion, patternNumber, 4) then
-                        svFound[k] = v
+                        svOutput[k] = v
                     end
                 end
             end
@@ -1750,19 +1749,15 @@ function tbug.refreshSavedVariablesTable()
 
     --Special tables not found before (not using ZO_SavedVariables wrapper e.g.)
     for _, k in ipairs(specialAddonSVTableNames) do
-        svFound[k] = rawget(_G, k)
+        svOutput[k] = rawget(_G, k)
     end
 
-    for _, v in pairs(svFound) do
-        --Lookup table where the found SV table name is the key
+    for k, v in pairs(svOutput) do
+        --Lookup table where the found SV table is the key
         svTabs[v] = true
-        --Lookup table where the found SV table object is the key
-        if _G[v] ~= nil then
-            svTabsObjects[_G[v]] = true
-        end
     end
 
-    return svFound
+    return svOutput
 end
 local tbug_refreshSavedVariablesTable = tbug.refreshSavedVariablesTable
 

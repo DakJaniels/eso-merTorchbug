@@ -1,6 +1,6 @@
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
-local tsort = table.sort
+--local tsort = table.sort
 
 local classes = tbug.classes
 local BasicInspector = classes.BasicInspector
@@ -229,8 +229,8 @@ function GlobalInspector:refresh()
 
     local itemLinkFunctionsUpdated = false
 
-    local svTabsObjects = tbug.SavedVariablesObjectsTabs
-    if ZO_IsTableEmpty(svTabsObjects) then
+    local svTabs = tbug.SavedVariablesTabs
+    if ZO_IsTableEmpty(svTabs) then
         tbug.refreshSavedVariablesTable()
     end
 
@@ -251,8 +251,10 @@ function GlobalInspector:refresh()
                 pushToMasterlist(panelClasses, RT.GENERIC, k, v)
             else
                 --Do not add __isObject = true to a SavedVariables table
-                if not svTabsObjects[v] then
+                if svTabs[v] == nil then
                     v.__isObject = true
+                --else
+--d(">found SV table - k: " .. tostring(k) .. ", v: " .. tostring(v))
                 end
                 pushToMasterlist(objects, RT.GENERIC, k, v)
             end

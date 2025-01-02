@@ -1330,7 +1330,8 @@ end
 
 function TabWindow:release()
 --d("[TB]TabWindow:release")
-  self.activeTab = nil
+    self.activeTab = nil
+    ClearCustomScrollableMenu()
 end
 
 
