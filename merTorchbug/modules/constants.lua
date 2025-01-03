@@ -2,7 +2,7 @@ TBUG = {}
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
 --Version and name of the AddOn
-tbug.version =  "1.73"
+tbug.version =  "1.74"
 tbug.name =     "merTorchbug"
 tbug.author =   "merlight, current: Baertram"
 

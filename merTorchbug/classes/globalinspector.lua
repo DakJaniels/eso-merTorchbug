@@ -257,7 +257,8 @@ function GlobalInspector:refresh()
             else
                 --Do not add __isObject = true to a SavedVariables table
                 if svTabs[v] == nil then
-                    v[isObjectKey] = true
+                    --v[isObjectKey] = true --todo 20250102 Detect SavedVariables more reliably, like MasterMerchant etc. or do not add __isObject anymore to each table.
+                    --would make detection of objects slower then as it needs to always check each table, as the contextMenu opens, if it is an object
                 --else
 --d(">found SV table - k: " .. tostring(k) .. ", v: " .. tostring(v))
                 end
