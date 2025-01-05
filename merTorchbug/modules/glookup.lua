@@ -355,20 +355,30 @@ local function doRefresh()
     tbug.foreachValue(g_enums, ZO_ClearTable)
     tbug.foreachValue(g_tmpGroups, ZO_ClearTable)
 
-    for k, v in zo_insecureNext, _G do
-        local valueType = type(v)
-        if isObjectType[valueType] then
-            if type(k) == stringType then mapObject(k, v) end
-            --Add *itemlink* functions to lookup table
-            if valueType == functionType then
-                checkIfItemLinkFunc(k, v)
-            end
-        elseif valueType == numberType and type(k) == stringType then
-            local firstLetter = strbyte(k, 1)
-            if not (firstLetter < 65 or firstLetter > 90) then mapEnum(k, v) end
-        end
-        --TODO: Libraries without LibStub: Check for global variables starting with "Lib" or "LIB"
-    end
+	local function isLibraryGlobal(name)
+		-- Check if the name starts with "Lib" or "LIB"
+		return type(name) == "string" and (strsub(name, 1, 3) == "Lib" or strsub(name, 1, 3) == "LIB")
+	end
+
+	local function processLibraryGlobal(name, lib)
+		if type(lib) == "table" then doRefreshLib(name, lib) end
+	end
+
+	for k, v in zo_insecureNext, _G do
+		local valueType = type(v)
+		if isObjectType[valueType] then
+			if type(k) == stringType then
+				mapObject(k, v)
+				-- Check for library globals
+				if isLibraryGlobal(k) then processLibraryGlobal(k, v) end
+			end
+			--Add *itemlink* functions to lookup table
+			if valueType == functionType then checkIfItemLinkFunc(k, v) end
+		elseif valueType == numberType and type(k) == stringType then
+			local firstLetter = strbyte(k, 1)
+			if not (firstLetter < 65 or firstLetter > 90) then mapEnum(k, v) end
+		end
+	end
 
     sortItemLinkFunctions()
 
