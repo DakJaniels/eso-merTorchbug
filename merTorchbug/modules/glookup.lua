@@ -10,6 +10,7 @@ local strfind = string.find
 local strmatch = string.match
 local strsub = string.sub
 local strup = string.upper
+local strlower = string.lower
 
 local strsplit = tbug.strSplit
 local zo_strsplit = zo_strsplit
@@ -355,9 +356,10 @@ local function doRefresh()
     tbug.foreachValue(g_enums, ZO_ClearTable)
     tbug.foreachValue(g_tmpGroups, ZO_ClearTable)
 
+	local libComparisonVar = "lib"
 	local function isLibraryGlobal(name)
-		-- Check if the name starts with "Lib" or "LIB"
-		return type(name) == "string" and (strsub(name, 1, 3) == "Lib" or strsub(name, 1, 3) == "LIB")
+		-- Check if the name starts with "Lib", "LIB" or "lib"
+		return type(name) == "string" and (strlower(strsub(name, 1, 3)) == libComparisonVar)
 	end
 
 	local function processLibraryGlobal(name, lib)
