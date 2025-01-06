@@ -2,7 +2,7 @@ TBUG = {}
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
 --Version and name of the AddOn
-tbug.version =  "1.74"
+tbug.version =  "1.75"
 tbug.name =     "merTorchbug"
 tbug.author =   "merlight, current: Baertram"
 
@@ -114,6 +114,10 @@ local svSuffix = {
     "_Options2",
 }
 tbug.svSuffix = svSuffix
+
+--Comparison string for libraries name "start"
+local libraryPrefixComparisonVar = "lib"
+tbug.libraryPrefixComparisonVar = libraryPrefixComparisonVar
 
 --Table of library names (key) to _G variable (value)
 local specialLibraryGlobalVarNames = {

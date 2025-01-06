@@ -39,6 +39,7 @@ local g_tmpStringIds = {}
 local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
 local hideLoadingSpinner = tbug.hideLoadingSpinner
 
+local libraryPrefixComparisonVar = tbug.libraryPrefixComparisonVar
 --local isSpecialInspectorKey = tbug.isSpecialInspectorKey
 local keyToSpecialEnum = tbug.keyToSpecialEnum
 local keyToSpecialEnumNoSubtablesInEnum = tbug.keyToSpecialEnumNoSubtablesInEnum
@@ -49,7 +50,6 @@ local checkIfItemLinkFunc = tbug.checkIfItemLinkFunc
 local sortItemLinkFunctions = tbug.sortItemLinkFunctions
 
 local specialEnumNoSubtables_subTables = {}
-
 
 
 local function isIterationOrMinMaxConstant(stringToSearch)
@@ -320,9 +320,11 @@ end
 local stringType = "string"
 local numberType = "number"
 local functionType = "function"
+local tableType = "table"
+local userDataType = "userdata"
 local isObjectType = {
-    ["table"] = true,
-    ["userdata"] = true,
+    [tableType] = true,
+    [userDataType] = true,
     [functionType] = true,
 }
 
@@ -356,14 +358,16 @@ local function doRefresh()
     tbug.foreachValue(g_enums, ZO_ClearTable)
     tbug.foreachValue(g_tmpGroups, ZO_ClearTable)
 
-	local libComparisonVar = "lib"
-	local function isLibraryGlobal(name)
-		-- Check if the name starts with "Lib", "LIB" or "lib"
-		return type(name) == "string" and (strlower(strsub(name, 1, 3)) == libComparisonVar)
+	local function isLibraryGlobal(name, valueType)
+        if valueType == tableType then
+            -- Check if the name starts with "Lib", "LIB" or "lib"
+            return type(name) == stringType and (strlower(strsub(name, 1, 3)) == libraryPrefixComparisonVar) --"lib"
+        end
+        return false
 	end
 
-	local function processLibraryGlobal(name, lib)
-		if type(lib) == "table" then doRefreshLib(name, lib) end
+	local function processLibraryGlobal(name, lib, valueType)
+		doRefreshLib(name, lib)
 	end
 
 	for k, v in zo_insecureNext, _G do
@@ -372,7 +376,7 @@ local function doRefresh()
 			if type(k) == stringType then
 				mapObject(k, v)
 				-- Check for library globals
-				if isLibraryGlobal(k) then processLibraryGlobal(k, v) end
+				if isLibraryGlobal(k, valueType) then processLibraryGlobal(k, v) end
 			end
 			--Add *itemlink* functions to lookup table
 			if valueType == functionType then checkIfItemLinkFunc(k, v) end
