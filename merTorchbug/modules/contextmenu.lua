@@ -1198,7 +1198,7 @@ end
 
 
 local function addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, p_self, p_row, p_data, p_isFunctionsDataType)
-d("[tbug]addScriptContextMenuEntriesForClassOrObjectIdentifierKey")
+--d("[tbug]addScriptContextMenuEntriesForClassOrObjectIdentifierKey")
     local retVar = false
     local subject = p_self.subject
     if p_key == nil or subject == nil or subject == EsoStrings or p_key == _G or p_key == "_G" then
@@ -1211,7 +1211,7 @@ d("[tbug]addScriptContextMenuEntriesForClassOrObjectIdentifierKey")
     local dataCopy = p_data
     local isFunction = p_isFunctionsDataType
 
-    local doAddAsObject, doAddAsClass, doAddAsLibrary = isObjectOrClassOrLibrary(subject, keyCopy)
+    local doAddAsObject, doAddAsClass, doAddAsLibrary, subjectName = isObjectOrClassOrLibrary(subject, keyCopy)
 
     tbug._debugAddScriptContextMenu = {
         key = keyCopy,
@@ -1236,23 +1236,11 @@ d("[tbug]addScriptContextMenuEntriesForClassOrObjectIdentifierKey")
             useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
         )
         retVar = true
-    else
-        if doAddAsClass == false and type(subject) == "table" then
-            for key, _ in zo_insecureNext, subject do
-                if not doAddAsClass and classIdentifierKeys[key] then
-                    lookupTabClass[subject] = true
-
-                    doAddAsClass = true
-                    break
-                end
-            end
-        end
-        if doAddAsClass == true then
-            AddCustomScrollableMenuEntry("Use class[key] as script", function()
-                useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
-            )
-            retVar = true
-        end
+    elseif doAddAsClass == true then
+        AddCustomScrollableMenuEntry("Use class[key] as script", function()
+            useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
+        )
+        retVar = true
     end
 
     --if retVar == true and isFunction == true then

@@ -45,6 +45,8 @@ local lookupTabClass = tbug.LookupTabs["class"]
 local lookupTabObject = tbug.LookupTabs["object"]
 local lookupTabLibrary = tbug.LookupTabs["library"]
 
+local classIdentifierKeys = tbug.classIdentifierKeys
+
 local getControlType
 local doNotGetParentInvokerNameAttributes = tbug.doNotGetParentInvokerNameAttributes
 local tbug_glookup = tbug.glookup
@@ -394,30 +396,69 @@ tbug.isGetStringKey = isGetStringKey
 local function isObjectOrClassOrLibrary(subject, key)
     tbug_glookup = tbug_glookup or tbug.glookup
     local lookupName = (subject ~= nil and tbug_glookup(subject)) or nil
-    if type(lookupName) ~= stringType then return nil, nil, nil end
+    if type(lookupName) ~= stringType then return nil, nil, nil, nil end
     local isLibrary = lookupTabLibrary[lookupName] or false
     local isClass = (not isLibrary and lookupTabClass[lookupName]) or false
     local isObject = (not isLibrary and not isClass and lookupTabObject[lookupName]) or false
 
 --d("[tbug]isObjectOrClassOrLibrary: " ..tostring(lookupName) .. ", key: " .. tostring(key) .. ", isLibrary: " .. tostring(isLibrary).. ", isClass: " .. tostring(isClass).. ", isObject: " .. tostring(isObject))
 
-    if not isClass and not isObject and not isLibrary then
+    if not isObject and not isClass and not isLibrary then
         local tv = type(subject)
         if tv == "table" then
-            if rawget(subject, "__index") then
-                lookupTabClass[lookupName] = true
-                --class
-                return false, true, false
+            if subject == _G then
+--d(">_G table = subject")
+                if key ~= nil and _G[key] ~= nil then
+                    lookupName = tbug_glookup(_G[key]) or nil
+--d(">>lookupName: " ..tostring(lookupName))
+                    if type(lookupName) ~= stringType then return nil, nil, nil, nil end
+
+                    if rawget(_G[key], "__index") then
+                        lookupTabClass[lookupName] = true
+                        --class
+                        return false, true, false, lookupName
+                    else
+                        for l_key, _ in zo_insecureNext, _G[key] do
+                            if not isClass and classIdentifierKeys[l_key] then
+                                isClass = true
+                                lookupTabClass[lookupName] = true
+                                --class
+                                return false, true, false, lookupName
+                            end
+                        end
+
+                        if not isClass then
+                            --Object
+                            lookupTabObject[lookupName] = true
+                            return true, false, false, lookupName
+                        end
+                    end
+                end
             else
-                --Object
-                lookupTabObject[lookupName] = true
-                return true, false, false
+                if rawget(subject, "__index") then
+                    lookupTabClass[lookupName] = true
+                    --class
+                    return false, true, false, lookupName
+                else
+                    for l_key, _ in zo_insecureNext, subject do
+                        if not isClass and classIdentifierKeys[l_key] then
+                            isClass = true
+                            lookupTabClass[lookupName] = true
+                            --class
+                            return false, true, false, lookupName
+                        end
+                    end
+
+                    if not isClass then
+                        --Object
+                        lookupTabObject[lookupName] = true
+                        return true, false, false, lookupName
+                    end
+                end
             end
         end
-    else
-        return isObject, isClass, isLibrary
     end
-    return false, false, false
+    return isObject, isClass, isLibrary, lookupName
 end
 tbug.isObjectOrClassOrLibrary = isObjectOrClassOrLibrary
 
