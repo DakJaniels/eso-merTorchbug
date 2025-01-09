@@ -1200,14 +1200,6 @@ end
 local function addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, p_self, p_row, p_data, p_isFunctionsDataType)
 d("[tbug]addScriptContextMenuEntriesForClassOrObjectIdentifierKey")
     local retVar = false
-    tbug._debugAddScriptContextMenu = {
-        key = p_key,
-        self = p_self,
-        row = p_row,
-        data = p_data,
-        isFunction = p_isFunctionsDataType,
-    }
-
     local subject = p_self.subject
     if subject == nil or subject == EsoStrings or p_key == _G or p_key == "_G" then
         return
@@ -1219,7 +1211,7 @@ d("[tbug]addScriptContextMenuEntriesForClassOrObjectIdentifierKey")
     local dataCopy = p_data
     local isFunction = p_isFunctionsDataType
 
-    local doAddAsObject, doAddAsClass, doAddAsLibrary = isObjectOrClassOrLibrary(subject)
+    local doAddAsObject, doAddAsClass, doAddAsLibrary = isObjectOrClassOrLibrary(subject, keyCopy)
 
     tbug._debugAddScriptContextMenu = {
         key = keyCopy,

@@ -391,11 +391,11 @@ local function isGetStringKey(key)
 end
 tbug.isGetStringKey = isGetStringKey
 
-local function isObjectOrClassOrLibrary(subject)
+local function isObjectOrClassOrLibrary(subject, key)
     tbug_glookup = tbug_glookup or tbug.glookup
     local lookupName = (subject ~= nil and tbug_glookup(subject)) or nil
     if type(lookupName) ~= stringType then return nil, nil, nil end
-d("[tbug]isObjectOrClassOrLibrary: " ..tostring(lookupName))
+--d("[tbug]isObjectOrClassOrLibrary: " ..tostring(lookupName) .. ", key: " .. tostring(key))
     local isLibrary = lookupTabLibrary[lookupName] or false
     local isClass = (not isLibrary and lookupTabClass[lookupName]) or false
     local isObject = (not isLibrary and not isClass and lookupTabObject[lookupName]) or false
