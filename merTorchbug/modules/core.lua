@@ -406,11 +406,11 @@ local function isObjectOrClassOrLibrary(subject, key)
             if rawget(subject, "__index") then
                 lookupTabClass[lookupName] = true
                 --class
-                return true, false, false
+                return false, true, false
             else
                 --Object
                 lookupTabObject[lookupName] = true
-                return false, true, false
+                return true, false, false
             end
         end
     else
