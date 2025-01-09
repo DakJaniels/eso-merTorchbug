@@ -154,8 +154,9 @@
 			</OnEffectivelyShown>
 			<Controls>
 				<Label name="$(parent)Label" font="ZoFontGameSmall" verticalAlignment="CENTER" tier="LOW" layer="CONTROLS" level="1">
-					<Dimensions y="20" />
-					<Anchor point="CENTER" />
+					<!-- <Dimensions y="20" /> -->
+					<DimensionConstraints minX="10" minY="20" maxX="500" maxY="60"/>
+					<Anchor point="TOP" relativeTo="$(parent)" relativePoint="TOP" />
 				</Label>
 			</Controls>
 		</Control>
@@ -177,7 +178,6 @@
 				self.label = self:GetNamedChild("Label")
 			</OnInitialized>
 
-
 			<OnEffectivelyShown>
 				TBUG.SetTemplate(self, self.label)
 			</OnEffectivelyShown>
@@ -194,7 +194,8 @@
 		</Control>
 
 		<Control name="tbugTableInspectorRow" virtual="true" mouseEnabled="true" tier="LOW" layer="CONTROLS" level="1">
-			<Dimensions y="24" />
+			<DimensionConstraints minX="10" minY="24" maxY="60"/>
+			<!-- <Dimensions y="24" /> -->
 			<OnInitialized>
 				self.cKeyLeft = self:GetNamedChild("KeyLeft")
 				self.cKeyRight = self:GetNamedChild("KeyRight")
@@ -252,10 +253,9 @@
 			</Controls>
 		</Control>
 
-		<Control name="tbugTableInspectorRowFont" virtual="true" mouseEnabled="true" inherits="tbugTableInspectorRow" resizeToFitDescendents="true"
-		 tier="LOW" layer="CONTROLS" level="1">
-			<Dimensions y="56" />
-			<DimensionConstraints maxY="64" minY="24"/>
+		<Control name="tbugTableInspectorRowFont" virtual="true" mouseEnabled="true" inherits="tbugTableInspectorRow" resizeToFitDescendents="true" resizeToFitConstrains="true" tier="LOW" layer="CONTROLS" level="1">
+			<!-- <Dimensions y="56" /> -->
+			<DimensionConstraints minX="10" minY="24" maxY="80"/>
 			<OnInitialized>
 				self.cKeyLeft = self:GetNamedChild("KeyLeft")
 				self.cKeyRight = self:GetNamedChild("KeyRight")
@@ -266,15 +266,15 @@
 			</OnEffectivelyShown>
 		</Control>
 
-		<Control name="tbugTableInspectorRowScriptHistory" virtual="true" mouseEnabled="true" tier="LOW" layer="CONTROLS" level="1">
-			<Dimensions y="40"/>
+		<Control name="tbugTableInspectorRowScriptHistory" virtual="true" mouseEnabled="true" tier="LOW" layer="CONTROLS" level="1" resizeToFitDescendents="true" resizeToFitConstrains="true">
+			<!-- <Dimensions y="40"/> -->
+			<DimensionConstraints minX="10" minY="40" maxY="80"/>
 			<OnInitialized>
 				self.cKeyLeft = self:GetNamedChild("KeyLeft")
 				self.cKeyRight = self:GetNamedChild("KeyRight")
 				self.cVal = self:GetNamedChild("Val")
 				self.cVal2 = self:GetNamedChild("Val2")
 			</OnInitialized>
-
 
 			<OnEffectivelyShown>
 				TBUG.SetTemplate(self, self.cKeyLeft, self.cKeyRight, self.cVal, self.cVal2)
@@ -359,15 +359,15 @@
 			</Controls>
 		</Control>
 
-		<Control name="tbugTableInspectorRowSavedInspectors" virtual="true" mouseEnabled="true" tier="LOW" layer="CONTROLS" level="1">
-			<Dimensions y="40"/>
+		<Control name="tbugTableInspectorRowSavedInspectors" virtual="true" mouseEnabled="true" tier="LOW" layer="CONTROLS" level="1" resizeToFitDescendents="true" resizeToFitConstrains="true">
+			<!-- <Dimensions y="40"/> -->
+			<DimensionConstraints minX="10" minY="40" maxY="80"/>
 			<OnInitialized>
 				self.cKeyLeft = self:GetNamedChild("KeyLeft")
 				self.cKeyRight = self:GetNamedChild("KeyRight")
 				self.cVal = self:GetNamedChild("Val")
 				self.cVal2 = self:GetNamedChild("Val2")
 			</OnInitialized>
-
 
 			<OnEffectivelyShown>
 				TBUG.SetTemplate(self, self.cKeyLeft, self.cKeyRight, self.cVal, self.cVal2)
@@ -506,9 +506,10 @@
 					<Anchor point="BOTTOMRIGHT" relativeTo="$(parent)EventsButton" relativePoint="TOPLEFT" />
 				</Label>
 				<!-- Loading spinner -->
-				<Control name="$(parent)LoadingSpinner" inherits="ZO_Loading" tier="DT_CONTROLS" layer="DL_OVERLAY" level="99" hidden="true" >
+				<Control name="$(parent)LoadingSpinner" inherits="ZO_Loading" tier="DT_CONTROLS" layer="DL_OVERLAY" level="99" resizeToFitConstrains="true" hidden="true" >
 					<Anchor point="CENTER" relativeTo="$(parent)Title" relativePoint="CENTER" offsetY="5"/>
-					<Dimensions y="20" />
+					<!-- <Dimensions y="20" /> -->
+					<DimensionConstraints minX="20" minY="20" maxX="48" maxY="48"/>
 					<OnInitialized>
 						ZO_Loading_Initialize(self, GetString(SI_INTERFACE_OPTIONS_DEFERRED_LOADING_TEXT))
 					</OnInitialized>
@@ -532,11 +533,13 @@
 				<!-- Moved from widgets.xml -> GlobalInspector <<<<< -->
 
 				<Scroll name="$(parent)Tabs" mouseEnabled="true" tier="LOW" layer="CONTROLS" level="1">
-					<Dimensions y="20" />
+					<!-- <Dimensions y="20"/> -->
+					<DimensionConstraints minX="10" minY="20" maxY="60"/>
+
 					<Anchor point="BOTTOMLEFT" offsetX="8" offsetY="-8" />
 					<Anchor point="BOTTOMRIGHT" offsetX="-8" offsetY="-8" />
 					<Controls>
-						<Control name="$(parent)Container" resizeToFitDescendents="true" tier="LOW" layer="CONTROLS" level="1">
+						<Control name="$(parent)Container" resizeToFitDescendents="true" resizeToFitConstrains="X" tier="LOW" layer="CONTROLS" level="1">
 							<Anchor point="BOTTOMLEFT" />
 							<Controls>
 								<Texture name="$(parent)ActiveBg" color="99000000" tier="LOW" layer="BACKGROUND" level="1">

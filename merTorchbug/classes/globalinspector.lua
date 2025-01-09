@@ -6,9 +6,13 @@ local classes = tbug.classes
 local BasicInspector = classes.BasicInspector
 local GlobalInspector = classes.GlobalInspector .. BasicInspector
 
+local stringType = "string"
+
 local panelClassName2panelClass = tbug.panelClassNames
 local panelNames = tbug.panelNames
 local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
+
+local tbug_glookup = tbug.glookup
 
 local checkIfItemLinkFunc = tbug.checkIfItemLinkFunc
 local sortItemLinkFunctions = tbug.sortItemLinkFunctions
@@ -236,8 +240,13 @@ function GlobalInspector:refresh()
         tbug.refreshSavedVariablesTable()
     end
 
-    local isClassKey = customKeysForInspectorRows.__isClass
-    local isObjectKey = customKeysForInspectorRows.__isObject
+    local lookupTabClass = tbug.LookupTabs["class"]
+    local lookupTabObject = tbug.LookupTabs["object"]
+    --Do not reset the tables here as entries once added should stay until reloadUI!
+    --local lookupTabLibrary = tbug.LookupTabs["library"]
+    --lookupTabClass = {}
+    --lookupTabObject = {}
+    --lookupTabLibrary = {}
 
     --Refresh ALL tab's data!
     for k, v in zo_insecureNext, _G do
@@ -252,16 +261,27 @@ function GlobalInspector:refresh()
             end
         elseif tv == "table" then
             if rawget(v, "__index") then
-                v[isClassKey] = true
+                --v[isClassKey] = true
+                local classTabName = tbug_glookup(v)
+                if type(classTabName) == stringType then
+                    lookupTabClass[classTabName] = true
+                end
+
                 pushToMasterlist(panelClasses, RT.GENERIC, k, v)
             else
                 --Do not add __isObject = true to a SavedVariables table
-                if svTabs[v] == nil then
-                    --v[isObjectKey] = true --todo 20250102 Detect SavedVariables more reliably, like MasterMerchant etc. or do not add __isObject anymore to each table.
+                --todo 20250102 Detect SavedVariables more reliably, like MasterMerchant etc. or do not add __isObject anymore to each table.
+                if svTabs[v] == nil and v ~= _G and v ~= EsoStrings then
+                    --v[isObjectKey] = true
                     --would make detection of objects slower then as it needs to always check each table, as the contextMenu opens, if it is an object
+                    local objectTabName = tbug_glookup(v)
+                    if type(objectTabName) == stringType then
+                        lookupTabObject[objectTabName] = true
+                    end
                 --else
 --d(">found SV table - k: " .. tostring(k) .. ", v: " .. tostring(v))
                 end
+
                 pushToMasterlist(objects, RT.GENERIC, k, v)
             end
         elseif tv == "function" then

@@ -17,6 +17,7 @@ local tbug_GetDefaultTemplate = tbug.GetDefaultTemplate
 local tbug_GetTemplate        = tbug.GetTemplate
 local tbug_getControlName     = tbug.getControlName
 local tbug_glookup
+local lookupTabClass = tbug.LookupTabs["class"]
 
 --LibScrollableMenu
 --local headerEntryColor = ZO_ColorDef:New(GetInterfaceColor(INTERFACE_COLOR_TYPE_TEXT_COLORS, INTERFACE_TEXT_COLOR_GAMEPAD_CATEGORY_HEADER))
@@ -36,7 +37,9 @@ local globalInspectorDialogTabKey = getGlobalInspectorPanelTabName("dialogs")
 local globalInspectorFunctionsTabKey = getGlobalInspectorPanelTabName("functions")
 
 local classIdentifierKeys = tbug.classIdentifierKeys
-local objectIdentifierKeys = tbug.objectIdentifierKeys
+--local objectIdentifierKeys = tbug.objectIdentifierKeys
+local isObjectOrClassOrLibrary = tbug.isObjectOrClassOrLibrary
+
 
 --local throttledCall = tbug.throttledCall
 local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
@@ -349,11 +352,10 @@ local searchExternalURL = tbug.searchExternalURL
 
 
 --Show the "Scripts" tab and put the key/value, and if it's a function an opening and closing () behind it, to the "test script" editbox
-function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, isClass, isObject)
+local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, isClassOrObjectOrLibrary)
     if not p_self or not p_row or not p_data or isKey == nil then return end
     isFunctionsDataType = isFunctionsDataType or false
-    isClass = isClass or false
-    isObject = isObject or false
+    isClassOrObjectOrLibrary = isClassOrObjectOrLibrary or false
     tbug_glookup = tbug_glookup or tbug.glookup
 
     local scriptStr = ""
@@ -371,7 +373,7 @@ function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, is
         isFunctionsDataType = true
     end
 
-    if isClass or isObject then
+    if isClassOrObjectOrLibrary == true then
         local lookupName = ((p_self.subjectName ~= nil and p_self.subjectName) or (p_self.subject ~= nil and tbug_glookup(p_self.subject))) or nil
         if lookupName ~= nil and lookupName ~= "_G" then
             scriptStr = tos(lookupName) .. (isFunctionsDataType and ":" or ".") .. scriptStr
@@ -379,7 +381,7 @@ function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, is
     end
 
     if isFunctionsDataType then
-        scriptStr = scriptStr .. "( )"
+        scriptStr = scriptStr .. "()"
     end
     --d("[tbug]useForScript - scriptStr: " .. tos(scriptStr) .. ", isFunction: " .. tos(isFunctionsDataType))
 
@@ -399,8 +401,12 @@ function tbug.useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, is
     if isFunctionsDataType then
         testScriptEditBox:SetCursorPosition(strlen(scriptStr) - 1)
     end
+
+    --Bring the scripts tab to the front
+    globalInspector.control:SetHidden(false)
+    globalInspector.control:BringWindowToTop()
 end
-local useForScript = tbug.useForScript
+tbug.useForScript = useForScript
 
 ------------------------------------------------------------------------------------------------------------------------
 --CONTROL OUTLINE
@@ -1189,25 +1195,79 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
-local function  addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, p_self, p_row, p_data, p_isFunctionsDataType)
+
+
+local function addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, p_self, p_row, p_data, p_isFunctionsDataType)
+d("[tbug]addScriptContextMenuEntriesForClassOrObjectIdentifierKey")
+    local retVar = false
     tbug._debugAddScriptContextMenu = {
-        p_key, p_self, p_row, p_data, p_isFunctionsDataType
+        key = p_key,
+        self = p_self,
+        row = p_row,
+        data = p_data,
+        isFunction = p_isFunctionsDataType,
     }
 
     local subject = p_self.subject
-    if subject == nil or subject == _G and subject ~= EsoStrings then return end
+    if subject == nil or subject == EsoStrings or p_key == _G or p_key == "_G" then
+        return
+    end
 
-    for key, _ in zo_insecureNext, subject do
-        if classIdentifierKeys[key] then
-            AddCustomScrollableMenuEntry("Use class[key] as script", function() useForScript(p_self, p_row, p_data, true, p_isFunctionsDataType, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
-            return
-        elseif objectIdentifierKeys[key] then
-            AddCustomScrollableMenuEntry("Use object[key] as script", function() useForScript(p_self, p_row, p_data, true, p_isFunctionsDataType, false, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
-            return
+    local keyCopy = p_key
+    local selfCopy = p_self
+    local rowCopy = p_row
+    local dataCopy = p_data
+    local isFunction = p_isFunctionsDataType
+
+    local doAddAsObject, doAddAsClass, doAddAsLibrary = isObjectOrClassOrLibrary(subject)
+
+    tbug._debugAddScriptContextMenu = {
+        key = keyCopy,
+        self = selfCopy,
+        row = rowCopy,
+        data = dataCopy,
+        isFunction = isFunction,
+        doAddAsObject = doAddAsObject,
+        doAddAsClass = doAddAsClass,
+        doAddAsLibrary = doAddAsLibrary,
+    }
+
+
+    if doAddAsObject == true then
+        --(text, callback, entryType, entries, additionalData)
+        AddCustomScrollableMenuEntry("Use object[key] as script", function()
+            useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
+        )
+        retVar = true
+    elseif doAddAsLibrary == true then
+        AddCustomScrollableMenuEntry("Use library[key] as script", function()
+            useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
+        )
+        retVar = true
+    else
+        if doAddAsClass == false and type(subject) == "table" then
+            for key, _ in zo_insecureNext, subject do
+                if not doAddAsClass and classIdentifierKeys[key] then
+                    lookupTabClass[subject] = true
+
+                    doAddAsClass = true
+                    break
+                end
+            end
+        end
+        if doAddAsClass == true then
+            AddCustomScrollableMenuEntry("Use class[key] as script", function()
+                useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
+            )
+            retVar = true
         end
     end
 
-
+    --if retVar == true and isFunction == true then
+        --Show an additional context menu entry: Show scripts popup editbox and let us enter parameters directly
+        --todo really needed? Better us the scripts tab for that
+    --end
+    return retVar
 end
 
 

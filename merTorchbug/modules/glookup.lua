@@ -22,6 +22,17 @@ local EsoStrings = EsoStrings
 local DEBUG = 1
 local SI_LAST = SI_NONSTR_PUBLICALLINGAMESGAMEPADSTRINGS_LAST_ENTRY --10944, old one was: SI_NONSTR_INGAMESHAREDSTRINGS_LAST_ENTRY  10468
 
+local stringType = "string"
+local numberType = "number"
+local functionType = "function"
+local tableType = "table"
+local userDataType = "userdata"
+local isObjectType = {
+    [tableType]    = true,
+    [userDataType] = true,
+    [functionType] = true,
+}
+
 local g_nonEnumPrefixes = tbug.nonEnumPrefixes
 
 local mtEnum = { __index = function (_, v) return v end }
@@ -264,7 +275,7 @@ local function mapEnum(k, v)
         if skip == true then
             --prefix = strmatch(k, "^([A-Z][A-Z0-9]*_[A-Z0-9]+_)")
             prefix = getPrefix(k, "_", 2)
-        elseif type(skip) == "string" and strfind(k, skip) then
+        elseif type(skip) == stringType and strfind(k, skip) then
             return
         end
     end
@@ -299,16 +310,16 @@ end
 
 
 local typeMappings = {
-    ["number"] = mapEnum;
-    ["table"] = mapObject;
-    ["userdata"] = mapObject;
-    ["function"] = mapObject;
+    [numberType] = mapEnum;
+    [tableType] = mapObject;
+    [userDataType] = mapObject;
+    [functionType] = mapObject;
 }
 
 
 local function doRefreshLib(lname, ltab)
     for k, v in zo_insecureNext, ltab do
-        if type(k) == "string" then
+        if type(k) == stringType then
             local mapFunc = typeMappings[type(v)]
             if mapFunc then
                 mapFunc(lname .. "." .. k, v)
@@ -316,17 +327,6 @@ local function doRefreshLib(lname, ltab)
         end
     end
 end
-
-local stringType = "string"
-local numberType = "number"
-local functionType = "function"
-local tableType = "table"
-local userDataType = "userdata"
-local isObjectType = {
-    [tableType] = true,
-    [userDataType] = true,
-    [functionType] = true,
-}
 
 local refreshStartTime
 local function doRefresh()
@@ -584,7 +584,7 @@ local function doRefresh()
                     if subTableData ~= nil then
                         for constantValue, constantName in pairs(subTableData) do
                             --d(">>>>copied constant from subtable: " ..tos(constantName) .. " (" .. tos(constantValue) ..")")
-                            if type(constantName) == "string" then
+                            if type(constantName) == stringType then
                                 g_enums[prefixWithoutLastUnderscore][constantValue] = constantName
                             end
                         end
@@ -713,7 +713,7 @@ local function doRefresh()
                         if subTableData ~= nil then
                             for constantValue, constantName in pairs(subTableData) do
                                 --d(">>>>copied constant from subtable: " ..tos(constantName) .. " (" .. tos(constantValue) ..")")
-                                if type(constantName) == "string" then
+                                if type(constantName) == stringType then
                                     g_enums[prefixWithoutLastUnderscore][constantValue] = constantName
                                 end
                             end

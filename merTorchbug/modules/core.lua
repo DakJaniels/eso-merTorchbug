@@ -31,6 +31,8 @@ local tsort = table.sort
 
 local osdate = os.date
 
+local stringType = "string"
+
 local prefixForLeftKey = tbug.prefixForLeftKey
 local prefixForLeftKeyLen = strlen(prefixForLeftKey)
 
@@ -38,6 +40,10 @@ local rtSpecialReturnValues = tbug.RTSpecialReturnValues
 local excludeTypes = { [CT_INVALID_TYPE] = true }
 local panelNames = tbug.panelNames
 local uiTemplates = tbug.UITemplates
+
+local lookupTabClass = tbug.LookupTabs["class"]
+local lookupTabObject = tbug.LookupTabs["object"]
+local lookupTabLibrary = tbug.LookupTabs["library"]
 
 local getControlType
 local doNotGetParentInvokerNameAttributes = tbug.doNotGetParentInvokerNameAttributes
@@ -385,6 +391,34 @@ local function isGetStringKey(key)
 end
 tbug.isGetStringKey = isGetStringKey
 
+local function isObjectOrClassOrLibrary(subject)
+    tbug_glookup = tbug_glookup or tbug.glookup
+    local lookupName = (subject ~= nil and tbug_glookup(subject)) or nil
+    if type(lookupName) ~= stringType then return nil, nil, nil end
+d("[tbug]isObjectOrClassOrLibrary: " ..tostring(lookupName))
+    local isLibrary = lookupTabLibrary[lookupName] or false
+    local isClass = (not isLibrary and lookupTabClass[lookupName]) or false
+    local isObject = (not isLibrary and not isClass and lookupTabObject[lookupName]) or false
+
+    if not isClass and not isObject and not isLibrary then
+        local tv = type(subject)
+        if tv == "table" then
+            if rawget(subject, "__index") then
+                lookupTabClass[lookupName] = true
+                --class
+                return true, false, false
+            else
+                --Object
+                lookupTabObject[lookupName] = true
+                return false, true, false
+            end
+        end
+    else
+        return isClass, isObject, isLibrary
+    end
+    return false, false, false
+end
+tbug.isObjectOrClassOrLibrary = isObjectOrClassOrLibrary
 
 
 --Get a property of a control in the TorchBugControlInspector list, at index indexInList, and the name should be propName

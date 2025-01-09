@@ -23,6 +23,7 @@ local title2ChatCleanUpTableAndColor =      titlePatterns.title2ChatCleanUpTable
 local specialInspectTabTitles  = tbug.specialInspectTabTitles
 
 local specialLibraryGlobalVarNames = tbug.specialLibraryGlobalVarNames
+local lookupTabLibrary = tbug.LookupTabs["library"]
 
 local unitConstants = tbug.unitConstants
 local unitPlayer = unitConstants.player
@@ -54,7 +55,7 @@ local panelNames = tbug.panelNames
 
 local customKeysForInspectorRows = tbug.customKeysForInspectorRows
 local customKey__usedInScenes = customKeysForInspectorRows.usedInScenes
-
+local stringType = "string"
 
 local tbug_glookup = tbug.glookup
 local tbug_getKeyOfObject = tbug.getKeyOfObject
@@ -1584,8 +1585,8 @@ function tbug.UpdateAddOnsAndLibraries()
                         name = addonName,
                         version = addonData.version,
                         dir = addonData.dir,
-                        globalVarName = addonData.dir,
-                        globalVar = addonData.dir,
+                        --globalVarName = "n/a",
+                        --globalVar = nil,
                     }
                     libWasAdded = true
                 end
@@ -1647,12 +1648,22 @@ function tbug.refreshAddOnsAndLibraries()
         if lsLibs then
             for k,v in pairs(lsLibs) do
                 tbug.LibrariesOutput[k]=v
+                lookupTabLibrary[k] = true
+                local libraryTabName = tbug_glookup(v)
+                if type(libraryTabName) == stringType then
+                    lookupTabLibrary[libraryTabName] = true
+                end
             end
         end
     end
     if tbug.LibrariesData then
         for k,v in pairs(tbug.LibrariesData) do
             tbug.LibrariesOutput[k]=v.globalVar
+            lookupTabLibrary[k] = true
+            local libraryTabName = (v.globalVarName ~= nil and v.globalVarName) or (tbug_glookup((v.globalVar ~= nil and v.globalVar) or v)) or nil
+            if type(libraryTabName) == stringType then
+                lookupTabLibrary[libraryTabName] = true
+            end
         end
     end
 

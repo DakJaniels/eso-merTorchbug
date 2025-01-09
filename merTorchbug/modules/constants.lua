@@ -38,21 +38,26 @@ tbug.author =   "merlight, current: Baertram"
 ]]
 
 -- [Known bugs]
-
+--Global inspector Fonts tab does not show the fonts in correct size until scrolled
+--New opened inspector get their icons top right changed in size if fon size at global inspector conetxt menu is changed, but it does not always change back (at all opened inspector windows!) to new font size if changed later
+--20250107 Warning: tbugGlobalInspectorTabsContainerTab2 has a set height but has resizeToFitDescendents enabled. If this is intended, use resizeToFitConstrains="X".|r
 
 -- [Planned features]
+--Detachable scripts tab/window
+--Events auto activation after reloadui and more event comfort like savedvariables with last run events & compare current to these saved ones
 
 
 -- [Working on]
---
+--Objects & libs detection at context menu so one can send <object or lib>:<functionName> or <.variableName> to scripts tab
 
 
---------------------------------------- Version 1.73 - Baertram (last updated 2024-12-28)
+--------------------------------------- Version 1.75 - Baertram (last updated 2025-01-06)
 ---- [Added]
+--Libraries detection via "lib" prefix
 
 
 ---- [Fixed]
---
+--Some XML fixed height and width values versus resizeToFitDescendents ESO log errors
 
 --
 ------------------------------------------------------------------------------------------------------------------------
@@ -487,9 +492,15 @@ local classIdentifierKeys = {
 tbug.classIdentifierKeys = classIdentifierKeys
 
 local objectIdentifierKeys = {
-    ["__isObject"] = true, -- added by tbug in global inspector buildMasterList
+    ["__isObject"] = true, -- added by tbug in global inspector buildMasterList --> Currently 20250106 disabled as it pollutes the SavedVariables with that __isObject entry!
 }
 tbug.objectIdentifierKeys = objectIdentifierKeys
+
+--Lookup tables for different types
+tbug.LookupTabs = {}
+tbug.LookupTabs["class"] = {}
+tbug.LookupTabs["object"] = {}
+tbug.LookupTabs["library"] = {}
 
 
 --LibScrollableMenu context menu default options
