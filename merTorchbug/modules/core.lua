@@ -395,10 +395,11 @@ local function isObjectOrClassOrLibrary(subject, key)
     tbug_glookup = tbug_glookup or tbug.glookup
     local lookupName = (subject ~= nil and tbug_glookup(subject)) or nil
     if type(lookupName) ~= stringType then return nil, nil, nil end
---d("[tbug]isObjectOrClassOrLibrary: " ..tostring(lookupName) .. ", key: " .. tostring(key))
     local isLibrary = lookupTabLibrary[lookupName] or false
     local isClass = (not isLibrary and lookupTabClass[lookupName]) or false
     local isObject = (not isLibrary and not isClass and lookupTabObject[lookupName]) or false
+
+--d("[tbug]isObjectOrClassOrLibrary: " ..tostring(lookupName) .. ", key: " .. tostring(key) .. ", isLibrary: " .. tostring(isLibrary).. ", isClass: " .. tostring(isClass).. ", isObject: " .. tostring(isObject))
 
     if not isClass and not isObject and not isLibrary then
         local tv = type(subject)
@@ -414,7 +415,7 @@ local function isObjectOrClassOrLibrary(subject, key)
             end
         end
     else
-        return isClass, isObject, isLibrary
+        return isObject, isClass, isLibrary
     end
     return false, false, false
 end

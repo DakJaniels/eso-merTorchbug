@@ -1201,7 +1201,7 @@ local function addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, p
 d("[tbug]addScriptContextMenuEntriesForClassOrObjectIdentifierKey")
     local retVar = false
     local subject = p_self.subject
-    if subject == nil or subject == EsoStrings or p_key == _G or p_key == "_G" then
+    if p_key == nil or subject == nil or subject == EsoStrings or p_key == _G or p_key == "_G" then
         return
     end
 
