@@ -3,7 +3,21 @@ local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 --Event tracking code was spyed and copied from the addon Zgoo! All credits go to the authors.
 --Authors: Errc, SinusPi, merlight, Rhyono
 
+------------------------------------------------------------------------------------------------------------------------
+--Local helper pointers
+local type = type
+local strfind = string.find
+local tinsert = table.insert
+
+
+local eventsInspectorControl
+local globalInspector
 local getGlobalInspector
+
+local throttledCall = tbug.throttledCall
+--local tbug_inspect = tbug.inspect
+--local tbug_inspectResults = tbug.inspectResults
+local tbug_slashCommand = tbug.slashCommand
 
 ------------------------------------------------------------------------------------------------------------------------
 local tbEvents = {}
@@ -29,21 +43,6 @@ tbEvents.eventsTableExcluded = {}
 
 tbEvents.IsEventTracking = false
 tbEvents.AreAllEventsRegistered = false
-
-------------------------------------------------------------------------------------------------------------------------
---Local helper pointers
-local type = type
-local strfind = string.find
-local tinsert = table.insert
-
-
-local eventsInspectorControl
-local globalInspector
-
-local throttledCall = tbug.throttledCall
-local tbug_inspect = tbug.inspect
-local tbug_inspectResults = tbug.inspectResults
-
 
 ------------------------------------------------------------------------------------------------------------------------
 --Local helper functions
@@ -346,7 +345,8 @@ function tbug.LoadEventsTracked(key)
     local savedEvents = tbug.savedVars.savedEvents
     if key == nil or savedEvents == nil or savedEvents[key] == nil then return end
     --Load the saved events and show them in an inspector UI!
-    tbug_inspectResults(nil, nil, savedEvents[key], true, savedEvents[key])
+    --tbug_inspectResults(nil, nil, savedEvents[key], true, savedEvents[key])
+    tbug_slashCommand(savedEvents[key], nil, true)
 end
 
 

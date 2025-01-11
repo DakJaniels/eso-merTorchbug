@@ -964,7 +964,7 @@ end
 local tbug_slashCommandMOC = tbug.slashCommandMOC
 
 
-function tbug.slashCommand(args, searchValues)
+function tbug.slashCommand(args, searchValues, openInNewInspector)
     local supportedGlobalInspectorArgs = tbug.allowedSlashCommandsForPanels
     local supportedGlobalInspectorArgsLookup = tbug.allowedSlashCommandsForPanelsLookup
 
