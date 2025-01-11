@@ -401,57 +401,66 @@ local function isObjectOrClassOrLibrary(subject, key)
     local isClass = (not isLibrary and lookupTabClass[lookupName]) or false
     local isObject = (not isLibrary and not isClass and lookupTabObject[lookupName]) or false
 
---d("[tbug]isObjectOrClassOrLibrary: " ..tostring(lookupName) .. ", key: " .. tostring(key) .. ", isLibrary: " .. tostring(isLibrary).. ", isClass: " .. tostring(isClass).. ", isObject: " .. tostring(isObject))
+-- d("[tbug]isObjectOrClassOrLibrary: " ..tostring(lookupName) .. ", key: " .. tostring(key) .. ", isLibrary: " .. tostring(isLibrary).. ", isClass: " .. tostring(isClass).. ", isObject: " .. tostring(isObject))
 
     if not isObject and not isClass and not isLibrary then
         local tv = type(subject)
         if tv == "table" then
             if subject == _G then
---d(">_G table = subject")
+-- d(">_G table = subject")
                 if key ~= nil and _G[key] ~= nil then
-                    lookupName = tbug_glookup(_G[key]) or nil
---d(">>lookupName: " ..tostring(lookupName))
+                    -- Check if the value is a function before proceeding
+                    local value = _G[key]
+                    if type(value) == "function" then
+                        return false, false, false, lookupName
+                    end
+
+                    lookupName = tbug_glookup(value) or nil
+-- d(">>lookupName: " ..tostring(lookupName))
                     if type(lookupName) ~= stringType then return nil, nil, nil, nil end
 
-                    if rawget(_G[key], "__index") then
-                        lookupTabClass[lookupName] = true
-                        --class
-                        return false, true, false, lookupName
-                    else
-                        for l_key, _ in zo_insecureNext, _G[key] do
-                            if not isClass and classIdentifierKeys[l_key] then
-                                --isClass = true
-                                lookupTabClass[lookupName] = true
-                                --class
-                                return false, true, false, lookupName
+                    -- Only proceed with rawget if we know it's a table
+                    if type(value) == "table" then
+                        if rawget(value, "__index") then
+                            lookupTabClass[lookupName] = true
+                            -- class
+                            return false, true, false, lookupName
+                        else
+                            for l_key, _ in zo_insecureNext, value do
+                                if not isClass and classIdentifierKeys[l_key] then
+                                    -- isClass = true
+                                    lookupTabClass[lookupName] = true
+                                    -- class
+                                    return false, true, false, lookupName
+                                end
                             end
-                        end
-
-                        --if not isClass then
-                            --Object
+                            -- if not isClass then
+                            -- Object
                             lookupTabObject[lookupName] = true
                             return true, false, false, lookupName
-                        --end
+                            -- end
+                        end
                     end
                 end
             else
+                -- Only proceed with rawget if subject is a table
                 if rawget(subject, "__index") then
                     lookupTabClass[lookupName] = true
-                    --class
+                    -- class
                     return false, true, false, lookupName
                 else
                     for l_key, _ in zo_insecureNext, subject do
                         if not isClass and classIdentifierKeys[l_key] then
                             isClass = true
                             lookupTabClass[lookupName] = true
-                            --class
+                            -- class
                             return false, true, false, lookupName
                         end
                     end
 
                     if not isClass then
-                        --Object
                         lookupTabObject[lookupName] = true
+                        -- Object
                         return true, false, false, lookupName
                     end
                 end
