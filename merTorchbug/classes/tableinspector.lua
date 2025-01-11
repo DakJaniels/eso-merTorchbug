@@ -226,9 +226,11 @@ end
 
 
 function TableInspectorPanel:buildMasterListSpecial()
---d("[TBug]TableInspectorPanel:buildMasterList")
+    local specialMasterlistType = self.specialMasterlistType
+--d("[TBug]TableInspectorPanel:buildMasterList-specialMasterlistType: " ..tos(specialMasterlistType))
 
     local editTable = self.subject
+
     local specialMasterListID = self.specialMasterListID
     local tbEvents = tbug.Events
     local isScenes = ((specialMasterListID and specialMasterListID == RT.SCENES_TABLE) or rawequal(editTable, tbug.ScenesOutput)) or false
@@ -252,16 +254,16 @@ function TableInspectorPanel:buildMasterListSpecial()
         self:populateMasterList(editTable, RT.LOCAL_STRING)
     elseif (specialMasterListID and specialMasterListID == RT.SOUND_STRING) or rawequal(editTable, _G.SOUNDS) then
         self:populateMasterList(editTable, RT.SOUND_STRING)
-    --elseif rawequal(editTable, LibStub.libs) then
+        --elseif rawequal(editTable, LibStub.libs) then
     elseif (specialMasterListID and specialMasterListID == RT.LIB_TABLE) or rawequal(editTable, tbug.LibrariesOutput) then
         self:bindMasterList(tbug.LibrariesOutput, RT.LIB_TABLE)
         self:populateMasterList(editTable, RT.LIB_TABLE)
-    --[[
-    elseif (specialMasterListID and specialMasterListID == RT.SCRIPTHISTORY_TABLE) or rawequal(editTable, tbug.ScriptsData) then
-        tbug.refreshScripts()
-        self:bindMasterList(tbug.ScriptsData, RT.SCRIPTHISTORY_TABLE)
-        self:populateMasterList(editTable, RT.SCRIPTHISTORY_TABLE)
-    ]]
+        --[[
+        elseif (specialMasterListID and specialMasterListID == RT.SCRIPTHISTORY_TABLE) or rawequal(editTable, tbug.ScriptsData) then
+            tbug.refreshScripts()
+            self:bindMasterList(tbug.ScriptsData, RT.SCRIPTHISTORY_TABLE)
+            self:populateMasterList(editTable, RT.SCRIPTHISTORY_TABLE)
+        ]]
     elseif (specialMasterListID and specialMasterListID == RT.ADDONS_TABLE) or rawequal(editTable, tbug.AddOnsOutput) then
         self:bindMasterList(tbug.AddOnsOutput, RT.ADDONS_TABLE)
         self:populateMasterList(editTable, RT.ADDONS_TABLE)
@@ -272,6 +274,16 @@ function TableInspectorPanel:buildMasterListSpecial()
     elseif (specialMasterListID and specialMasterListID == RT.SAVEDVARIABLES_TABLE) or rawequal(editTable, tbug.SavedVariablesOutput) then
         self:bindMasterList(tbug.SavedVariablesOutput, RT.SAVEDVARIABLES_TABLE)
         self:populateMasterList(editTable, RT.SAVEDVARIABLES_TABLE)
+
+    --Passed in a special masterlist setup etc. from e.g. opening a tab via the EventsViewer?
+    elseif specialMasterlistType ~= nil then
+        if specialMasterlistType == "EventsViewer" then
+            --self:bindMasterList(editTable, RT.EVENTS_TABLE)
+            self:populateMasterList(editTable, RT.EVENTS_TABLE)
+        else
+            return false
+        end
+
     else
         return false
     end

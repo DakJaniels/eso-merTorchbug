@@ -517,16 +517,20 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
     --local lastActive = (Class ~= nil and Class._lastActive ~= nil and true) or false
     --local lastActiveSubject = (lastActive == true and Class._lastActive.subject ~= nil and true) or false
 --d("[TBUG]ObjectInspector.acquire-name: " ..tos(name) .. ", recycleActive: " ..tos(recycleActive) .. ", titleName: " ..tos(titleName) .. ", lastActive: " ..tos(lastActive) .. ", lastActiveSubject: " ..tos(lastActiveSubject))
+    local dataProvided = data ~= nil
+    local inspectorTemplate = (dataProvided and data.inspectorTemplate) or nil
+
     local inspector = Class._activeObjects[subject]
-    if not inspector then
-        if recycleActive and Class._lastActive and Class._lastActive.subject then
+    if not inspector or inspectorTemplate ~= nil then
+        if recycleActive and Class._lastActive and Class._lastActive.subject and
+            (inspectorTemplate == nil or (inspectorTemplate ~= nil and Class._lastActive.inspectorTemplate == inspectorTemplate)) then
             inspector = Class._lastActive
             Class._activeObjects[inspector.subject] = nil
         else
             inspector = table.remove(Class._inactiveObjects)
-            if not inspector then
+            if not inspector or inspectorTemplate ~= nil then
                 local id = Class._nextObjectId
-                local templateName = Class._templateName
+                local templateName = inspectorTemplate or Class._templateName
 --d(">templateName: " ..tos(templateName))
                 local controlName = templateName .. id
                 local control = wm:CreateControlFromVirtual(controlName, nil,
@@ -542,7 +546,14 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
         end
         Class._activeObjects[subject] = inspector
         inspector.subject = subject
-        inspector._parentSubject = (data ~= nil and data._parentSubject) or nil
+        inspector._parentSubject = (dataProvided and data._parentSubject) or nil
+
+        if inspectorTemplate then
+            inspector.inspectorTemplate = inspectorTemplate
+        end
+        inspector.childName = (dataProvided and data.childName) or nil
+        inspector.specialMasterlistType = (dataProvided and data.specialMasterlistType) or nil
+
         inspector.subjectName = name
         inspector.titleName = titleName
     end
@@ -566,9 +577,11 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
     local panel, tabControl
 
     --Only for debugging:
-    local parentSubjectFound = (data ~= nil and data._parentSubject ~= nil and true) or false
-    local childNameFound = (data ~= nil and data.childName ~= nil and true) or false
-    if tbug.doDebug then d("[tbug:openTabFor]title: " ..tos(title) .. ", inspectorTitle: " ..tos(inspectorTitle) .. ", useInspectorTitel: " ..tos(useInspectorTitel) .. ", _parentSubject: " ..tos(parentSubjectFound) .. ", childNameFound: " .. tos(childNameFound) ..", isMOC: " ..tos(isMOC) .. ", openedFromExistingInspector: " .. tos(openedFromExistingInspector)) end
+    if tbug.doDebug then
+        local parentSubjectFound = (data ~= nil and data._parentSubject ~= nil and true) or false
+        local childNameFound = (data ~= nil and data.childName ~= nil and true) or false
+        d("[tbug:openTabFor]title: " ..tos(title) .. ", inspectorTitle: " ..tos(inspectorTitle) .. ", useInspectorTitel: " ..tos(useInspectorTitel) .. ", _parentSubject: " ..tos(parentSubjectFound) .. ", childNameFound: " .. tos(childNameFound) ..", isMOC: " ..tos(isMOC) .. ", openedFromExistingInspector: " .. tos(openedFromExistingInspector))
+    end
 
     -- the global table should only be viewed in GlobalInspector
     if rawequal(object, _G) then
@@ -617,26 +630,33 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
     if panel ~= nil then
         --d(">>panel found")
         local newAddedData = {
-            timeStamp =     timeStamp,
-            --timeStampStr =  nil,
+            timeStamp = timeStamp
         }
 
         --Add a new tab to the horizontal tab scrollbar
         tabControl = self:insertTab(title, panel, newTabIndex, inspectorTitle, useInspectorTitel, nil, isMOC, newAddedData)
+
+        local dataFound = data ~= nil
         --d(">>insertTab was done")
         --Add the currently inspected control/object as subject to the panel
         panel.subject = object
         --Add the data to the tab too
         tabControl.subject = object
-        local parentSubject = (data ~= nil and data._parentSubject) or nil
+        local parentSubject = (dataFound and data._parentSubject) or nil
         panel._parentSubject = parentSubject
         tabControl.parentSubject = parentSubject
         tabControl.titleClean = titleClean
         tabControl.inspectorTitle = inspectorTitle
-        local childName = (data ~= nil and data.childName) or nil
+        local childName = (dataFound and data.childName) or nil
         panel.childName = childName
         tabControl.childName = childName
         self.childName = nil -- reset at the inspector again!
+
+        local specialMasterlistType = (dataFound and data.specialMasterlistType) or nil
+        panel.specialMasterlistType = specialMasterlistType
+        tabControl.specialMasterlistType = specialMasterlistType
+        self.specialMasterlistType = nil -- reset at the inspector again!
+
 
         --Add the breadCrumbs for an easier navigation and to show the order of clicked controls/tables/data at each tab's title
         -->Only do that if opened tab is not a MOC and it was opened from clicking any opened inspector's table/control/etc.
@@ -646,7 +666,7 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
 
         --self.subjectsToPanel = self.subjectsToPanel or {}
         --self.subjectsToPanel[panel.subject] = panel
-        panel:refreshData()
+        panel:refreshData() --> Calls panel's buildMasterList etc.
         self:selectTab(tabControl, isMOC)
     end
 
@@ -662,6 +682,9 @@ function ObjectInspector:refresh(isMOC, openedFromExistingInspector, wasClickedA
     local data = {}
     data._parentSubject = self._parentSubject
     data.childName = self.childName
+    data.inspectorTemplate = self.inspectorTemplate
+    data.specialMasterlistType = self.specialMasterlistType
+
     self:openTabFor(self.subject, self.subjectName, self.titleName, wasClickedAtGlobalInspector, data, isMOC, openedFromExistingInspector)
 end
 

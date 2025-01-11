@@ -66,6 +66,7 @@ local function resetTabControlData(tabControl)
     tabControl.timeStampAddedStr = nil
 
     tabControl.childName = nil
+    tabControl.specialMasterlistType = nil
 
     tabControl.breadCrumbs = nil
     tabControl.breadCrumbsStr = nil

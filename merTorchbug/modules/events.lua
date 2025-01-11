@@ -341,10 +341,10 @@ end
 
 function tbug.LoadEventsTracked(key)
     local savedEvents = tbug.savedVars.savedEvents
-    if key == nil or savedEvents == nil or savedEvents[key] == nil then return end
+    if key == nil or savedEvents == nil or savedEvents[key] == nil or savedEvents[key].events == nil then return end
     --Load the saved events and show them in an inspector UI!
-    --tbug_inspectResults(nil, nil, savedEvents[key], true, savedEvents[key])
-    tbug_slashCommand("TBUG.savedVars.savedEvents["..tostring(key).."]", nil, true)
+    tbug_slashCommand("TBUG.savedVars.savedEvents["..tostring(key).."].events", nil, true, { specialMasterlistType = "EventsViewer" })
+    --todo How to open the inspector with the same row setup like the "Events" tab?
 end
 
 

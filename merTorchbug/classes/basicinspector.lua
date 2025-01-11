@@ -579,6 +579,7 @@ function BasicInspectorPanel:refreshData()
         local doRefreshDirectly = true
         if libAS ~= nil then
             local currentPanel = self.currentPanel
+            --Is global inspector panel?
             if currentPanel and currentPanel.control.isGlobalInspector then
                 local currentPanelTabId = getTBUGGlobalInspectorPanelIdByName(currentPanel)
                 if currentPanelTabId ~= nil and panelNames[currentPanelTabId].async == true then
@@ -590,7 +591,7 @@ function BasicInspectorPanel:refreshData()
 
                         local selfVar = self
 
-                        local start = GetGameTimeMilliseconds()
+                        --local start = GetGameTimeMilliseconds()
 
                         --Use LibAsync tasks to call the functions
                         local task = libAS:Create("TBug_task-BasicInspector_refreshData")
