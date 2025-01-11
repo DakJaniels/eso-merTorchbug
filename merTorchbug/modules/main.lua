@@ -941,8 +941,9 @@ end
 tbug.updateTbugGlobalMouseUpHandler = updateTbugGlobalMouseUpHandler
 
 
-function tbug.slashCommandMOC(comingFromEventGlobalMouseUp, searchValues)
+function tbug.slashCommandMOC(comingFromEventGlobalMouseUp, searchValues, openInNewInspector)
     comingFromEventGlobalMouseUp = comingFromEventGlobalMouseUp or false
+    openInNewInspector = openInNewInspector or false
     --d("tbug.slashCommandMOC - comingFromEventGlobalMouseUp: " ..tos(comingFromEventGlobalMouseUp))
     --Was already checked in event_global_mouse_up!
     --if comingFromEventGlobalMouseUp == true then
@@ -959,16 +960,19 @@ function tbug.slashCommandMOC(comingFromEventGlobalMouseUp, searchValues)
     if mouseOverControl == GuiRoot then return end
 
     local searchData = buildSearchData(searchValues, 10) --10 milliseconds delay before search starts
+    tbug.doOpenNewInspector = tbug.doOpenNewInspector or openInNewInspector
     inspectResults((comingFromEventGlobalMouseUp == true and "MOC_EVENT_GLOBAL_MOUSE_UP") or "MOC", searchData, mouseOverControl, true, mouseOverControl)
 end
 local tbug_slashCommandMOC = tbug.slashCommandMOC
 
 
 function tbug.slashCommand(args, searchValues, openInNewInspector)
+    openInNewInspector = openInNewInspector or false
     local supportedGlobalInspectorArgs = tbug.allowedSlashCommandsForPanels
     local supportedGlobalInspectorArgsLookup = tbug.allowedSlashCommandsForPanelsLookup
 
     local searchData = buildSearchData(searchValues, 10) --10 milliseconds delay before search starts
+    tbug.doOpenNewInspector = tbug.doOpenNewInspector or openInNewInspector
 
     if args ~= "" then
         if tbug.doDebug then d("[tbug]slashCommand - " ..tos(args) .. ", searchValues: " ..tos(searchValues)) end
@@ -978,7 +982,7 @@ function tbug.slashCommand(args, searchValues, openInNewInspector)
         local argOne = argsOptions[1]
 
         if argOne == "mouse" or argOne == "m" then
-            tbug_slashCommandMOC(false, searchValues)
+            tbug_slashCommandMOC(false, searchValues, openInNewInspector)
         elseif argOne == "free" then
             SetGameCameraUIMode(true)
         else
@@ -991,6 +995,7 @@ function tbug.slashCommand(args, searchValues, openInNewInspector)
                     isSupportedGlobalInspectorArg = true
                 end
             end
+
             if isSupportedGlobalInspectorArg then
                 local supportedGlobalInspectorArg = firstToUpper(argOne)
 
@@ -1009,7 +1014,7 @@ function tbug.slashCommand(args, searchValues, openInNewInspector)
                 if tbug.doDebug then d(">>tabIndexToShow: " ..tos(tabIndexToShow)) end
                 if tabIndexToShow ~= nil then
                     if tbug.doDebug then d(">tbug_inspectorSelectTabByName") end
-                    tbug_inspectorSelectTabByName("globalInspector", supportedGlobalInspectorArg, tabIndexToShow, true, searchData)
+                    tbug_inspectorSelectTabByName("globalInspector", supportedGlobalInspectorArg, tabIndexToShow, openInNewInspector, true, searchData)
                 else
                     if tbug.doDebug then d(">inspectResults1") end
                     inspectResults(nil, searchData, args, evalString(args)) --evalString uses pcall and returns boolean, table(nilable)
@@ -1037,6 +1042,7 @@ function tbug.slashCommand(args, searchValues, openInNewInspector)
             end
         end
     elseif tbugGlobalInspector then
+        openInNewInspector = false
         if tbugGlobalInspector:IsHidden() then
             if tbug.doDebug then d(">show GlobalInspector") end
             inspectResults(nil, searchData, "_G", true, _G)

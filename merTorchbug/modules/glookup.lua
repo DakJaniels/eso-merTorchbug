@@ -331,12 +331,13 @@ end
 
 local refreshStartTime
 local function doRefresh()
+    local doDebug = tbug.doDebug
     if not g_needRefresh then return end
     if g_refreshRunning then
         d("tbug: _G Lookup refresh already active! Started: " .. tos(refreshStartTime ~= nil and refreshStartTime > 0 and os.date("%c", refreshStartTime)))
         return
     end
-    if LibAsync ~= nil then
+    if LibAsync ~= nil and doDebug then
         d("tbug: _G Lookup queued to LibAsync...")
     end
     refreshStartTime = GetTimeStamp()
@@ -763,7 +764,9 @@ local function doRefresh()
         :Finally(function(p_task)
             --df("[Tbug]ENUM special and StringId generation took %ims", GetGameTimeMilliseconds() - start2)
             if not enumError then
-                df("tbug: LibAsync global ENUM generation finished after %ims", GetGameTimeMilliseconds() - start)
+                if doDebug then
+                    df("tbug: LibAsync global ENUM generation finished after %ims", GetGameTimeMilliseconds() - start)
+                end
                 g_needRefresh = false
             else
                 g_needRefresh = true

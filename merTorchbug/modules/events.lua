@@ -15,8 +15,6 @@ local globalInspector
 local getGlobalInspector
 
 local throttledCall = tbug.throttledCall
---local tbug_inspect = tbug.inspect
---local tbug_inspectResults = tbug.inspectResults
 local tbug_slashCommand = tbug.slashCommand
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -346,7 +344,7 @@ function tbug.LoadEventsTracked(key)
     if key == nil or savedEvents == nil or savedEvents[key] == nil then return end
     --Load the saved events and show them in an inspector UI!
     --tbug_inspectResults(nil, nil, savedEvents[key], true, savedEvents[key])
-    tbug_slashCommand(savedEvents[key], nil, true)
+    tbug_slashCommand("TBUG.savedVars.savedEvents["..tostring(key).."]", nil, true)
 end
 
 
