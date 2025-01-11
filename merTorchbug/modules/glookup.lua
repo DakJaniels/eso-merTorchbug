@@ -33,14 +33,15 @@ local isObjectType = {
     [functionType] = true,
 }
 
-local g_nonEnumPrefixes = tbug.nonEnumPrefixes
+local g_objects = tbug.LookupTabs["_G"] -- = {}
 
+local g_nonEnumPrefixes = tbug.nonEnumPrefixes
 local mtEnum = { __index = function (_, v) return v end }
 local g_enums = setmetatable({}, autovivify(mtEnum))
 tbug.enums = g_enums
 local g_needRefresh = true
 local g_refreshRunning = false
-local g_objects = {}
+
 local g_tmpGroups = setmetatable({}, autovivify(nil))
 tbug.enumTmpGroups = g_tmpGroups
 local g_tmpKeys = {}

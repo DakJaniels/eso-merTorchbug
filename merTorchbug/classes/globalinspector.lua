@@ -17,7 +17,7 @@ local tbug_glookup = tbug.glookup
 local checkIfItemLinkFunc = tbug.checkIfItemLinkFunc
 local sortItemLinkFunctions = tbug.sortItemLinkFunctions
 
-local customKeysForInspectorRows = tbug.customKeysForInspectorRows
+--local customKeysForInspectorRows = tbug.customKeysForInspectorRows
 
 --------------------------------
 

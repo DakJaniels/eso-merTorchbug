@@ -420,18 +420,18 @@ local function isObjectOrClassOrLibrary(subject, key)
                     else
                         for l_key, _ in zo_insecureNext, _G[key] do
                             if not isClass and classIdentifierKeys[l_key] then
-                                isClass = true
+                                --isClass = true
                                 lookupTabClass[lookupName] = true
                                 --class
                                 return false, true, false, lookupName
                             end
                         end
 
-                        if not isClass then
+                        --if not isClass then
                             --Object
                             lookupTabObject[lookupName] = true
                             return true, false, false, lookupName
-                        end
+                        --end
                     end
                 end
             else

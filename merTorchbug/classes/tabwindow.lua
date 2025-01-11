@@ -587,6 +587,7 @@ function TabWindow:__init__(control, id)
     --else
 --d(">GlobalInspector init - TabWindow")
     end
+    local isGlobalInspector = self.control.isGlobalInspector
 
     --Filter and search
     self.filterColorGood = ZO_ColorDef:New(118/255, 188/255, 195/255)
@@ -878,16 +879,17 @@ function TabWindow:__init__(control, id)
     self.refreshButton = refreshButton
 
     --Events tracking
-    if self.control.isGlobalInspector == true then
+    if isGlobalInspector == true then
         local eventsButton = TextButton(control, "EventsButton")
         eventsButton.toggleState = false
-        eventsButton.tooltipText = "Enable EVENT tracking"
         eventsButton.onMouseUp = function(buttonCtrl, mouseButton, upInside, ctrl, alt, shift, command)
             if upInside then
                 if LibScrollableMenu and mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
                     tbug.ShowEventsContextMenu(buttonCtrl, nil, nil, true)
 
                 elseif mouseButton == MOUSE_BUTTON_INDEX_LEFT then
+                    buttonCtrl.toggleState = false
+
                     local tbEvents = tbug.Events
                     if not tbEvents then return end
                     if tbEvents.IsEventTracking == true then
@@ -896,24 +898,13 @@ function TabWindow:__init__(control, id)
                         tbug.StartEventTracking()
                     end
 
-                    buttonCtrl.toggleState = not buttonCtrl.toggleState
                     onMouseExitHideTooltip(eventsButton.control)
-
-                    if not buttonCtrl.toggleState then
-                        eventsButton:fitText("e", 12)
-                        eventsButton:setMouseOverBackgroundColor(0, 0.8, 0, 1)
-                        eventsButton.tooltipText = "Enable EVENT tracking"
-                    else
-                        eventsButton:fitText("E", 12)
-                        eventsButton:setMouseOverBackgroundColor(0.8, 0.0, 0, 0.4)
-                        eventsButton.tooltipText = "Disable EVENT tracking"
-                    end
                 end
             end
         end
         eventsButton:fitText("e", 12)
         eventsButton:setMouseOverBackgroundColor(0, 0.8, 0, 1)
-        eventsButton.tooltipText = "Enable EVENT tracking"
+        eventsButton.tooltipText = "Event tracking is |cFF0000Disabled|r.\nClick to enable EVENT tracking"
         eventsButton:insertOnMouseEnterHandler(function(ctrl) onMouseEnterShowTooltip(ctrl.control, ctrl.tooltipText, 500) end)
         eventsButton:insertOnMouseExitHandler(function(ctrl) onMouseExitHideTooltip(ctrl.control) end)
         self.eventsButton = eventsButton

@@ -1782,11 +1782,7 @@ function tbug.refreshSavedInspectors()
 end
 
 
-local function onPlayerActivated(event, init)
-    --Update libs and AddOns
-    tbug_refreshAddOnsAndLibraries()
-    --Find and update global SavedVariable tables
-    tbug_refreshSavedVariablesTable()
+local function onPlayerActivated(event)
 end
 
 --The possible slash commands in the chat editbox
@@ -2026,6 +2022,11 @@ local function onAddOnLoaded(event, addOnName)
     env.env = setmetatable(env, {__index = _G})
     tbug.env = env
 
+    --Update libs and AddOns
+    tbug_refreshAddOnsAndLibraries()
+    --Find and update global SavedVariable tables
+    tbug_refreshSavedVariablesTable()
+
     --Load the slash commands
     slashCommands()
 
@@ -2043,6 +2044,8 @@ local function onAddOnLoaded(event, addOnName)
         tbug.doRefresh()
     end
 
+    --Enable event tracking?
+    tbug.AutomaticEventTrackingCheck()
 
     --PreHook the chat#s return key pressed function in order to check for run /script commands
     --and add them to the script history
@@ -2139,7 +2142,7 @@ local function onAddOnLoaded(event, addOnName)
 
     updateTbugGlobalMouseUpHandler(isMouseRightAndLeftAndSHIFTClickEnabled(true))
 
-    EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated)
+    --EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated)
 end
 
 

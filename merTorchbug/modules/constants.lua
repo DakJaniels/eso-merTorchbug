@@ -491,13 +491,9 @@ local classIdentifierKeys = {
 }
 tbug.classIdentifierKeys = classIdentifierKeys
 
-local objectIdentifierKeys = {
-    ["__isObject"] = true, -- added by tbug in global inspector buildMasterList --> Currently 20250106 disabled as it pollutes the SavedVariables with that __isObject entry!
-}
-tbug.objectIdentifierKeys = objectIdentifierKeys
-
 --Lookup tables for different types
 tbug.LookupTabs = {}
+tbug.LookupTabs["_G"] = {}      --> See file glookup.lua, g_objects
 tbug.LookupTabs["class"] = {}
 tbug.LookupTabs["object"] = {}
 tbug.LookupTabs["library"] = {}

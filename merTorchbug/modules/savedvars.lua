@@ -49,7 +49,10 @@ local defaults =
 	customTemplate = {
 		font = 'ZoFontGameSmall',
 		height = 24
-	}
+	},
+
+    enableEventTrackerAtStartup = false,
+    savedEvents = {},
 }
 tbug.svDefaults = defaults
 

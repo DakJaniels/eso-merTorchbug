@@ -15,11 +15,13 @@ local EM = EVENT_MANAGER
 local searchURLs              = tbug.searchURLs
 local tbug_GetDefaultTemplate = tbug.GetDefaultTemplate
 local tbug_GetTemplate        = tbug.GetTemplate
-local tbug_getControlName     = tbug.getControlName
+--local tbug_getControlName     = tbug.getControlName
 local tbug_glookup
-local lookupTabClass = tbug.LookupTabs["class"]
 
 --LibScrollableMenu
+local lsm = LibScrollableMenu
+local useLibScrollableMenu = lsm ~= nil
+
 --local headerEntryColor = ZO_ColorDef:New(GetInterfaceColor(INTERFACE_COLOR_TYPE_TEXT_COLORS, INTERFACE_TEXT_COLOR_GAMEPAD_CATEGORY_HEADER))
 local noCallbackFunc = function() end
 
@@ -31,13 +33,11 @@ local isSplittableString = tbug.isSplittableString
 local findUpperCaseCharsAndReturnOffsetsTab = tbug.findUpperCaseCharsAndReturnOffsetsTab
 local tbug_slashCommand = tbug.slashCommand
 local tbug_slashCommandSCENEMANAGER = tbug.slashCommandSCENEMANAGER
-local tbug_inspectorSelectTabByName = tbug.inspectorSelectTabByName
+--local tbug_inspectorSelectTabByName = tbug.inspectorSelectTabByName
 
 local globalInspectorDialogTabKey = getGlobalInspectorPanelTabName("dialogs")
 local globalInspectorFunctionsTabKey = getGlobalInspectorPanelTabName("functions")
 
-local classIdentifierKeys = tbug.classIdentifierKeys
---local objectIdentifierKeys = tbug.objectIdentifierKeys
 local isObjectOrClassOrLibrary = tbug.isObjectOrClassOrLibrary
 
 
@@ -61,6 +61,7 @@ local keyShiftAndLMBRMB = keyShiftStr .. "+|t100.000000%:100.000000%:/esoui/art/
 local getterOrSetterStr = "%s()"
 local getterOrSetterWithControlStr = "%s:%s()"
 
+local searchActionsStr = "Search actions"
 local externalUrlGitHubSearchString = "Search %q in ESOUI sources at \'GitHub\'"
 
 local checkForSpecialDataEntryAsKey = tbug.checkForSpecialDataEntryAsKey
@@ -593,7 +594,6 @@ function tbug.runScript(scriptKeybindNumber)
     tbug_slashCommand(command)
 end
 
-
 function tbug.cleanScriptHistory()
     local alreadyFoundScripts = {}
     local duplicatesFound = {}
@@ -749,29 +749,44 @@ local function removeFromIncluded(eventId, removeAll)
     end
 end
 
+local function enableBecauseEventsListIsNotEmpty()
+    return not ZO_IsTableEmpty(tbug.Events.eventsTableInternal)
+end
+
 local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
     --Did we right click the main UI's e/E toggle button?
     isEventMainUIToggle = isEventMainUIToggle or false
     if isEventMainUIToggle == true then
         hideContextMenus()
     end
+    if not useLibScrollableMenu then return end
 
     local events    = tbug.Events
     eventsInspector = eventsInspector or events.getEventsTrackerInspectorControl()
 
     AddCustomScrollableMenuEntry("Event tracking actions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
 
+    local startOrStopEventTracking = not events.IsEventTracking and "Start Event tracking" or "Stop Event tracking"
+    AddCustomScrollableMenuEntry(startOrStopEventTracking, function()
+            if tbug.Events.IsEventTracking == true then
+                tbug.StopEventTracking()
+            else
+                tbug.StartEventTracking()
+            end
+        end, LSM_ENTRY_TYPE_NORMAL, nil)
+
     --If the events list is not empty
-    if eventsInspector ~= nil and #events.eventsTableInternal > 0 then
+    if eventsInspector ~= nil and enableBecauseEventsListIsNotEmpty() then
+        AddCustomScrollableMenuDivider()
         AddCustomScrollableMenuEntry("Clear events list", function()
-            events.eventsTableInternal = {}
-            tbug.RefreshTrackedEventsList()
-            globalInspector = globalInspector or tbug.getGlobalInspector(true)
-            local eventsPanel = globalInspector.panels["events"]
-            --eventsPanel:populateMasterList(events.eventsTable, RT.EVENTS_TABLE)
-            eventsPanel:refreshData()
-            eventsPanel:refreshData() --todo: why do we need to call this twice to clear the list?
-        end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                events.eventsTableInternal = {}
+                tbug.RefreshTrackedEventsList()
+                globalInspector = globalInspector or tbug.getGlobalInspector(true)
+                local eventsPanel = globalInspector.panels["events"]
+                --eventsPanel:populateMasterList(events.eventsTable, RT.EVENTS_TABLE)
+                eventsPanel:refreshData()
+                eventsPanel:refreshData() --todo: why do we need to call this twice to clear the list?
+            end, LSM_ENTRY_TYPE_NORMAL, nil)
     end
 
     local currentValue
@@ -791,6 +806,8 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
     currentValue = p_data.value
     local eventName = currentValue._eventName
     local eventId   = currentValue._eventId
+
+    local isEventSettingsMenu = eventName == "Settings"
 
     --Actual event actions
     local eventTrackingSubMenuTable = {}
@@ -834,10 +851,16 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
         callback = function()
             reRegisterAllEvents()
         end,
+        enabled = function()
+            local anyIncluded = not ZO_IsTableEmpty(tbug.Events.eventsTableIncluded)
+            if anyIncluded then return true end
+            local anyExcluded = not ZO_IsTableEmpty(tbug.Events.eventsTableExcluded)
+            if anyExcluded then return true end
+            return false
+        end,
     }
     table.insert(eventTrackingSubMenuTable, eventTrackingSubMenuTableEntry)
     AddCustomScrollableSubMenuEntry(strformat("Event: \'%s\'", tos(eventName)), eventTrackingSubMenuTable)
-
 
     --Included events
     local includedEvents = events.eventsTableIncluded
@@ -877,6 +900,60 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
             table.insert(eventTrackingExcludedSubMenuTable, eventTrackingExcludedSubMenuTableEntry)
         end
         AddCustomScrollableSubMenuEntry("EXcluded events", eventTrackingExcludedSubMenuTable)
+    end
+
+
+    if isEventSettingsMenu then
+        AddCustomScrollableMenuDivider()
+        if enableBecauseEventsListIsNotEmpty() then
+            AddCustomScrollableMenuEntry("Save currently tracked events", function() tbug.SaveEventsTracked() end, LSM_ENTRY_TYPE_NORMAL, nil, {
+                tooltip = "Save the currently tracked events so that you can load them later again.\n\nThis will only work, if you currently got tracked events in the list!"
+            })
+        end
+
+        local savedEvents = tbug.savedVars.savedEvents
+        if not ZO_IsTableEmpty(savedEvents) then
+            local eventTrackingSettingsLoadSavedSubmenu = {}
+            for k, v in ipairs(savedEvents) do
+                local timeStampStr = (v._timeStamp ~= nil and os.date("%c", v._timeStamp)) or ""
+                local eventTrackingSettingsLoadSubmenuEntry = {
+                    label = "Load #" ..tostring(k) .. " (" .. timeStampStr .. ")" ,
+                    callback = function()
+                        tbug.LoadEventsTracked(k)
+                    end,
+                }
+                table.insert(eventTrackingSettingsLoadSavedSubmenu, eventTrackingSettingsLoadSubmenuEntry)
+            end
+            AddCustomScrollableSubMenuEntry("Load tracked events", eventTrackingSettingsLoadSavedSubmenu)
+        end
+
+        --Enable event tracking at startup of tbug/reloadui
+        local eventTrackingAtStartupSettingsSubmenu = {}
+        eventTrackingAtStartupSettingsSubmenu[#eventTrackingAtStartupSettingsSubmenu + 1] = {
+            name            = "Automatically enable at startup",
+            checked           = function() return tbug.savedVars.enableEventTrackerAtStartup end,
+            callback        =   function(comboBox, itemName, item, checked)
+                tbug.savedVars.enableEventTrackerAtStartup = checked
+            end,
+            --entries         = submenuEntries,
+            tooltip         = "Automatically enable the event tracker as the AddOn merTorchbug loads. \nThis will open the global inspector and activate the events tab if you login or reload the UI.",
+            entryType = lsm.LSM_ENTRY_TYPE_CHECKBOX,
+            --rightClickCallback = function() d("Test context menu")  end
+        }
+        eventTrackingAtStartupSettingsSubmenu[#eventTrackingAtStartupSettingsSubmenu + 1] = {
+            name            = "Enable at startup & !|cFF0000Reload the UI Now|r!",
+            callback        =   function(comboBox, itemName, item)
+                tbug.savedVars.enableEventTrackerAtStartup = true
+                ReloadUI()
+            end,
+            --entries         = submenuEntries,
+            tooltip         = "|cFF0000Attention:|r Clicking this button will automatically enable the event tracker as the AddOn merTorchbug loads AND |cFF0000it will relod your UI now|r!\nThis will open the global inspector and activate the events tab if you login or reload the UI.",
+            entryType = lsm.LSM_ENTRY_TYPE_BUTTON,
+            --rightClickCallback = function() d("Test context menu")  end
+        }
+
+        AddCustomScrollableMenuDivider()
+        AddCustomScrollableSubMenuEntry("!> Event tracking at startup", eventTrackingAtStartupSettingsSubmenu)
     end
 
     if isEventMainUIToggle == true then
@@ -1167,19 +1244,10 @@ local function buildItemLinkContextMenuEntries(p_self, p_row, p_data, prefixDept
     if not ZO_IsTableEmpty(itemLinkPrefixesSubmenuTab) then
         table.sort(itemLinkPrefixesSubmenuTab, function(a, b) return a.submenuName < b.submenuName end)
 
-        local useLibScrollableMenu = LibScrollableMenu ~= nil and AddCustomScrollableSubMenuEntry ~= nil and true or false
-        if useLibScrollableMenu then
-            AddCustomScrollableMenuEntry("ItemLink functions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
-        else
-            AddCustomScrollableMenuEntry("ItemLink functions", function()  end, LSM_ENTRY_TYPE_HEADER, nil, nil, nil, nil, nil)
-        end
+        AddCustomScrollableMenuEntry("ItemLink functions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
 
         for _, data in ipairs(itemLinkPrefixesSubmenuTab) do
-            if useLibScrollableMenu then
-                AddCustomScrollableSubMenuEntry(data.submenuName, data.submenuEntries)
-            else
-                AddCustomScrollableSubMenuEntry(data.submenuName, data.submenuEntries)
-            end
+            AddCustomScrollableSubMenuEntry(data.submenuName, data.submenuEntries)
         end
     end
 --[[
@@ -1255,7 +1323,6 @@ end
 --Custom context menu entry creation for inspector rows / LibScrollableMenu support as of version 1.7
 function tbug.buildRowContextMenuData(p_self, p_row, p_data, p_contextMenuForKey, mouseIsOverRightKey)
     p_contextMenuForKey = p_contextMenuForKey or false
-    local useLibScrollableMenu = (LibScrollableMenu ~= nil and AddCustomScrollableMenuEntry ~= nil and true) or false
 
 --d("[tbug.buildRowContextMenuData]isKey: " ..tos(p_contextMenuForKey) .. ", mouseIsOverRightKey: " .. tos(mouseIsOverRightKey) ..", useLibScrollableMenu: " ..tos(useLibScrollableMenu))
     if useLibScrollableMenu == false or (p_self == nil or p_row == nil or p_data == nil) then return end
@@ -1498,7 +1565,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
 
                 local searchHeaderAdded = false
                 if not ZO_IsTableEmpty(searchSubmenu) then
-                    AddCustomScrollableMenuEntry("Search actions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
+                    AddCustomScrollableMenuEntry(searchActionsStr, noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
                     searchHeaderAdded = true
                     AddCustomScrollableSubMenuEntry("Search", searchSubmenu)
                 end
@@ -1509,7 +1576,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 if keyStr ~= nil and keyStr ~= "" then
                     tins(externalSearchSubmenu,
                             {
-                                name =     strformat("Search %q in ESOUI sources at \'GitHub\'", keyStr),
+                                name =     strformat(externalUrlGitHubSearchString, keyStr),
                                 callback =  function() searchExternalURL(p_self, p_row, p_data, keyStr, "github") end,
                             }
                     )
@@ -1517,7 +1584,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 if subjectName ~= nil and subjectName ~= keyStr and type(subjectName) == "string" then
                     tins(externalSearchSubmenu,
                             {
-                                name =     strformat("Search %q in ESOUI sources at \'GitHub\'", subjectName),
+                                name =     strformat(externalUrlGitHubSearchString, subjectName),
                                 callback =  function() searchExternalURL(p_self, p_row, p_data, subjectName, "github") end,
                             }
                     )
@@ -1525,14 +1592,14 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 if parentSubjectName ~= nil and parentSubjectName ~= subjectName and parentSubjectName ~= keyStr and type(parentSubjectName) == "string" then
                     tins(externalSearchSubmenu,
                             {
-                                name =     strformat("Search %q in ESOUI sources at \'GitHub\'", parentSubjectName),
+                                name =     strformat(externalUrlGitHubSearchString, parentSubjectName),
                                 callback =  function() searchExternalURL(p_self, p_row, p_data, parentSubjectName, "github") end,
                             }
                     )
                 end
                 if not ZO_IsTableEmpty(externalSearchSubmenu) then
                     if not searchHeaderAdded then
-                        AddCustomScrollableMenuEntry("Search actions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
+                        AddCustomScrollableMenuEntry(searchActionsStr, noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
                         searchHeaderAdded = true
                     end
                     AddCustomScrollableSubMenuEntry("Search external", externalSearchSubmenu)
