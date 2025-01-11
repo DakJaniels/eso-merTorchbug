@@ -342,9 +342,8 @@ end
 function tbug.LoadEventsTracked(key)
     local savedEvents = tbug.savedVars.savedEvents
     if key == nil or savedEvents == nil or savedEvents[key] == nil or savedEvents[key].events == nil then return end
-    --Load the saved events and show them in an inspector UI!
+    --Load the saved events and show them in an inspector UI, passing on data.specialMasterlistType to the BuildMasterList func of the panel (TableInspectorPanel)
     tbug_slashCommand("TBUG.savedVars.savedEvents["..tostring(key).."].events", nil, true, { specialMasterlistType = "EventsViewer" })
-    --todo How to open the inspector with the same row setup like the "Events" tab?
 end
 
 

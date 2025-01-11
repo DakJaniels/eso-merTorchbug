@@ -341,6 +341,7 @@ local function inspectResults(specialInspectionString, searchData, data, source,
         TBUG._evalData = {...}
     end
 
+
     local recycle
     local doOpenNewInspector = tbug.doOpenNewInspector
     if doOpenNewInspector == false then
@@ -350,13 +351,13 @@ local function inspectResults(specialInspectionString, searchData, data, source,
     elseif doOpenNewInspector == nil then
         recycle = not IsShiftKeyDown()
     end
---d("[TBUG]inspectResults - recycle: " ..tos(recycle) .. "; tbug.doOpenNewInspector: " ..tos(tbug.doOpenNewInspector))
-    tbug.doOpenNewInspector = nil
-
     local isMOCFromGlobalEventMouseUp = (specialInspectionString and specialInspectionString == "MOC_EVENT_GLOBAL_MOUSE_UP") or false
-    --Prevent SHIFT key handling at EVENT_GLOBAL_MOUSE_UP, as the shift key always needs to be pressed there!
     if isMOCFromGlobalEventMouseUp == true then recycle = true end
     local isMOC = (specialInspectionString ~= nil and (isMOCFromGlobalEventMouseUp == true or specialInspectionString == "MOC")) or false
+--d("[TBUG]inspectResults - recycle: " ..tos(recycle) .. "; tbug.doOpenNewInspector: " ..tos(tbug.doOpenNewInspector) .. ", isMOCFromGlobalEventMouseUp: " .. tos(isMOCFromGlobalEventMouseUp) .. ", isMOC: " .. tos(isMOC))
+    tbug.doOpenNewInspector = nil
+
+    --Prevent SHIFT key handling at EVENT_GLOBAL_MOUSE_UP, as the shift key always needs to be pressed there!
     if doDebug then d("tb: inspectResults - specialInspectionString: " ..tos(specialInspectionString) .. ", source: " ..tos(source) .. ", status: " ..tos(status) .. ", recycle: " ..tos(recycle) .. ", isMOC: " ..tos(isMOC) .. ", searchData: " ..tos(searchData)) end
     if not status then
 
@@ -561,21 +562,22 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
     local doDebug = tbug.doDebug --TODO: change again
 
     local resType = type(object)
+    if doDebug then
+        tbug._debugInspect = {
+            object = object,
+            tabTitle = tabTitle,
+            winTitle = winTitle,
+            recycleActive = recycleActive,
+            objectParent = objectParent,
+            currentResultIndex = currentResultIndex,
+            allResults = allResults,
+            data = data,
+            searchData = searchData,
+            isMOC = isMOC,
+            wasClickedAtGlobalInspector = wasClickedAtGlobalInspector,
+        }
+    end
 
-tbug._debugInspect = {
-    object = object,
-    tabTitle = tabTitle,
-    winTitle = winTitle,
-    recycleActive = recycleActive,
-    objectParent = objectParent,
-    currentResultIndex = currentResultIndex,
-    allResults = allResults,
-    data = data,
-    searchData = searchData,
-    isMOC = isMOC,
-    wasClickedAtGlobalInspector = wasClickedAtGlobalInspector,
-}
-    --d("[tbug.inspect]object: " ..tos(object) .. ", objType: "..tos(resType) ..", tabTitle: " ..tos(tabTitle) .. ", winTitle: " ..tos(winTitle) .. ", recycleActive: " .. tos(recycleActive) ..", objectParent: " ..tos(objectParent) .. ", searchData: " ..tos(searchData))
     if doDebug then d("[tbug.inspect]object: " ..tos(object) .. ", objType: "..tos(resType) ..", tabTitle: " ..tos(tabTitle) .. ", winTitle: " ..tos(winTitle) .. ", recycleActive: " .. tos(recycleActive) ..", objectParent: " ..tos(objectParent) .. ", searchData: " ..tos(searchData)) end
     if rawequal(object, _G) then
         if doDebug then d(">rawequal _G") end
@@ -629,8 +631,8 @@ tbug._debugInspect = {
             title = getControlName(object)
         end
         objInsp = objInsp or classes.ObjectInspector
+        inspector = objInsp:acquire(object, tabTitle, recycleActive, title, data)
         if inspector ~= nil then
-            inspector = objInsp:acquire(object, tabTitle, recycleActive, title, data)
             inspector.control:SetHidden(false)
             inspector:refresh(isMOC, false)
             getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
@@ -960,9 +962,8 @@ end
 tbug.updateTbugGlobalMouseUpHandler = updateTbugGlobalMouseUpHandler
 
 
-function tbug.slashCommandMOC(comingFromEventGlobalMouseUp, searchValues, openInNewInspector, data)
+function tbug.slashCommandMOC(comingFromEventGlobalMouseUp, searchValues)
     comingFromEventGlobalMouseUp = comingFromEventGlobalMouseUp or false
-    openInNewInspector = openInNewInspector or false
     --d("tbug.slashCommandMOC - comingFromEventGlobalMouseUp: " ..tos(comingFromEventGlobalMouseUp))
     --Was already checked in event_global_mouse_up!
     --if comingFromEventGlobalMouseUp == true then
@@ -979,8 +980,7 @@ function tbug.slashCommandMOC(comingFromEventGlobalMouseUp, searchValues, openIn
     if mouseOverControl == GuiRoot then return end
 
     local searchData = buildSearchData(searchValues, 10) --10 milliseconds delay before search starts
-    tbug.doOpenNewInspector = tbug.doOpenNewInspector or openInNewInspector
-    inspectResults((comingFromEventGlobalMouseUp == true and "MOC_EVENT_GLOBAL_MOUSE_UP") or "MOC", searchData, data, mouseOverControl, true, mouseOverControl)
+    inspectResults((comingFromEventGlobalMouseUp == true and "MOC_EVENT_GLOBAL_MOUSE_UP") or "MOC", searchData, nil, mouseOverControl, true, mouseOverControl)
 end
 local tbug_slashCommandMOC = tbug.slashCommandMOC
 
@@ -1001,7 +1001,7 @@ function tbug.slashCommand(args, searchValues, openInNewInspector, data)
         local argOne = argsOptions[1]
 
         if argOne == "mouse" or argOne == "m" then
-            tbug_slashCommandMOC(false, searchValues, openInNewInspector, data)
+            tbug_slashCommandMOC(false, searchValues)
         elseif argOne == "free" then
             SetGameCameraUIMode(true)
         else
