@@ -56,6 +56,7 @@ local panelNames = tbug.panelNames
 local customKeysForInspectorRows = tbug.customKeysForInspectorRows
 local customKey__usedInScenes = customKeysForInspectorRows.usedInScenes
 local stringType = "string"
+local tableType = "table"
 
 local tbug_glookup = tbug.glookup
 local tbug_getKeyOfObject = tbug.getKeyOfObject
@@ -159,7 +160,7 @@ local function showFunctionReturnValue(object, tabTitle, winTitle, objectParent)
     end
 
     if resultsOfFunc then
-        if type(resultsOfFunc) == "table" then
+        if type(resultsOfFunc) == tableType then
             for k, v in ipairs(resultsOfFunc) do
                 d("[" .. tos(k) .. "] " .. v)
             end
@@ -271,7 +272,7 @@ tbug.parseSlashCommandArgumentsAndReturnTable = parseSlashCommandArgumentsAndRet
 
 local function getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
 --d("[TB]getSearchDataAndUpdateInspectorSearchEdit")
-    if searchData ~= nil and inspector ~= nil and inspector.updateFilterEdit ~= nil then
+    if type(searchData) == tableType and inspector ~= nil and inspector.updateFilterEdit ~= nil then
         local searchText = searchData.searchText
 --d(">searchStr: " .. tos(searchText))
         if searchText ~= nil then
@@ -318,7 +319,7 @@ tbug.closeAllTabs = closeAllTabs
 
 
 local function hasMember(tab, keyPattern, valueType, maxDepth)
-    if type(tab) == "table" and maxDepth > 0 then
+    if type(tab) == tableType and maxDepth > 0 then
         for k, v in zo_insecureNext, tab do
             if type(v) == valueType and type(k) == "string" and strfind(k, keyPattern) then
                 return true
@@ -567,7 +568,7 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
         inspector.control:SetHidden(false)
         inspector:refresh() --will remove all tabs and create them again
         getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
-    elseif resType == "table" then
+    elseif resType == tableType then
         if doDebug then d(">table") end
         local title = tbug_glookup(object) or winTitle or tos(object)
         if wasClickedAtGlobalInspector == true and winTitle ~= nil and winTitle ~= "" and winTitle ~= title and not startsWith(winTitle, "table: ") then
@@ -1014,7 +1015,7 @@ function tbug.slashCommand(args, searchValues, openInNewInspector)
                 if tbug.doDebug then d(">>tabIndexToShow: " ..tos(tabIndexToShow)) end
                 if tabIndexToShow ~= nil then
                     if tbug.doDebug then d(">tbug_inspectorSelectTabByName") end
-                    tbug_inspectorSelectTabByName("globalInspector", supportedGlobalInspectorArg, tabIndexToShow, openInNewInspector, true, searchData)
+                    tbug_inspectorSelectTabByName("globalInspector", supportedGlobalInspectorArg, tabIndexToShow, true, searchData)
                 else
                     if tbug.doDebug then d(">inspectResults1") end
                     inspectResults(nil, searchData, args, evalString(args)) --evalString uses pcall and returns boolean, table(nilable)
@@ -1713,17 +1714,17 @@ function tbug.refreshSavedVariablesTable()
                     local possibeSVNameLower
                     local possibeSVNameUpper
                     local possibleSVTable = _G[possibeSVName]
-                    if possibleSVTable ~= nil and type(possibleSVTable) == "table" then
+                    if possibleSVTable ~= nil and type(possibleSVTable) == tableType then
                         addSVTable = 1
                     else
                         possibeSVNameLower = tos(addonName  .. suffix:lower())
                         possibleSVTable = _G[possibeSVNameLower]
-                        if possibleSVTable ~= nil and type(possibleSVTable) == "table" then
+                        if possibleSVTable ~= nil and type(possibleSVTable) == tableType then
                             addSVTable = 2
                         else
                             possibeSVNameUpper = tos(addonName  .. suffix:upper())
                             possibleSVTable = _G[possibeSVNameUpper]
-                            if possibleSVTable ~= nil and type(possibleSVTable) == "table" then
+                            if possibleSVTable ~= nil and type(possibleSVTable) == tableType then
                                 addSVTable = 3
                             else
 
@@ -1749,7 +1750,7 @@ function tbug.refreshSavedVariablesTable()
 
     --Then check all other global tables for the "Default"/"EU/NA Megaserver/PTS" subtable with a value "version = <number>"
     for k, v in zo_insecureNext, _G do
-        if svOutput[k] == nil and type(v) == "table" then
+        if svOutput[k] == nil and type(v) == tableType then
             --"Default" entry
             if hasMember(rawget(v, "Default"), patternVersion, patternNumber, 4) then
                 svOutput[k] = v
