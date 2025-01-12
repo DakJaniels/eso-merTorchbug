@@ -51,13 +51,19 @@ tbug.author =   "merlight, current: Baertram"
 --Objects & libs detection at context menu so one can send <object or lib>:<functionName> or <.variableName> to scripts tab
 
 
---------------------------------------- Version 1.75 - Baertram (last updated 2025-01-06)
+--------------------------------------- Version 1.75 - Baertram (last updated 2025-01-12)
 ---- [Added]
 --Libraries detection via "lib" prefix
+--Context menu to send class/library/object.variable or :function() to the scripts tab
+--Added context menu enties to the events e/E char at the title bar (and at the event inspector rows):
+--Start/Stop event tracking
+--Setting to automatically start the event tracking as addon loads (button to enable that and reload the UI now)
+--Save and load events tracked. Load shows them in an extra inspector using the eventviewer layout so you can compare them to current event viewer's tracked events
 
 
 ---- [Fixed]
 --Some XML fixed height and width values versus resizeToFitDescendents ESO log errors
+--Show chat output only if TBUG.doDebug == true
 
 --
 ------------------------------------------------------------------------------------------------------------------------
