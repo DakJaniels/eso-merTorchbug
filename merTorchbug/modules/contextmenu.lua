@@ -40,6 +40,10 @@ local globalInspectorFunctionsTabKey = getGlobalInspectorPanelTabName("functions
 
 local isObjectOrClassOrLibrary = tbug.isObjectOrClassOrLibrary
 
+local customKeysForInspectorRows = tbug.customKeysForInspectorRows
+local customKey__Object = customKeysForInspectorRows.object
+local lookupTabObject = tbug.LookupTabs["object"]
+
 
 --local throttledCall = tbug.throttledCall
 local valueEdit_CancelThrottled = tbug.valueEdit_CancelThrottled
@@ -375,7 +379,15 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
     end
 
     if isClassOrObjectOrLibrary == true then
-        local lookupName = ((p_self.subjectName ~= nil and p_self.subjectName) or (p_self.subject ~= nil and tbug_glookup(p_self.subject))) or nil
+        local lookupName
+        local subject = (p_self._parentSubject ~= nil and p_self._parentSubject) or nil
+        if subject == nil then
+            subject = p_self.subject
+            lookupName = ((p_self.subjectName ~= nil and p_self.subjectName) or (subject ~= nil and tbug_glookup(subject))) or nil
+        else
+            lookupName = tbug_glookup(subject)
+        end
+
         if lookupName ~= nil and lookupName ~= "_G" then
             scriptStr = tos(lookupName) .. (isFunctionsDataType and ":" or ".") .. scriptStr
         end
@@ -1264,34 +1276,58 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 
-
 local function addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, p_self, p_row, p_data, p_isFunctionsDataType)
---d("[tbug]addScriptContextMenuEntriesForClassOrObjectIdentifierKey")
-    local retVar = false
-    local subject = p_self.subject
-    if p_key == nil or subject == nil or subject == EsoStrings or p_key == _G or p_key == "_G" then
-        return
-    end
+--d("[tbug]addScriptContextMenuEntriesForClassOrObjectIdentifierKey-key: " ..tos(p_key))
+    tbug_glookup = tbug_glookup or tbug.glookup
 
+    local doAddAsObject, doAddAsClass, doAddAsLibrary, subjectName
     local keyCopy = p_key
     local selfCopy = p_self
     local rowCopy = p_row
     local dataCopy = p_data
     local isFunction = p_isFunctionsDataType
 
-    local doAddAsObject, doAddAsClass, doAddAsLibrary, subjectName = isObjectOrClassOrLibrary(subject, keyCopy)
+    local retVar = false
+    local subject = (p_self._parentSubject ~= nil and p_self._parentSubject) or nil
+    if subject == nil then
+        subject = p_self.subject
+    else
+        --Should be an object if a parentSubject was found
+        subjectName = tbug_glookup(subject)
+        if subjectName ~= nil then
+            lookupTabObject[subjectName] = true
+            doAddAsObject = true
+        end
+    end
 
-    tbug._debugAddScriptContextMenu = {
-        key = keyCopy,
-        self = selfCopy,
-        row = rowCopy,
-        data = dataCopy,
-        isFunction = isFunction,
-        doAddAsObject = doAddAsObject,
-        doAddAsClass = doAddAsClass,
-        doAddAsLibrary = doAddAsLibrary,
-    }
+    if not doAddAsObject then
+        if  p_key == nil or subject == nil or subject == EsoStrings or p_key == _G or p_key == "_G" then
+            return
+        end
 
+        --Check if the currently inspected subject got a parentSubject (.__Object)
+        --[[
+        if p_self.parentSubject ~= nil and subject ~= _G and tbug_glookup(subject) == nil then
+    d(">parentSubject found, tbug_glookup(subject): " .. tostring(tbug_glookup(subject)))
+            subject = p_self.parentSubject
+        end
+        ]]
+
+        doAddAsObject, doAddAsClass, doAddAsLibrary, subjectName = isObjectOrClassOrLibrary(subject, keyCopy)
+    end
+
+    if tbug.doDebug then
+        tbug._debugAddScriptContextMenu = {
+            key = keyCopy,
+            self = selfCopy,
+            row = rowCopy,
+            data = dataCopy,
+            isFunction = isFunction,
+            doAddAsObject = doAddAsObject,
+            doAddAsClass = doAddAsClass,
+            doAddAsLibrary = doAddAsLibrary,
+        }
+    end
 
     if doAddAsObject == true then
         --(text, callback, entryType, entries, additionalData)
@@ -1312,8 +1348,8 @@ local function addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, p
     end
 
     --if retVar == true and isFunction == true then
-        --Show an additional context menu entry: Show scripts popup editbox and let us enter parameters directly
-        --todo really needed? Better us the scripts tab for that
+    --Show an additional context menu entry: Show scripts popup editbox and let us enter parameters directly
+    --todo really needed? Better us the scripts tab for that
     --end
     return retVar
 end

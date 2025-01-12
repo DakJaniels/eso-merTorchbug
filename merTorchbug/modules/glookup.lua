@@ -334,7 +334,9 @@ local function doRefresh()
     local doDebug = tbug.doDebug
     if not g_needRefresh then return end
     if g_refreshRunning then
-        d("tbug: _G Lookup refresh already active! Started: " .. tos(refreshStartTime ~= nil and refreshStartTime > 0 and os.date("%c", refreshStartTime)))
+        if tbug.doDebug then
+            d("tbug: _G Lookup refresh already active! Started: " .. tos(refreshStartTime ~= nil and refreshStartTime > 0 and os.date("%c", refreshStartTime)))
+        end
         return
     end
     if LibAsync ~= nil and doDebug then
