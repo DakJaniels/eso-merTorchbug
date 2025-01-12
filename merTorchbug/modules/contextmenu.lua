@@ -2298,6 +2298,9 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
             if GetDisplayName() == "@Baertram" then
                 AddCustomScrollableMenuEntry("-", noCallbackFunc, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
                 AddCustomScrollableMenuEntry("~ DEBUG MODE ~", function() tbug.doDebug = not tbug.doDebug d("[TBUG]Debugging: " ..tos(tbug.doDebug)) end, LSM_ENTRY_TYPE_NORMAL, nil, nil, nil, nil, nil)
+                AddCustomScrollableMenuCheckbox("~ Enable DEBUG MODE at start ~", function(comboBox, itemName, item, checked, data)
+                    tbug.savedVars._doDebug = checked
+                end, function()  return tbug.savedVars._doDebug end, nil)
             end
 
 

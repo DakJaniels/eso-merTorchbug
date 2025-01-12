@@ -8,6 +8,8 @@ local firstToUpper = tbug.firstToUpper
 ------------------------------------------------------------------------------------------------------------------------
 local defaults =
 {
+    _doDebug = false, --enables tbug.doDebug
+
     interfaceColors =
     {
         tabWindowBackground                  = "hsla(60, 10, 20, 0.5)",
