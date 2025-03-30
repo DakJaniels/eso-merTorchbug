@@ -4,6 +4,7 @@ local wm = WINDOW_MANAGER
 
 local tos = tostring
 local tins = table.insert
+local trem = table.remove
 
 local BLUE = ZO_ColorDef:New(0.8, 0.8, 1.0)
 local RED  = ZO_ColorDef:New(1.0, 0.2, 0.2)
@@ -144,6 +145,7 @@ end
 
 
 function ObjectInspectorPanel:__init__(control, ...)
+--d("[TBUG]ObjectInspectorPanel:__init__")
     BasicInspectorPanel.__init__(self, control, ...)
 
     self:initScrollList(control)
@@ -487,6 +489,7 @@ end
 
 
 function ObjectInspectorPanel:setupRow(row, data)
+--d("[TBUG]ObjectInspectorPanel:setupRow")
     BasicInspectorPanel.setupRow(self, row, data)
 
     if self.editData == data then
@@ -512,29 +515,104 @@ ObjectInspector._inactiveObjects = {}
 ObjectInspector._nextObjectId = 1
 ObjectInspector._templateName = "tbugTabWindow"
 
-
+------------------------------------------------------------------------------------------------------------------------
 function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName, data)
-    --local lastActive = (Class ~= nil and Class._lastActive ~= nil and true) or false
-    --local lastActiveSubject = (lastActive == true and Class._lastActive.subject ~= nil and true) or false
---d("[TBUG]ObjectInspector.acquire-name: " ..tos(name) .. ", recycleActive: " ..tos(recycleActive) .. ", titleName: " ..tos(titleName) .. ", lastActive: " ..tos(lastActive) .. ", lastActiveSubject: " ..tos(lastActiveSubject))
+    local lastActive = (Class ~= nil and Class._lastActive ~= nil and true) or false
+    local lastActiveSubject = (lastActive == true and Class._lastActive.subject ~= nil and true) or false
+
     local dataProvided = data ~= nil
-    local inspectorTemplate = (dataProvided and data.inspectorTemplate) or nil
+    local inspectorTemplate        = (dataProvided and data.inspectorTemplate) or nil
+    local customClassUsed          = Class ~= ObjectInspector and true or false
+
+    if tbug.doDebug then
+        tbug._debugObjectInspectorAcquire = tbug._debugObjectInspectorAcquire or {}
+        tbug._debugObjectInspectorAcquire[#tbug._debugObjectInspectorAcquire+1] = {
+            class = Class,
+            data = data and ZO_ShallowTableCopy(data) or nil,
+            recycleActive = recycleActive,
+            subject = subject,
+            name = name,
+            titleName = titleName,
+            dataProvided = dataProvided,
+            inspectorTemplate = inspectorTemplate,
+            customClassUsed = customClassUsed,
+        }
+    end
+
 
     local inspector = Class._activeObjects[subject]
-    if not inspector or inspectorTemplate ~= nil then
+    if tbug.doDebug then d("[TBUG]ObjectInspector.acquire-name: " ..tos(name) .. ", inspectorTemplate: " ..tos(inspectorTemplate) ..", recycleActive: " ..tos(recycleActive) .. ", titleName: " ..tos(titleName) .. ", lastActive: " ..tos(lastActive) .. ", lastActiveSubject: " ..tos(lastActiveSubject) .. ", inspectorFound: " .. tos(inspector) ..", Current ID: " ..tos(Class._nextObjectId) .. ", customClassUsed: " ..tos(customClassUsed)) end
+
+    --Opening an inspector as custom class and we currently show the same object/subject in a normal objectinspector?
+    local overrideInspectorCreation = false
+    if not recycleActive and inspector then
+        if customClassUsed then
+            if not inspector.usesCustomInspectorClass then
+                if tbug.doDebug then d(">Found inspector does not use customClass, but we want to show one!") end
+                overrideInspectorCreation = true
+            end
+        else
+            if inspector.usesCustomInspectorClass then
+                if tbug.doDebug then d(">Found inspector does use customClass, but we do not want to show one!") end
+                overrideInspectorCreation = true
+            end
+        end
+    end
+
+
+    if not inspector or inspectorTemplate ~= nil or customClassUsed == true or overrideInspectorCreation == true then
         if recycleActive and Class._lastActive and Class._lastActive.subject and
-            (inspectorTemplate == nil or (inspectorTemplate ~= nil and Class._lastActive.inspectorTemplate == inspectorTemplate)) then
+                (inspectorTemplate == nil or (inspectorTemplate ~= nil and Class._lastActive.inspectorTemplate == inspectorTemplate)) then
+            if tbug.doDebug then d(">reusing _lastActive inspector") end
             inspector = Class._lastActive
             Class._activeObjects[inspector.subject] = nil
         else
-            inspector = table.remove(Class._inactiveObjects)
-            if not inspector or inspectorTemplate ~= nil then
+            local createNew = false
+
+            if not overrideInspectorCreation then
+                if tbug.doDebug then d(">removing _inactiveObjects to get the inspector") end
+                inspector = trem(Class._inactiveObjects)
+
+                if inspector then
+                    if customClassUsed == true then
+                        --inactive inspector uses no customClass but we do want to open a custom class?
+                        if inspector and not inspector.usesCustomInspectorClass and inspectorTemplate == nil then
+                            if tbug.doDebug then d(">removed inspector uses no ustom class but we need one! Putting it back to inactive. Current _nextObjectId: " ..tos(Class._nextObjectId)) end
+                            createNew = true
+                        end
+                    else
+                        --inactive inspector uses a customClass but we do want to open just a normal ObjectInspector?
+                        if inspector and inspector.usesCustomInspectorClass and inspectorTemplate == nil then
+                            if tbug.doDebug then d(">removed inspector uses custom class and we need normal ObjectInspector! Putting it back to inactive. Current _nextObjectId: " ..tos(Class._nextObjectId)) end
+                            createNew = true
+                        end
+                    end
+                    if createNew == true then
+                        inspector:release() --> Send back to _inactiveObjects
+                    end
+                else
+                    createNew = true
+                end
+            else
+                createNew = true
+            end
+
+            if createNew or not inspector or inspectorTemplate ~= nil then
+                if tbug.doDebug then d(">Class.nextObjectId: " .. tos(Class._nextObjectId) .. ", Class==ObjectInspector? " .. tos(Class==ObjectInspector)) end
                 local id = Class._nextObjectId
                 local templateName = inspectorTemplate or Class._templateName
---d(">templateName: " ..tos(templateName))
                 local controlName = templateName .. id
+
+                if _G[controlName] ~= nil then
+                    if tbug.doDebug then d(">controlName exists already: " .. tos(controlName)) end
+                    Class._nextObjectId = Class._nextObjectId + 1
+                    id = Class._nextObjectId
+                    controlName = templateName .. id
+                end
+
+                if tbug.doDebug then d(">no inspector found, after remove, creating new one. ControlName: " .. tos(controlName) ..", templateName: " ..tos(templateName) .. "; Current nextObjectId: " ..tos(id)) end
                 local control = wm:CreateControlFromVirtual(controlName, nil,
-                                                            templateName)
+                        templateName)
                 Class._nextObjectId = id + 1
                 inspector = Class(id, control)
             end
@@ -549,6 +627,7 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
         inspector._parentSubject = (dataProvided and data._parentSubject) or nil
 
         if inspectorTemplate then
+            if tbug.doDebug then d(">setting inspector template: " ..tos(inspectorTemplate)) end
             inspector.inspectorTemplate = inspectorTemplate
         end
         inspector.childName = (dataProvided and data.childName) or nil
@@ -559,9 +638,11 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
     end
     return inspector
 end
+------------------------------------------------------------------------------------------------------------------------
 
 
 function ObjectInspector:__init__(id, control)
+--d("[TBUG]ObjectInspector:__init__")
     BasicInspector.__init__(self, id, control)
 
     self.conf = tbug.savedTable("objectInspector" .. id)
@@ -577,11 +658,11 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
     local panel, tabControl
 
     --Only for debugging:
-    if tbug.doDebug then
+    --if tbug.doDebug then
         local parentSubjectFound = (data ~= nil and data._parentSubject ~= nil and true) or false
         local childNameFound = (data ~= nil and data.childName ~= nil and true) or false
-        d("[tbug:openTabFor]title: " ..tos(title) .. ", inspectorTitle: " ..tos(inspectorTitle) .. ", useInspectorTitel: " ..tos(useInspectorTitel) .. ", _parentSubject: " ..tos(parentSubjectFound) .. ", childNameFound: " .. tos(childNameFound) ..", isMOC: " ..tos(isMOC) .. ", openedFromExistingInspector: " .. tos(openedFromExistingInspector))
-    end
+        --d("[TBUG]openTabFor-title: " ..tos(title) .. ", inspectorTitle: " ..tos(inspectorTitle) .. ", useInspectorTitel: " ..tos(useInspectorTitel) .. ", _parentSubject: " ..tos(parentSubjectFound) .. ", childNameFound: " .. tos(childNameFound) ..", isMOC: " ..tos(isMOC) .. ", openedFromExistingInspector: " .. tos(openedFromExistingInspector))
+    --end
 
     -- the global table should only be viewed in GlobalInspector
     if rawequal(object, _G) then
@@ -598,11 +679,22 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
     -->Will be added to the tabControl if the tab is created NEW (not updated)
     local timeStamp = GetTimeStamp()
 
+    --20250121 Is this a ScriptsInspector?
+    local isScriptsInspector = (self.isScriptsInspector ~= nil and self.isScriptsInspector) or false
+
+
     -- try to find an existing tab inspecting the given object
     for tabIndex, tabControlLoop in ipairs(self.tabs) do
         if rawequal(tabControlLoop.panel.subject, object) then
             --d(">found existing tab by object -> Selecting it now")
             self:selectTab(tabControlLoop, isMOC)
+
+            if isScriptsInspector == true then
+                local panel = (self.activeTab ~= nil and self.activeTab.panel) or nil
+                if panel then
+                    panel:testScript(nil, nil, nil, title, false)
+                end
+            end
             return tabControlLoop
         elseif tabControlLoop == self.activeTab then
             newTabIndex = tabIndex + 1
@@ -612,6 +704,9 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
     --df("[ObjectInspector:openTabFor]object %s, title: %s, inspectorTitle: %s, newTabIndex: %s", tos(object), tos(title), tos(inspectorTitle), tos(newTabIndex))
 
     local titleClean = title --for the breadCrumbs, without any "[]" suffix etc.
+
+    local panelClass = (isScriptsInspector == true and classes.ScriptsInspectorPanel) or nil
+
     if type(object) == "table" then
         --d(">table")
         title = tbug_glookup(object) or title or tos(object)
@@ -619,13 +714,14 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
         if title and title ~= "" and not endsWith(title, "[]") then
             title = title .. "[]"
         end
-        panel = self:acquirePanel(classes.TableInspectorPanel)
+        panel = self:acquirePanel(panelClass or classes.TableInspectorPanel)
     elseif isControl(object) then
         --d(">control")
         title = title or getControlName(object)
         titleClean = title --for the breadCrumbs
-        panel = self:acquirePanel(classes.ControlInspectorPanel)
+        panel = self:acquirePanel(panelClass or classes.ControlInspectorPanel)
     end
+
 
     if panel ~= nil then
         --d(">>panel found")
@@ -666,8 +762,14 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
 
         --self.subjectsToPanel = self.subjectsToPanel or {}
         --self.subjectsToPanel[panel.subject] = panel
-        panel:refreshData() --> Calls panel's buildMasterList etc.
+        panel:refreshData() --> Calls panel's buildMasterList etc. -> BasicInspectorPanel:refreshData()
         self:selectTab(tabControl, isMOC)
+
+        if isScriptsInspector == true then
+            panel:testScript(nil, nil, nil, title, false)
+        end
+    --else
+        --d("[TBUG]ERROR - panel not created - ObjectInspector:openTabFor - title: " .. tos(title))
     end
 
     return tabControl
@@ -675,8 +777,7 @@ end
 
 
 function ObjectInspector:refresh(isMOC, openedFromExistingInspector, wasClickedAtGlobalInspector)
-    --df("tbug: refreshing %s (%s / %s)", tos(self.subject), tos(self.subjectName), tos(self.titleName))
-    --d("[tbug]ObjectInspector:refresh")
+    --df("[TBUG]ObjectInspector:refresh %s (%s / %s)", tos(self.subject), tos(self.subjectName), tos(self.titleName))
     --self:removeAllTabs() --do not remove all tabs as this will clear the current inspectors tabs if you click something
     --in the global inspector e.g.-> Always happened if tbug.inspect was called, and not inspector:openTabFor!
     local data = {}

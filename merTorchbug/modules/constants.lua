@@ -39,22 +39,23 @@ tbug.author =   "merlight, current: Baertram"
 
 -- [Known bugs]
 --Global inspector Fonts tab does not show the fonts in correct size until scrolled
---New opened inspector get their icons top right changed in size if fon size at global inspector conetxt menu is changed, but it does not always change back (at all opened inspector windows!) to new font size if changed later
+--New opened inspector get their icons top right changed in size if font size at global inspector context menu is changed, but it does not always change back (at all opened inspector windows!) to new font size if changed later
 --20250107 Warning: tbugGlobalInspectorTabsContainerTab2 has a set height but has resizeToFitDescendents enabled. If this is intended, use resizeToFitConstrains="X".|r
+--20250330 Entering in chat editbox: GetItemRewardItemLink('|H1:item:119704:5:1:0:0:0:199:13:23:2:0:0:0:0:0:0:0:0:0:0:50000|h|h') raises an error Checking type on argument rewardId failed in GetItemRewardItemLink_lua
+--20250330 Opening a new scriptsViewer as "firstInspector" will reuse that firstInspector always for the next opened "non script" values, and vice versa (if firstInspector was no script it cannot show the scripts later)
 
 -- [Planned features]
---Detachable scripts tab/window
 --Events auto activation after reloadui and more event comfort like savedvariables with last run events & compare current to these saved ones
 
 
 -- [Working on]
---Objects & libs detection at context menu so one can send <object or lib>:<functionName> or <.variableName> to scripts tab
+--ScriptsViewer inspector: Create new scripts inspector(s) having the same look and entries like the global inspector's scripts tab (opened via SHIFT + context menu send to script, or via SHIFT + /tbs command)
 
 
 --------------------------------------- Version 1.75 - Baertram (last updated 2025-01-12)
 ---- [Added]
 --Libraries detection via "lib" prefix
---Context menu to send class/library/object.variable or :function() to the scripts tab
+--Objects, class & libs detection at context menu so one can send <object or lib>:<functionName> or <.variableName> to scripts tab
 --Added context menu enties to the events e/E char at the title bar (and at the event inspector rows):
 --Start/Stop event tracking
 --Setting to automatically start the event tracking as addon loads (button to enable that and reload the UI now)
@@ -64,6 +65,7 @@ tbug.author =   "merlight, current: Baertram"
 ---- [Fixed]
 --Some XML fixed height and width values versus resizeToFitDescendents ESO log errors
 --Show chat output only if TBUG.doDebug == true
+--Scrolling tabs won't resize to invisibly small anymore if window size is changed to very small (or below 0), or if many tabs added
 
 --
 ------------------------------------------------------------------------------------------------------------------------
@@ -206,12 +208,18 @@ local doNotGetParentInvokerNameAttributes = {
 }
 tbug.doNotGetParentInvokerNameAttributes = doNotGetParentInvokerNameAttributes
 
+local dummy = {}
+--Special master list types used to get another class for the inspector
+--e.g. ["ScriptsViewer"] = ScriptsInspector,
+tbug.specialMasterListType2InspectorClass = {
+    ["ScriptsViewer"] = dummy, --Will be updated with ScriptsInspector once that class exists -> see scriptsinspector.lua
+}
+
 --The possible panel class names for the different inspectorTabs. Each panelClassName (key of this table) will be assigned to
 --one value (later on in folder classes, file basicinspector.lua/tableinspector.lua/controlinspector.lua/objectinspector.lua
 --etc. at the top of the files) -> The here assigned "dummy" table will be overwritten there with the actual "class" table reference
 --This table key and value will be used in function GlobalInspector:makePanel!
 --The default class, if non was provided in function GlobalInspector:makePanel, will be "GlobalInspectorPanel"
-local dummy = {}
 tbug.panelClassNames = {
     --Default tabs at global inspector
     ["basicInspector"] = dummy,
@@ -220,7 +228,7 @@ tbug.panelClassNames = {
     ["controlInspector"] = dummy,
     ["objectInspector"] = dummy,
     --Custom tabs at global inspector
-    ["scriptInspector"] = dummy, --Used for the GlobalInspector -> "Scripts" tab
+    ["scriptInspector"] = dummy, --Used for the GlobalInspector -> "Scripts" tab -> Updated with ScriptsInspectorPanel
     ["savedInspectors"] = dummy, --Used for the GlobalInspector -> "SavedInsp" tab
 }
 

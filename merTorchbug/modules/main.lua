@@ -64,8 +64,10 @@ local getControlName = tbug.getControlName
 local isControl = tbug.isControl
 local throttledCall = tbug.throttledCall
 local tbug_SetTemplate = tbug.SetTemplate
-local tbug_getActiveTabPanel = tbug.GetActiveTabPanel
+--local tbug_getActiveTabPanel = tbug.GetActiveTabPanel
 
+
+local specialMasterListType2InspectorClass = tbug.specialMasterListType2InspectorClass
 
 local tbug_inspect
 local objInsp
@@ -134,6 +136,11 @@ local function checkIfAlreadyInTable(table, key, value, checkKeyOrValue)
         end
     end
     return false
+end
+
+local function clearDataForInspector()
+    tbug.dataForInspector = nil
+    tbug.doOpenNewInspector = nil
 end
 
 local function isPlayerInCombatDungeonRaidAvA()
@@ -354,7 +361,9 @@ local function inspectResults(specialInspectionString, searchData, data, source,
     local isMOCFromGlobalEventMouseUp = (specialInspectionString and specialInspectionString == "MOC_EVENT_GLOBAL_MOUSE_UP") or false
     if isMOCFromGlobalEventMouseUp == true then recycle = true end
     local isMOC = (specialInspectionString ~= nil and (isMOCFromGlobalEventMouseUp == true or specialInspectionString == "MOC")) or false
---d("[TBUG]inspectResults - recycle: " ..tos(recycle) .. "; tbug.doOpenNewInspector: " ..tos(tbug.doOpenNewInspector) .. ", isMOCFromGlobalEventMouseUp: " .. tos(isMOCFromGlobalEventMouseUp) .. ", isMOC: " .. tos(isMOC))
+    if doDebug then
+        d("[TBUG]inspectResults - recycle: " ..tos(recycle) .. "; tbug.doOpenNewInspector: " ..tos(tbug.doOpenNewInspector) .. ", isMOCFromGlobalEventMouseUp: " .. tos(isMOCFromGlobalEventMouseUp) .. ", isMOC: " .. tos(isMOC))
+    end
     tbug.doOpenNewInspector = nil
 
     --Prevent SHIFT key handling at EVENT_GLOBAL_MOUSE_UP, as the shift key always needs to be pressed there!
@@ -362,12 +371,12 @@ local function inspectResults(specialInspectionString, searchData, data, source,
     if not status then
 
         local foundNotAllowedCharacters = zo_plainstrfind(source, "=")
---d("[TB]inspectResults - execution of '" .. tos(source) .."' resulted in an error. foundNotAllowedCharacters: " ..tos(foundNotAllowedCharacters))
+        if doDebug then d("[TB]inspectResults - execution of '" .. tos(source) .."' resulted in an error. foundNotAllowedCharacters: " ..tos(foundNotAllowedCharacters)) end
         --Passed in params 2ff are maybe a search string and not something to execute?
         if not preventEndlessLoop and source ~= nil and type(source) == "string"
                 and not foundNotAllowedCharacters --no = (assignment) in the string
                 and (searchData == nil or (searchData ~= nil and searchData.searchText == "")) then
-            --d(">testing other args")
+            if doDebug then d(">testing other args") end
             --Build the searchData from the passed in "source" (args)
             local argsOptions = parseSlashCommandArgumentsAndReturnTable(source, false)
             if argsOptions ~= nil then
@@ -439,6 +448,27 @@ local function inspectResults(specialInspectionString, searchData, data, source,
             end
             tabTitle = strformat(titleTemplate, tos(tabTitle))
             if doDebug then d(">>tabTitle: " ..tos(tabTitle)) end
+
+
+            --todo 20250330 Detect if passed in data contains a "custom class" like ScriptsViewer and then
+            --todo 20250303 do not always reuse the firstInspector to try to show that, but create a new inspctor with that class
+            --Any custom inspector class passed in?
+            local useCustomInspectorClass = false
+            if data ~= nil then
+                if not recycle then
+                    --Shall the inspector be opened with a new one and a special class? e.g ScriptsViewer
+                    local specialMasterlistType = data.specialMasterlistType
+                    if specialMasterlistType ~= nil then
+                        local newInspectorClass = specialMasterListType2InspectorClass[specialMasterlistType]
+                        if newInspectorClass ~= nil then
+                            useCustomInspectorClass = true
+                        end
+                    end
+                    if tbug.doDebug then d(">useCustomInspectorClass: " ..tostring(useCustomInspectorClass)) end
+                end
+            end
+
+            --Only reuse the firstInspector if no custom inspector class is acquired, or if it wasn't created with a custom inspector class
             if firstInspector ~= nil then
                 if type(source) ~= "string" then
                     source = getControlName(res)
@@ -453,7 +483,8 @@ local function inspectResults(specialInspectionString, searchData, data, source,
                 --Open existing tab in firstInspector
 
                 --Use existing inspector?
-                if recycle == true then
+                if recycle == true and not useCustomInspectorClass and not firstInspector.usesCustomInspectorClass then
+                    if doDebug then d(">using existing inspector") end
                     --ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorTitel, data, isMOC, openedFromExistingInspector)
                     local newTab = firstInspector:openTabFor(res, tabTitle, source, nil, nil, isMOC, false)
 
@@ -463,7 +494,7 @@ local function inspectResults(specialInspectionString, searchData, data, source,
                     end
 
                     if newTab ~= nil then
---d(">>newTab at first inspector!")
+                        --d(">>newTab at first inspector!")
                         if doDebug then d(">>newTab at first inspector!") end
                         --local newTabLabelText = newTab.label:GetText()
                         --local newTabLabelTextNew = ((isMOC == true and newTabLabelText .. " " .. source) or (specialInspectionString ~= nil and newTabLabelText)) or source
@@ -471,7 +502,7 @@ local function inspectResults(specialInspectionString, searchData, data, source,
                         --firstInspector.title:SetText(newTabLabelTextNew)
                         firstInspectorShow = true
                     else
---d(">>tbug_inspect - res: " ..tos(res) .. ", source: " ..tos(source))
+                        --d(">>tbug_inspect - res: " ..tos(res) .. ", source: " ..tos(source))
                         if doDebug then d(">>tbug_inspect - res: " ..tos(res) .. ", source: " ..tos(source)) end
                         tbug_inspect = tbug_inspect or tbug.inspect
                         --object, tabTitle, winTitle, recycleActive, objectParent, currentResultIndex, allResults, data, searchData, isMOC, wasClickedAtGlobalInspector
@@ -480,7 +511,7 @@ local function inspectResults(specialInspectionString, searchData, data, source,
                         errorOccured = true
                     end
                 else
-                    if doDebug then d(">>create new inspector!") end
+                    if doDebug then d(">>create new inspector! useCustomInspectorClass: " ..tos(useCustomInspectorClass) .. ", firstInspector.usesCustomInspectorClass: " ..tos(firstInspector.usesCustomInspectorClass)) end
                     --Or open new one (SHIFT key was pressed)
                     tbug_inspect = tbug_inspect or tbug.inspect
                     tbug_inspect(res, tabTitle, source, recycle, nil, ires, {...}, data, searchData, isMOC, nil)
@@ -517,7 +548,11 @@ local function inspectResults(specialInspectionString, searchData, data, source,
                 getSearchDataAndUpdateInspectorSearchEdit(searchData, firstInspector)
             end
         end
-        tbug.firstInspector = firstInspector
+
+        --Do not flag this inspector as the first inspector if it was a Scripts Inspector!
+        if firstInspector and not firstInspector.isScriptsInspector then
+            tbug.firstInspector = firstInspector
+        end
     end
 end
 tbug.inspectResults = inspectResults
@@ -555,6 +590,32 @@ function tbug.prepareItemLink(control, asPlainText)
     return itemLink
 end
 
+local function acquireInspector(inspectorClass, subject, name, reuseActiveInspector, titleName, data, searchData, isMOC, wasClickedAtGlobalInspector)
+    objInsp = objInsp or classes.ObjectInspector
+
+    if inspectorClass == nil then
+        inspectorClass = objInsp
+    end
+
+    --local useCustomClass = inspectorClass ~= objInsp and true or false
+
+d("[tbug]acquireInspector - reuse: " ..tos(reuseActiveInspector) ..", class: " .. tos((inspectorClass ~= nil and (inspectorClass == objInsp and "ObjectInspector") or (inspectorClass == tbug.specialMasterListType2InspectorClass["ScriptsViewer"] and "ScriptsViewer"))) or "n/a")
+    if inspectorClass ~= nil and inspectorClass.acquire ~= nil then
+
+        local inspector = inspectorClass:acquire(subject, name, reuseActiveInspector, titleName, data)
+        if inspector ~= nil then
+d(">inspector.usesCustomInspectorClass: " ..tos(inspector.usesCustomInspectorClass))
+
+            inspector.control:SetHidden(false)
+            inspector:refresh(isMOC, false, wasClickedAtGlobalInspector)
+            getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
+            return inspector
+        end
+    end
+    return
+end
+tbug.acquireInspector = acquireInspector
+
 function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, currentResultIndex, allResults, data, searchData, isMOC, wasClickedAtGlobalInspector)
     local inspector = nil
     isMOC = isMOC or false
@@ -576,9 +637,37 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
             isMOC = isMOC,
             wasClickedAtGlobalInspector = wasClickedAtGlobalInspector,
         }
+        d("[tbug.inspect]object: " ..tos(object) .. ", objType: "..tos(resType) ..", tabTitle: " ..tos(tabTitle) .. ", winTitle: " ..tos(winTitle) .. ", recycleActive: " .. tos(recycleActive) ..", objectParent: " ..tos(objectParent) .. ", searchData: " ..tos(searchData))
     end
 
-    if doDebug then d("[tbug.inspect]object: " ..tos(object) .. ", objType: "..tos(resType) ..", tabTitle: " ..tos(tabTitle) .. ", winTitle: " ..tos(winTitle) .. ", recycleActive: " .. tos(recycleActive) ..", objectParent: " ..tos(objectParent) .. ", searchData: " ..tos(searchData)) end
+    objInsp = objInsp or classes.ObjectInspector
+    local newInspectorClass = objInsp
+    local useCustomInspectorClass = false
+
+    --Any custom inspector class passed in?
+    if data ~= nil then
+        if not recycleActive then
+            --Shall the inspector be opened with a new one and a special class? e.g ScriptsViewer
+            local specialMasterlistType = data.specialMasterlistType
+            if specialMasterlistType ~= nil then
+                newInspectorClass = specialMasterListType2InspectorClass[specialMasterlistType]
+                useCustomInspectorClass = (newInspectorClass ~= nil and newInspectorClass ~= objInsp and true) or false
+
+                if tbug.doDebug then d(">useCustomInspectorClass: " ..tos(useCustomInspectorClass)) end
+                --[[
+                local title = tbug_glookup(object) or winTitle or tos(object)
+
+
+                local panel = tbug_makePanel(inspectorCurrentlyShown, ScriptsInspectorPanel, "ScriptsViewer", nil)
+                if panel == nil then return false end
+                inspectorCurrentlyShown:removeTab(selfVar.subject or 1)
+                panel:buildMasterList() --> Calls ScriptsInspectorPanel:buildMasterList()
+                ]]
+            end
+        end
+    end
+
+
     if rawequal(object, _G) then
         if doDebug then d(">rawequal _G") end
         inspector = tbug.getGlobalInspector()
@@ -586,89 +675,110 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
         inspector:refresh() --will remove all tabs and create them again
         getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
 
-    elseif resType == tableType then
-        if doDebug then d(">table") end
-        local title = tbug_glookup(object) or winTitle or tos(object)
-        if wasClickedAtGlobalInspector == true and winTitle ~= nil and winTitle ~= "" and winTitle ~= title and not startsWith(winTitle, "table: ") then
-            title = winTitle
-        elseif wasClickedAtGlobalInspector == true and winTitle == nil then
-            wasClickedAtGlobalInspector = false
-            --Check which is the active tab at the global inspector and add it in front of the title
-            local globalInspector = tbug.getGlobalInspector(true)
-            if globalInspector ~= nil then
-                local globalInspectorActiveTab = globalInspector.activeTab
-                if globalInspectorActiveTab ~= nil then
-                    local newTitle = globalInspectorActiveTab.tabName or globalInspectorActiveTab.titleText
---d(">title: " ..tos(title) ..", newTitle: " ..tos(newTitle))
-                    local newTitleTableIndex
-                    if tabTitle ~= nil and tabTitle ~= title and startsWith(title, "table: ") then
-                        newTitleTableIndex = tabTitle
-                    else
-                        newTitleTableIndex = title
-                    end
-                    if newTitle ~= nil and newTitleTableIndex ~= nil and newTitle ~= "" and newTitle ~= newTitleTableIndex then
-                        title = newTitle .. "[" .. newTitleTableIndex .. "]"
-                        wasClickedAtGlobalInspector = true
-                    end
-                end
-            end
-        end
-        if not endsWith(title, "[]") and not endsWith(title, "]") then title = title .. "[]" end
-        objInsp = objInsp or classes.ObjectInspector
-        inspector = objInsp:acquire(object, tabTitle, recycleActive, title, data)
-        if inspector ~= nil then
-            inspector.control:SetHidden(false)
-            inspector:refresh(isMOC, false, wasClickedAtGlobalInspector)
-            getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
-        end
-
-    elseif isControl(object) then
-        if doDebug then d(">isControl") end
-        local title = ""
-        if type(winTitle) == "string" then
-            title = winTitle
-        else
-            title = getControlName(object)
-        end
-        objInsp = objInsp or classes.ObjectInspector
-        inspector = objInsp:acquire(object, tabTitle, recycleActive, title, data)
-        if inspector ~= nil then
-            inspector.control:SetHidden(false)
-            inspector:refresh(isMOC, false)
-            getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
-        end
-
-    elseif resType == "function" then
-        if doDebug then d(">function") end
-        showFunctionReturnValue(object, tabTitle, winTitle, objectParent)
-
     else
-        if doDebug then d(">all others...") end
-        --Check if the source of the call was ending on () -> it was a function call then
-        --Output the function data then
-        local wasAFunction = false
-        if winTitle and winTitle ~= "" then
-            local winTitleLast2Chars = strsub(winTitle, -2)
-            local winTitleLastChar = strsub(winTitle, -1)
-            if winTitleLast2Chars == "()" or winTitleLastChar == ")" then
-                wasAFunction = true
-            end
-        end
-        if not wasAFunction then
-            if doDebug then d(">>showDoesNotExistError") end
-            showDoesNotExistError(object, winTitle, tabTitle)
-        else
-            --Object contains the current return value of the function.
-            --currentResult is the index of that result, in table allResults.
-            --Output the function return value text, according to the "call to tbug.inspect"
-            if currentResultIndex and allResults then
-                if currentResultIndex == 1 then
-                    d("[TBUG]Results of function \'" .. tos((winTitle ~= nil and winTitle ~= "" and winTitle) or tabTitle) .. "\':")
+
+        if resType == tableType then
+            if doDebug then d(">table") end
+            local title = tbug_glookup(object) or winTitle or tos(object)
+            if wasClickedAtGlobalInspector == true and winTitle ~= nil and winTitle ~= "" and winTitle ~= title and not startsWith(winTitle, "table: ") then
+                title = winTitle
+            elseif wasClickedAtGlobalInspector == true and winTitle == nil then
+                wasClickedAtGlobalInspector = false
+                --Check which is the active tab at the global inspector and add it in front of the title
+                local globalInspector = tbug.getGlobalInspector(true)
+                if globalInspector ~= nil then
+                    local globalInspectorActiveTab = globalInspector.activeTab
+                    if globalInspectorActiveTab ~= nil then
+                        local newTitle = globalInspectorActiveTab.tabName or globalInspectorActiveTab.titleText
+                        --d(">title: " ..tos(title) ..", newTitle: " ..tos(newTitle))
+                        local newTitleTableIndex
+                        if tabTitle ~= nil and tabTitle ~= title and startsWith(title, "table: ") then
+                            newTitleTableIndex = tabTitle
+                        else
+                            newTitleTableIndex = title
+                        end
+                        if newTitle ~= nil and newTitleTableIndex ~= nil and newTitle ~= "" and newTitle ~= newTitleTableIndex then
+                            title = newTitle .. "[" .. newTitleTableIndex .. "]"
+                            wasClickedAtGlobalInspector = true
+                        end
+                    end
                 end
-                d("[" ..tos(currentResultIndex) .."]" .. tos(object))
+            end
+            if not endsWith(title, "]") and not endsWith(title, "[]") then title = title .. "[]" end
+            inspector = acquireInspector(newInspectorClass, object, tabTitle, recycleActive, title, data, searchData, isMOC, wasClickedAtGlobalInspector)
+            --[[
+            objInsp = objInsp or classes.ObjectInspector
+            inspector = objInsp:acquire(object, tabTitle, recycleActive, title, data)
+            if inspector ~= nil then
+                inspector.control:SetHidden(false)
+                inspector:refresh(isMOC, false, wasClickedAtGlobalInspector)
+                getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
+            end
+            ]]
+
+        elseif isControl(object) then
+            if doDebug then d(">isControl") end
+            local title = ""
+            if type(winTitle) == "string" then
+                title = winTitle
+            else
+                title = getControlName(object)
+            end
+
+            inspector = acquireInspector(newInspectorClass, object, tabTitle, recycleActive, title, data, searchData, isMOC, nil)
+            --[[
+            objInsp = objInsp or classes.ObjectInspector
+            inspector = objInsp:acquire(object, tabTitle, recycleActive, title, data)
+            if inspector ~= nil then
+                inspector.control:SetHidden(false)
+                inspector:refresh(isMOC, false, nil)
+                getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
+            end
+            ]]
+
+        else
+            if useCustomInspectorClass == true and _G[object] ~= nil then
+                inspector = acquireInspector(newInspectorClass, object, tabTitle, recycleActive, winTitle, data, searchData, isMOC, nil)
+
+            else
+                if resType == "function" then
+                    if doDebug then d(">function") end
+                    showFunctionReturnValue(object, tabTitle, winTitle, objectParent)
+                else
+                    if doDebug then d(">all others...") end
+                    --Check if the source of the call was ending on () -> it was a function call then
+                    --Output the function data then
+                    local wasAFunction = false
+                    if winTitle and winTitle ~= "" then
+                        local winTitleLast2Chars = strsub(winTitle, -2)
+                        local winTitleLastChar = strsub(winTitle, -1)
+                        if winTitleLast2Chars == "()" or winTitleLastChar == ")" then
+                            wasAFunction = true
+                        end
+                    end
+                    if not wasAFunction then
+                        if doDebug then d(">>showDoesNotExistError") end
+                        showDoesNotExistError(object, winTitle, tabTitle)
+                    else
+                        --Object contains the current return value of the function.
+                        --currentResult is the index of that result, in table allResults.
+                        --Output the function return value text, according to the "call to tbug.inspect"
+                        if currentResultIndex and allResults then
+                            if currentResultIndex == 1 then
+                                d("[TBUG]Results of function \'" .. tos((winTitle ~= nil and winTitle ~= "" and winTitle) or tabTitle) .. "\':")
+                            end
+                            d("[" ..tos(currentResultIndex) .."]" .. tos(object))
+                        end
+                    end
+                end
             end
         end
     end
+
+    if useCustomInspectorClass == true then
+        inspector.usesCustomInspectorClass = true
+    end
+
     return inspector
 end
 tbug_inspect = tbug.inspect
@@ -985,13 +1095,14 @@ end
 local tbug_slashCommandMOC = tbug.slashCommandMOC
 
 
-function tbug.slashCommand(args, searchValues, openInNewInspector, data)
-    openInNewInspector = openInNewInspector or false
+function tbug.slashCommand(args, searchValues)
     local supportedGlobalInspectorArgs = tbug.allowedSlashCommandsForPanels
     local supportedGlobalInspectorArgsLookup = tbug.allowedSlashCommandsForPanelsLookup
 
     local searchData = buildSearchData(searchValues, 10) --10 milliseconds delay before search starts
-    tbug.doOpenNewInspector = tbug.doOpenNewInspector or openInNewInspector
+
+    --local openInNewInspector = tbug.doOpenNewInspector
+    local data = tbug.dataForInspector
 
     if args ~= "" then
         if tbug.doDebug then d("[tbug]slashCommand - " ..tos(args) .. ", searchValues: " ..tos(searchValues)) end
@@ -1061,7 +1172,8 @@ function tbug.slashCommand(args, searchValues, openInNewInspector, data)
             end
         end
     elseif tbugGlobalInspector then
-        openInNewInspector = false
+        tbug.doOpenNewInspector = nil
+
         if tbugGlobalInspector:IsHidden() then
             if tbug.doDebug then d(">show GlobalInspector") end
             inspectResults(nil, searchData, data, "_G", true, _G)
@@ -1070,8 +1182,26 @@ function tbug.slashCommand(args, searchValues, openInNewInspector, data)
             tbugGlobalInspector:SetHidden(true)
         end
     end
+
+    clearDataForInspector()
 end
 local tbug_slashCommand = tbug.slashCommand
+
+function tbug.slashCommandWrapper(args, searchValues, openInNewInspector, data)
+    clearDataForInspector()
+    if openInNewInspector ~= nil then
+        tbug.doOpenNewInspector = openInNewInspector
+    end
+    if data ~= nil then
+        tbug.dataForInspector = data
+    end
+
+    if tbug.doDebug then d("[TBUG]slashCommandWrapper - args: " .. tos(args) .. ", openInNewInspector: " .. tos(openInNewInspector) .. ", data: " .. tos(data)) end
+
+    return tbug_slashCommand(args, searchValues)
+end
+--local tbug_slashCommandWrapper = tbug.slashCommandWrapper
+
 
 function tbug.SoundStop()
     tbug.PlaySoundNow(nil, nil, nil, nil, false, nil)
@@ -1079,36 +1209,43 @@ end
 local tbug_soundStop = tbug.SoundStop
 
 function tbug.slashCommandSavedVariables(args)
+    clearDataForInspector()
     tbug_slashCommand("sv", args)
 end
 local tbug_slashCommandSavedVariables = tbug.slashCommandSavedVariables
 
 function tbug.slashCommandEvents(args)
+    clearDataForInspector()
     tbug_slashCommand("events", args)
 end
 local tbug_slashCommandEvents = tbug.slashCommandEvents
 
 function tbug.slashCommandScripts(args)
+    clearDataForInspector()
     tbug_slashCommand("scripts", args)
 end
 local tbug_slashCommandScripts = tbug.slashCommandScripts
 
 function tbug.slashCommandAddOns(args)
+    clearDataForInspector()
     tbug_slashCommand("addons", args)
 end
 local tbug_slashCommandAddOns = tbug.slashCommandAddOns
 
 function tbug.slashCommandStrings(args)
+    clearDataForInspector()
     tbug_slashCommand("strings", args)
 end
 local tbug_slashCommandStrings = tbug.slashCommandStrings
 
 function tbug.slashCommandTBUG(args)
+    clearDataForInspector()
     tbug_slashCommand("TBUG", args)
 end
 local tbug_slashCommandTBUG = tbug.slashCommandTBUG
 
 function tbug.slashCommandITEMLINKINFO(args)
+    clearDataForInspector()
     if not args or args=="" then return end
     args = zo_strtrim(args)
     if args ~= "" then
@@ -1124,6 +1261,7 @@ end
 local tbug_slashCommandITEMLINKINFO = tbug.slashCommandITEMLINKINFO
 
 function tbug.slashCommandITEMLINK()
+    clearDataForInspector()
     local il = tbug.prepareItemLink(moc(), false)
     if not il or il=="" then return end
     --d(il)
@@ -1133,12 +1271,14 @@ end
 local tbug_slashCommandITEMLINK = tbug.slashCommandITEMLINK
 
 function tbug.slashCommandSCENEMANAGER(args)
+    clearDataForInspector()
     tbug_slashCommand("SCENE_MANAGER", args)
 end
 local tbug_slashCommandSCENEMANAGER = tbug.slashCommandSCENEMANAGER
 
 
 function tbug.slashCommandDumpToChat(slashArguments)
+    clearDataForInspector()
     --Dump the slashArguments' values to the chat
     local funcOfSlashArgs, errorText = zo_ls( ("d(\"[TBUG]Dump of \'%s\'\")"):format(slashArguments) )
     if funcOfSlashArgs ~= nil then
@@ -1151,6 +1291,7 @@ end
 local tbug_slashCommandDumpToChat = tbug.slashCommandDumpToChat
 
 function tbug.slashCommandSavedInspectors(saveOrLoad, args)
+    clearDataForInspector()
     if saveOrLoad == nil then return end
 
     --Save inspectors?
@@ -1188,6 +1329,7 @@ local tbug_slashCommandSavedInspectors = tbug.slashCommandSavedInspectors
 
 --Delayed call: /tbd <delayInSeconds> <command1> <command2> ...
 function tbug.slashCommandDelayed(args)
+    clearDataForInspector()
     local argsOptions = parseSlashCommandArgumentsAndReturnTable(args, false)
     local moreThanOneArg = (argsOptions and #argsOptions > 1) or false
     if moreThanOneArg then
@@ -1218,6 +1360,7 @@ local tbug_slashCommandDelayed = tbug.slashCommandDelayed
 
 --Call the "Mouse cursor over control" slash command, but delayed (1st param of args)
 function tbug.slashCommandMOCDelayed(args)
+    clearDataForInspector()
     local argsOptions = parseSlashCommandArgumentsAndReturnTable(args, false)
     local secondsToDelay = (argsOptions ~= nil and ton(argsOptions[1])) or nil
     if not secondsToDelay or type(secondsToDelay) ~= "number" then return end
@@ -1269,21 +1412,25 @@ local function controlOutlineFunc(args, withChildren, doRemove, doRemoveAll)
     end
 end
 function tbug.slashCommandControlOutline(args)
+    clearDataForInspector()
     controlOutlineFunc(args, false, false, false)
 end
 local tbug_slashCommandControlOutline = tbug.slashCommandControlOutline
 
 function tbug.slashCommandControlOutlineWithChildren(args)
+    clearDataForInspector()
     controlOutlineFunc(args, true, false, false)
 end
 local tbug_slashCommandControlOutlineWithChildren = tbug.slashCommandControlOutlineWithChildren
 
 function tbug.slashCommandControlOutlineRemove(args)
+    clearDataForInspector()
     controlOutlineFunc(args, true, true, false)
 end
 local tbug_slashCommandControlOutlineRemove = tbug.slashCommandControlOutlineRemove
 
 function tbug.slashCommandControlOutlineRemoveAll(args)
+    clearDataForInspector()
     controlOutlineFunc(args, nil, nil, true)
 end
 local tbug_slashCommandControlOutlineRemoveAll = tbug.slashCommandControlOutlineRemoveAll
@@ -1396,6 +1543,7 @@ local tbug_dumpConstantsDelete = tbug.dumpConstantsDelete
 
 
 function tbug.slashCommandLanguage(args)
+    clearDataForInspector()
     local argsOptions = parseSlashCommandArgumentsAndReturnTable(args, true)
     local isOnlyOneArg = (argsOptions and #argsOptions == 1) or false
     if isOnlyOneArg == true then
@@ -2131,6 +2279,38 @@ local function onAddOnLoaded(event, addOnName)
                 end
             end)
 
+            local debugLogViewerUIAutoScrollEventName = "TBUG_DLV_AutoScroll"
+            --Auto scroll debuglogviewer UI to the bottom if d messages are added
+            local function autoScrollDebugLogViewerMainUI()
+                EM:UnregisterForUpdate(debugLogViewerUIAutoScrollEventName)
+                local dlvUIList = DebugLogViewerMainWindowList
+                if dlvUIList == nil then return end
+
+                if dlvUIList:IsHidden() then
+--CHAT_ROUTER:AddSystemMessage("DLV UI is hidden!")
+                    return
+                end
+
+                EM:RegisterForUpdate(debugLogViewerUIAutoScrollEventName, 0, function()
+                    EM:UnregisterForUpdate(debugLogViewerUIAutoScrollEventName)
+                    local l_dlvUIList = dlvUIList or DebugLogViewerMainWindowList
+                    if l_dlvUIList == nil then return end
+
+--CHAT_ROUTER:AddSystemMessage("Scrolling to 999999")
+                    --local scrollBar = l_dlvUIList.scrollbar
+                    --if scrollBar == nil then return end
+                    --ZO_ScrollList_ScrollAbsolute(l_dlvUIList, 100)
+                    l_dlvUIList.timeline:Stop()
+                    l_dlvUIList.scrollbar:SetValue(999999)
+                end)
+            end
+
+            SecurePostHook("d", function(...)
+                autoScrollDebugLogViewerMainUI()
+            end)
+            SecurePostHook("df", function(...)
+                autoScrollDebugLogViewerMainUI()
+            end)
         end
     end
 

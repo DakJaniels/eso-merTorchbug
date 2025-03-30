@@ -9,19 +9,17 @@ local trem = table.remove
 local RT                 = tbug.RT
 local RT_savedInspectors = RT.SAVEDINSPECTORS_TABLE
 
-local tbug_slashCommand = tbug.slashCommand
-local tbug_addSavedInspectors = tbug.addSavedInspectors
-
 local typeColors = tbug.cache.typeColors
 
 local tbug_truncate = tbug.truncate
 local tbug_specialKeyToColorType = tbug.specialKeyToColorType
 
-local tbug_inspect = tbug.inspect
 local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
 local tbug_isControl = tbug.isControl
 local tbug_getControlName = tbug.getControlName
 local tbug_getRelevantNameForCall = tbug.getRelevantNameForCall
+
+local tbug_slashCommand = tbug.slashCommand
 
 local inspectorTexture = zo_iconFormat("/esoui/art/miscellaneous/icon_numpad.dds", 24, 24)
 
@@ -82,7 +80,7 @@ local function loadSavedInspectorsWindows(savedInspectorsData, openAllInSameInsp
 
                 tbug.doOpenNewInspector = doOpenNewInspector
 --d(">window: " .. tos(windowNr) .. ", objectName: " ..tos(objectName) .."-tbug.doOpenNewInspector: " ..tos(tbug.doOpenNewInspector))
-                tbug.slashCommand(objectName) --calls inspectResults internally and respects tbug.doOpenNewInspector
+                tbug_slashCommand(objectName) --calls inspectResults internally and respects tbug.doOpenNewInspector
                 tbug.doOpenNewInspector = nil
                 tabsOpened = tabsOpened + 1
             end

@@ -85,6 +85,7 @@ tbug.panelClassNames["basicInspector"] = BasicInspectorPanel
 
 
 function BasicInspectorPanel:__init__(control, inspector, pool)
+--d("[TBUG]BasicInspectorPanel:__init__")
     self._pool = pool
     self._pendingUpdate = UPDATE_NONE
     self._lockedForUpdates = false
@@ -99,6 +100,7 @@ function BasicInspectorPanel:__init__(control, inspector, pool)
 end
 
 function BasicInspectorPanel:addDataType(typeId, templateName, controlHeight, showCallback, hideCallback)
+--d("[TBUG]BasicInspectorPanel:addDataType - typeId: " .. tos(typeId) .. ", templateName: " .. tos(templateName))
     local list = self.list
 
     local function rowMouseEnter(row)
@@ -155,6 +157,7 @@ end
 
 --Will be overwritten at the other classes, e.g. ControlInspectorPanel:buildMasterList(), or GlobalInspectorPanel:buildMasterList() ...
 function BasicInspectorPanel:buildMasterList(libAsyncTask)
+--d("[TBUG]BasicInspectorPanel:buildMasterList")
 end
 
 
@@ -167,6 +170,7 @@ end
 
 
 function BasicInspectorPanel:commitScrollList()
+--d("[TBUG]BasicInspectorPanel:commitScrollList")
     self:exitRowIf(self._mouseOverRow)
     ZO_ScrollList_Commit(self.list)
 end
@@ -284,7 +288,7 @@ end
 
 
 function BasicInspectorPanel:initScrollList(control)
---d("BasicInspectorPanel:initScrollList")
+--d("[TBUG]BasicInspectorPanel:initScrollList")
 
     local list = assert(control:GetNamedChild("List"))
     tbug.inspectorScrollLists[list] = self
@@ -574,7 +578,7 @@ end
 
 
 function BasicInspectorPanel:refreshData()
---d("BasicInspectorPanel:refreshData")
+--d("[TBUG]BasicInspectorPanel:refreshData")
     if self:readyForUpdate(UPDATE_MASTER) then
         local doRefreshDirectly = true
         if libAS ~= nil then
@@ -773,13 +777,14 @@ local BasicInspector = classes.BasicInspector .. TabWindow
 
 
 function BasicInspector:__init__(id, control)
+--d("[TBUG]BasicInspectorPanel:__init__ - id: " .. tos(id))
     TabWindow.__init__(self, control, id)
     self.panelPools = {}
 end
 
 --panelData: The data of the panel from table tbug.panelNames
 function BasicInspector:acquirePanel(panelClass)
---d("BasicInspector:acquirePanel - panelClass: " ..tos(panelClass))
+--d("[TBUG]BasicInspector:acquirePanel - panelClass: " ..tos(panelClass))
 
     local pool = self.panelPools[panelClass]
     if not pool then

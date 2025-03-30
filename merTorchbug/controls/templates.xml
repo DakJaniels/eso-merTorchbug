@@ -539,7 +539,8 @@
 					<Anchor point="BOTTOMLEFT" offsetX="8" offsetY="-8" />
 					<Anchor point="BOTTOMRIGHT" offsetX="-8" offsetY="-8" />
 					<Controls>
-						<Control name="$(parent)Container" resizeToFitDescendents="true" resizeToFitConstrains="X" tier="LOW" layer="CONTROLS" level="1">
+						<Control name="$(parent)Container" resizeToFitDescendents="true" resizeToFitConstrains="true" tier="LOW" layer="CONTROLS" level="1">
+							<DimensionConstraints minX="10"/>
 							<Anchor point="BOTTOMLEFT" />
 							<Controls>
 								<Texture name="$(parent)ActiveBg" color="99000000" tier="LOW" layer="BACKGROUND" level="1">

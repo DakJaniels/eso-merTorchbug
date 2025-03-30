@@ -32,6 +32,7 @@ local getGlobalInspectorPanelTabName = tbug.getGlobalInspectorPanelTabName
 local isSplittableString = tbug.isSplittableString
 local findUpperCaseCharsAndReturnOffsetsTab = tbug.findUpperCaseCharsAndReturnOffsetsTab
 local tbug_slashCommand = tbug.slashCommand
+local tbug_slashCommandWrapper = tbug.slashCommandWrapper
 local tbug_slashCommandSCENEMANAGER = tbug.slashCommandSCENEMANAGER
 --local tbug_inspectorSelectTabByName = tbug.inspectorSelectTabByName
 
@@ -41,7 +42,7 @@ local globalInspectorFunctionsTabKey = getGlobalInspectorPanelTabName("functions
 local isObjectOrClassOrLibrary = tbug.isObjectOrClassOrLibrary
 
 local customKeysForInspectorRows = tbug.customKeysForInspectorRows
-local customKey__Object = customKeysForInspectorRows.object
+--local customKey__Object = customKeysForInspectorRows.object
 local lookupTabObject = tbug.LookupTabs["object"]
 
 
@@ -357,10 +358,13 @@ local searchExternalURL = tbug.searchExternalURL
 
 
 --Show the "Scripts" tab and put the key/value, and if it's a function an opening and closing () behind it, to the "test script" editbox
-local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, isClassOrObjectOrLibrary)
+local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, isClassOrObjectOrLibrary, showInNewTab)
     if not p_self or not p_row or not p_data or isKey == nil then return end
     isFunctionsDataType = isFunctionsDataType or false
     isClassOrObjectOrLibrary = isClassOrObjectOrLibrary or false
+    if not showInNewTab then
+        showInNewTab = IsShiftKeyDown()
+    end
     tbug_glookup = tbug_glookup or tbug.glookup
 
     local scriptStr = ""
@@ -372,6 +376,7 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
         --Value
         scriptStr = tos(value)
     end
+d("[TBUG]useForScript - scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isKey) .. "; valueType: " .. tos(type(value)) ..", showInNewTab: " ..tos(showInNewTab))
     if scriptStr == "" then return end
 
     if not isFunctionsDataType and value ~= nil and type(value) == "function" then
@@ -387,9 +392,18 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
         else
             lookupName = tbug_glookup(subject)
         end
+--d(">lookupName1: " ..tos(lookupName))
 
         if lookupName ~= nil and lookupName ~= "_G" then
             scriptStr = tos(lookupName) .. (isFunctionsDataType and ":" or ".") .. scriptStr
+        end
+    else
+        if isKey and type(value) == "table" then
+            local lookupName = tbug_glookup(value)
+--d(">lookupName2: " ..tos(lookupName))
+            if lookupName ~= nil and lookupName ~= "_G" and _G[lookupName] ~= nil and _G[lookupName][key] ~= nil then
+                scriptStr = lookupName .. "." .. scriptStr
+            end
         end
     end
 
@@ -404,20 +418,23 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
     if panels.scriptHistory == nil then return end
 --d(">found scriptHistory panel")
 
-    --Show the global inspector scripts tab
-    tbug_slashCommand("scripts", nil)
+    --Show the global inspector scripts tab, or open a new inspector with scripts viewer window
+    if showInNewTab == true then
+        tbug_slashCommandWrapper(scriptStr, nil, true, { specialMasterlistType = "ScriptsViewer" })
+    else
+        tbug_slashCommandWrapper("scripts", nil, false, nil)
+    --d(">>tab selected - set script to editbox now")
+        --Set the script text
+        local testScriptEditBox = panels.scriptHistory:testScript(p_row, p_data, isKey, scriptStr, false)
+        testScriptEditBox:TakeFocus()
+        if isFunctionsDataType then
+            testScriptEditBox:SetCursorPosition(strlen(scriptStr) - 1)
+        end
 
---d(">>tab selected - set script to editbox now")
-    --Set the script text
-    local testScriptEditBox = panels.scriptHistory:testScript(p_row, p_data, isKey, scriptStr, false)
-    testScriptEditBox:TakeFocus()
-    if isFunctionsDataType then
-        testScriptEditBox:SetCursorPosition(strlen(scriptStr) - 1)
+        --Bring the scripts tab to the front
+        globalInspector.control:SetHidden(false)
+        globalInspector.control:BringWindowToTop()
     end
-
-    --Bring the scripts tab to the front
-    globalInspector.control:SetHidden(false)
-    globalInspector.control:BringWindowToTop()
 end
 tbug.useForScript = useForScript
 
@@ -1280,6 +1297,7 @@ local function addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, p
 --d("[tbug]addScriptContextMenuEntriesForClassOrObjectIdentifierKey-key: " ..tos(p_key))
     tbug_glookup = tbug_glookup or tbug.glookup
 
+    local openInNewInspector = IsShiftKeyDown()
     local doAddAsObject, doAddAsClass, doAddAsLibrary, subjectName
     local keyCopy = p_key
     local selfCopy = p_self
@@ -1332,17 +1350,17 @@ local function addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, p
     if doAddAsObject == true then
         --(text, callback, entryType, entries, additionalData)
         AddCustomScrollableMenuEntry("Use object[key] as script", function()
-            useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
+            useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true, openInNewInspector) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
         )
         retVar = true
     elseif doAddAsLibrary == true then
         AddCustomScrollableMenuEntry("Use library[key] as script", function()
-            useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
+            useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true, openInNewInspector) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
         )
         retVar = true
     elseif doAddAsClass == true then
         AddCustomScrollableMenuEntry("Use class[key] as script", function()
-            useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
+            useForScript(selfCopy, rowCopy, dataCopy, true, isFunction, true, openInNewInspector) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
         )
         retVar = true
     end
@@ -1650,10 +1668,10 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 if type(key) == "string" and valType == "string" and (tbug_endsWith(key, "_SCENE_NAME") == true or tbug_endsWith(key, "_SCENE_IDENTIFIER") == true) then
                     local slashCmdToShowScene = "SCENE_MANAGER:Show(\'" ..tos(currentValue) .. "\')"
                     AddCustomScrollableMenuEntry("Scene actions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
-                    AddCustomScrollableMenuEntry("Show scene", function() tbug.slashCommand(slashCmdToShowScene) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                    AddCustomScrollableMenuEntry("Show scene", function() tbug_slashCommand(slashCmdToShowScene) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     if SCENE_MANAGER:IsShowing(tos(currentValue)) then
                         local slashCmdToHideScene = "SCENE_MANAGER:Hide(\'" ..tos(currentValue) .. "\')"
-                        AddCustomScrollableMenuEntry("Hide scene", function() tbug.slashCommand(slashCmdToHideScene) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
+                        AddCustomScrollableMenuEntry("Hide scene", function() tbug_slashCommand(slashCmdToHideScene) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
                     end
                 end
                 ------------------------------------------------------------------------------------------------------------------------
@@ -2213,7 +2231,7 @@ function tbug.ShowTabWindowContextMenu(selfCtrl, button, upInside, selfInspector
         elseif isGlobalInspectorWindow and toggleSizeButton.toggleState == false and (selfInspector.tabs and #selfInspector.tabs < tbug.panelCount ) then
             tins(tabsSubmenu, {
                 label = "+ Restore all standard tabs",
-                callback = function() tbug.slashCommand("-all-")  end,
+                callback = function() tbug_slashCommand("-all-")  end,
             })
         end
         if not ZO_IsTableEmpty(tabsSubmenu) then

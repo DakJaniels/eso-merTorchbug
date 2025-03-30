@@ -8,6 +8,11 @@ local strlow = string.lower
 local type = type
 local osdate = os.date
 
+local stringType = "string"
+local funcType = "function"
+local tableType = "table"
+local userDataType = "userdata"
+
 local prefixForLeftKey = tbug.prefixForLeftKey
 
 local RT = tbug.RT
@@ -47,10 +52,54 @@ local hideContextMenus = tbug.HideContextMenus
 local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
 local getLastRowClickedData = tbug.getLastRowClickedData
 
+local tbug_slashCommand = tbug.slashCommand
+local tbug_makePanel = tbug.makePanel
+
+local classes = tbug.classes
+--local BasicInspector = classes.BasicInspector
+
+
+--Special passed in masterlist type at BuildMasterList function?
+local specialMasterListTypePassedInToMasterList = {
+    ["EventsViewer"] = RT.EVENTS_TABLE,
+--[[
+    --todo 20250120 Does not work as this opens a new inspector with a tab and clicking that tab opens the ScriptViewer then (each time) ...
+    -->todo 20250120 The ScriptViewer tab needs to open diretly from main.lua -> tbug.inspect -> inspector = objInsp:acquire(object, tabTitle, recycleActive, title, data)
+    -->todo 20250120 it needs to directly know that we do not want to inspect a table or object etc.
+    ["ScriptsViewer"] = function(selfVar, dataTable)
+d(">>> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        local TableInspectorPanel = classes.TableInspectorPanel
+        local ScriptsInspectorPanel = classes.ScriptsInspectorPanel .. TableInspectorPanel
+
+        if ScriptsInspectorPanel == nil then return false end
+d("[TBUG]ScriptsViewer - ScriptsInspectorPanel class found")
+        --ScriptsViewer needs to create and use a new instance of the ScriptsInspectorPanel class
+        --todo 20250120 selfVar = TableInspector"Panel" and not the BasicInspector below that! So how do we get the actual BasicInspector of the current TableInspectorPanel?
+        local inspectorCurrentlyShown = selfVar.inspector
+
+        --Remove all shown tabs at the new inspector as it was only addin the tab as a a placeholder to add the new tab "ScriptsViewer"
+        local panel = tbug_makePanel(inspectorCurrentlyShown, ScriptsInspectorPanel, "ScriptsViewer", nil)
+d(">Panel: " .. tos(panel))
+tbug._debugScriptsViewerPanels = tbug._debugScriptsViewerPanels or {}
+tbug._debugScriptsViewerPanels[#tbug._debugScriptsViewerPanels +1] = panel
+d("<<< ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+        if panel == nil then return false end
+        inspectorCurrentlyShown:removeTab(selfVar.subject or 1)
+
+
+        panel:buildMasterList() --> Calls ScriptsInspectorPanel:buildMasterList()
+
+        return true
+    end,
+]]
+}
+
+
 --------------------------------
 local function getSpecialInspectorRightKeyValue(key, value, row, data)
     local specialRightKeyValueFunc = keyToSpecialRightKeyFunc[key]
-    if type(specialRightKeyValueFunc) ~= "function" then return end
+    if type(specialRightKeyValueFunc) ~= funcType then return end
     local rightKeyValue = specialRightKeyValueFunc(value)
 --d(">key: " .. tos(key) ..", rightKeyValue: " .. tos(rightKeyValue))
     return rightKeyValue
@@ -107,7 +156,7 @@ d(">getSpecialTabTitleCleanAtInspectorKeyConstant - tabTitleClean: " ..tos(tabTi
     ]]
     --Actual tab was maybe the "last one" as code here was run before the new got updated
     --So check the saved data of last clicked row
-    local lastRowClickedDataOfTableInspector = getLastRowClickedData("table")
+    local lastRowClickedDataOfTableInspector = getLastRowClickedData(tableType)
     if lastRowClickedDataOfTableInspector ~= nil and lastRowClickedDataOfTableInspector.data ~= nil then
         local clickedKey = lastRowClickedDataOfTableInspector.data.key
 --d(">getSpecialTabTitleCleanAtInspectorKeyConstant - clickedKey: " ..tos(clickedKey))
@@ -128,7 +177,6 @@ end
 -------------------------------
 -- class TableInspectorPanel --
 
-local classes = tbug.classes
 local ObjectInspectorPanel = classes.ObjectInspectorPanel
 local TableInspectorPanel = classes.TableInspectorPanel .. ObjectInspectorPanel
 
@@ -140,6 +188,7 @@ tbug.panelClassNames["tableInspector"] = TableInspectorPanel
 
 
 function TableInspectorPanel:__init__(control, ...)
+--d("[TBUG]TableInspectorPanel:__init__")
     ObjectInspectorPanel.__init__(self, control, ...)
 
     self.compareFunc = function(a, b)
@@ -157,19 +206,21 @@ end
 
 
 function TableInspectorPanel:bindMasterList(editTable, specialMasterListID)
---d("[tbug]TableInspectorPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
+--d("[TBUG]TableInspectorPanel:bindMasterList - editTable: " .. tos(editTable) .. ", specialMasterListID: ".. tos(specialMasterListID))
     self.subject = editTable
     self.specialMasterListID = specialMasterListID
 end
 
 
 function TableInspectorPanel:buildMasterList(libAsyncTask)
---d("[tbug]TableInspectorPanel:buildMasterList")
+--d("[TBUG]TableInspectorPanel:buildMasterList")
 
     if self:buildMasterListSpecial() then
---d("<building special!")
+--d("<was building special!")
         return
     end
+
+
     local masterList = self.masterList
     local n = 0
 
@@ -193,7 +244,7 @@ function TableInspectorPanel:buildMasterList(libAsyncTask)
         local tv = type(v)
         local rt = RT.GENERIC
 
-        if tv == "userdata" and pcall(invoke, v, "GetFontInfo") then
+        if tv == userDataType and pcall(invoke, v, "GetFontInfo") then
             rt = RT.FONT_OBJECT
         end
 
@@ -227,15 +278,34 @@ end
 
 function TableInspectorPanel:buildMasterListSpecial()
     local specialMasterlistType = self.specialMasterlistType
---d("[TBug]TableInspectorPanel:buildMasterList-specialMasterlistType: " ..tos(specialMasterlistType))
+--d("[TBUG]TableInspectorPanel:buildMasterList-specialMasterlistType: " ..tos(specialMasterlistType))
 
     local editTable = self.subject
 
     local specialMasterListID = self.specialMasterListID
-    local tbEvents = tbug.Events
     local isScenes = ((specialMasterListID and specialMasterListID == RT.SCENES_TABLE) or rawequal(editTable, tbug.ScenesOutput)) or false
     local isFragments = ((specialMasterListID and specialMasterListID == RT.FRAGMENTS_TABLE) or rawequal(editTable, tbug.FragmentsOutput)) or false
 --d(string.format("[tbug]TableInspectorPanel:buildMasterListSpecial - specialMasterListID: %s, scenes: %s, fragments: %s", tos(specialMasterListID), tos(isScenes), tos(isFragments)))
+
+    tbEvents = tbug.Events
+
+    ------------------------------------------------------------------------------------------------------------------------
+    --Passed in a special masterlist setup etc. from e.g. opening a tab via the EventsViewer?
+    if specialMasterlistType ~= nil then
+        local specialMasterListTable = specialMasterListTypePassedInToMasterList[specialMasterlistType]
+        if specialMasterListTable == nil then return false end
+        local typeSpecialMasterListTable = type(specialMasterListTable)
+
+        if typeSpecialMasterListTable == funcType then
+d(">specialMasterListPassedIn = function")
+tbug._debugSelfTableInspectorPanel = self
+            return specialMasterListTable(self, editTable)
+        elseif typeSpecialMasterListTable == tableType then
+d(">specialMasterListPassedIn = table")
+            self:populateMasterList(editTable, specialMasterListTable)
+        end
+    end
+    ------------------------------------------------------------------------------------------------------------------------
 
     if rawequal(editTable, nil) then
         return true
@@ -259,6 +329,7 @@ function TableInspectorPanel:buildMasterListSpecial()
         self:bindMasterList(tbug.LibrariesOutput, RT.LIB_TABLE)
         self:populateMasterList(editTable, RT.LIB_TABLE)
         --[[
+        --ScriptsHistory is an own class -> See file classes, scriptsinspector.lua
         elseif (specialMasterListID and specialMasterListID == RT.SCRIPTHISTORY_TABLE) or rawequal(editTable, tbug.ScriptsData) then
             tbug.refreshScripts()
             self:bindMasterList(tbug.ScriptsData, RT.SCRIPTHISTORY_TABLE)
@@ -274,16 +345,6 @@ function TableInspectorPanel:buildMasterListSpecial()
     elseif (specialMasterListID and specialMasterListID == RT.SAVEDVARIABLES_TABLE) or rawequal(editTable, tbug.SavedVariablesOutput) then
         self:bindMasterList(tbug.SavedVariablesOutput, RT.SAVEDVARIABLES_TABLE)
         self:populateMasterList(editTable, RT.SAVEDVARIABLES_TABLE)
-
-    --Passed in a special masterlist setup etc. from e.g. opening a tab via the EventsViewer?
-    elseif specialMasterlistType ~= nil then
-        if specialMasterlistType == "EventsViewer" then
-            --self:bindMasterList(editTable, RT.EVENTS_TABLE)
-            self:populateMasterList(editTable, RT.EVENTS_TABLE)
-        else
-            return false
-        end
-
     else
         return false
     end
@@ -311,6 +372,7 @@ end
 
 
 function TableInspectorPanel:initScrollList(control)
+--d("[TBUG]TableInspectorPanel:initScrollList")
     ObjectInspectorPanel.initScrollList(self, control)
 
     local inspector = self.inspector
@@ -416,7 +478,7 @@ function TableInspectorPanel:initScrollList(control)
                     setupValue(row.cVal, tv, v .. " |r|cFFFFFF(\""..valueGetString.."\")|r", false)
                 end
             else
-                if isNumber and tk == "string" and row.cKeyRight then
+                if isNumber and tk == stringType and row.cKeyRight then
                     local isKeyTimeStamp = checkForTimeStampKey(k, v)
                     if isKeyTimeStamp == true then
                         row.cKeyRight:SetText(osdate("%c", v))
@@ -430,11 +492,11 @@ function TableInspectorPanel:initScrollList(control)
                 end
                 setupValue(row.cVal, tv, v)
             end
-        elseif tv == "string" then
+        elseif tv == stringType then
             setupValue(row.cVal, tv, strformat("%q", v))
-        elseif tv == "table" and next(v) == nil then
+        elseif tv == tableType and next(v) == nil then
             setupValue(row.cVal, tv, "{}")
-        elseif tv == "userdata" then
+        elseif tv == userDataType then
             local ct, ctName = getControlType(v, "CT_names")
             if ct then
                 if row.cKeyRight then
@@ -454,11 +516,11 @@ function TableInspectorPanel:initScrollList(control)
                     isKeyRightUsed = true
                 end
             else
-                if row.cKeyRight and tk == "string" and tv == "table" and ton(k) ~= nil then
+                if row.cKeyRight and tk == stringType and tv == tableType and ton(k) ~= nil then
                     local svCharName = inspector:getSavedVariablesCharacterName(k, self.subject)
                     if svCharName ~= nil then
 --d(">k: " ..tos(k) ..", v: " ..tos(v) ..", svCharName: " ..tos(svCharName))
-                        setupValue(row.cKeyRight, "string", svCharName, true)
+                        setupValue(row.cKeyRight, stringType, svCharName, true)
                         isKeyRightUsed = true
                     end
                 end
@@ -524,7 +586,7 @@ function TableInspectorPanel:initScrollList(control)
             end
             if row.cKeyRight then
                 local LibrariesData = tbug.LibrariesData
-                local typeOfLibrary = "string"
+                local typeOfLibrary = stringType
                 local libraryNameAndVersion = ""
                 local wasFoundInLibStub = false
                 if LibStub then
@@ -558,7 +620,7 @@ function TableInspectorPanel:initScrollList(control)
         --AddOn
         else
             if row.cKeyRight then
-                local typeOfAddOn = "string"
+                local typeOfAddOn = stringType
                 local addOnNameAndVersion = ""
                 if AddOnData and AddOnData[k] then
                     if AddOnData[k].version ~= nil then
@@ -602,7 +664,7 @@ function TableInspectorPanel:initScrollList(control)
             end
         end
 
-        if tv == "string" then
+        if tv == stringType then
             setupValue(row.cVal, tv, strformat("%q", v))
         else
             setupValue(row.cVal, tv, v)
@@ -616,7 +678,7 @@ function TableInspectorPanel:initScrollList(control)
         local tv = type(v)
 
         row.cVal:SetText("")
-        if tv == "string" then
+        if tv == stringType then
             setupValue(row.cVal, tv, v)
         end
         if row.cVal2 then
@@ -643,9 +705,9 @@ function TableInspectorPanel:initScrollList(control)
             end
         end
 
-        if tv == "table" and next(v) == nil then
+        if tv == tableType and next(v) == nil then
             setupValue(row.cVal, tv, "{}")
-        elseif tv == "userdata" then
+        elseif tv == userDataType then
             setupValueLookup(row.cVal, tv, v)
         else
             setupValueLookup(row.cVal, tv, v)
@@ -712,7 +774,7 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
     hideContextMenus()
     local sliderCtrl = self.sliderControl
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
-        tbug.setLastRowClickedData("table", self, nil, nil)
+        tbug.setLastRowClickedData(tableType, self, nil, nil)
 
         self.editBox:LoseFocus()
         if sliderCtrl ~= nil then
@@ -721,7 +783,7 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
         end
 
         local value = data.value
-        if type(value) == "string" then
+        if type(value) == stringType then
             if data.dataEntry.typeId == RT.SOUND_STRING then
                 PlaySound(value)
             end
@@ -736,7 +798,7 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
                 --Add the subject as new line __parentSubject to the inspector result rows
                 _parentSubject = self._parentSubject or (self.subject ~= nil and self.subject[customKey__Object])
                 if _parentSubject == nil then
-                    if self.subject ~= nil and type(self.subject == "table") then
+                    if self.subject ~= nil and type(self.subject == tableType) then
                         --Got the subject table metatables?
                         local mt = getmetatable(self.subject)
                         if mt ~= nil and mt.__index ~= nil then
@@ -746,7 +808,7 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
                     end
                 end
                 data._parentSubject = _parentSubject
-            elseif type(value) == "function" and shift == true and not ctrl then
+            elseif type(value) == funcType and shift == true and not ctrl then
 --d(">>function!")
                 _parentSubject = self._parentSubject or (self.subject ~= nil and self.subject[customKey__Object])
                 if _parentSubject ~= nil then
@@ -755,7 +817,7 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
                     parentSubjectName = getRelevantNameForCall(_parentSubject)
 
                     isFunctionCallWithParentSubject = true
-                    parentSubjectNameGiven = (parentSubjectName ~= nil and type(parentSubjectName) == "string" and parentSubjectName ~= "" and true) or false
+                    parentSubjectNameGiven = (parentSubjectName ~= nil and type(parentSubjectName) == stringType and parentSubjectName ~= "" and true) or false
                     if not parentSubjectNameGiven then
 --d(">>no parentSubject name")
                         --Attention: Might only return the 1st return parameter of the function!
@@ -764,7 +826,7 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
                 end
             end
 
-            tbug.setLastRowClickedData("table", self, row, data)
+            tbug.setLastRowClickedData(tableType, self, row, data)
             if not shift and self.inspector.openTabFor then
                 local winTitle = self:BuildWindowTitleForTableKey(data)
                 local useInspectorTitel = (winTitle ~= nil and winTitle ~= "" and true) or false
@@ -782,7 +844,7 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
                     --Do not use tbug_inspect directly but use the tbug.slashCommand handler instead so that all
                     --return parameters of the function are properly shown in chat
                     --valueToInspect = function() return value(_parentSubject) end
-                    tbug.slashCommand(slashCommand)
+                    tbug_slashCommand(slashCommand)
 
                 else
 --d(">tbug_inspect-winTitle: " ..tos(winTitle))
@@ -867,7 +929,7 @@ function TableInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, al
                     local newValue = not value
                     data.value = newValue
                     tbug_setEditValueFromContextMenu(self, row, data, oldValue)
-                --elseif typeValue == "string" then
+                --elseif typeValue == stringType then
                     --[[
                     if value ~= "" and data.dataEntry.typeId == RT.SCRIPTHISTORY_TABLE then
                         --CHAT_SYSTEM.textEntry.system:StartTextEntry("/script " .. data.value)
@@ -881,6 +943,8 @@ function TableInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, al
 end
 
 function TableInspectorPanel:populateMasterList(editTable, dataType)
+--d("[TBUG]populateMasterList - dataType: " .. tos(dataType))
+
     local masterList, n = self.masterList, 0
     for k, v in next, editTable do
         n = n + 1

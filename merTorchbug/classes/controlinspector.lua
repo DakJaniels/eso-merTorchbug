@@ -395,7 +395,7 @@ end
 
 function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shift)
     if tbug.doDebug then
-        d("[tbug]ControlInspector:onRowClicked")
+        --d("[TBUG]ControlInspector:onRowClicked")
         tbug._debugControlInspectorRowClicked = {
             row = row,
             data = data,

@@ -5,6 +5,7 @@ local type = type
 
 local trem = table.remove
 
+local classes = tbug.classes
 local RT = tbug.RT
 local RT_scriptHistory = RT.SCRIPTHISTORY_TABLE
 
@@ -117,16 +118,39 @@ function tbug.changeScriptHistory(scriptRowId, editBox, scriptOrCommentText, doN
             if updatedColumnIndex == 1 then
                 tbug.refreshInspectorPanel("globalInspector", "scriptHistory")
             end
+
+        --else
+            --todo 20250120 Check if any other scripts panel is shown and update it
+
         end
     end
 end
 local changeScriptHistory = tbug.changeScriptHistory
 
 
--------------------------------
+
+
+------------------------------------------------------------------------------------------------------------------------
+-- class ScriptsInspector --
+local BasicInspector = classes.BasicInspector
+local ObjectInspector = classes.ObjectInspector
+local ScriptsInspector = classes.ScriptsInspector .. ObjectInspector
+
+--Update the table tbug.panelClassNames with the ScriptInspectorPanel class
+tbug.specialMasterListType2InspectorClass["ScriptsViewer"] = ScriptsInspector
+
+function ScriptsInspector:__init__(id, control)
+    if tbug.doDebug then d("[TBUG]ScriptsInspector:__init__") end
+    BasicInspector.__init__(self, id, control)
+
+    self.conf = tbug.savedTable("scriptsInspector" .. id)
+    self:configure(self.conf)
+    self.isScriptsInspector = true
+end
+
+------------------------------------------------------------------------------------------------------------------------
 -- class ScriptsInspectorPanel --
 
-local classes = tbug.classes
 local TableInspectorPanel = classes.TableInspectorPanel
 local ScriptsInspectorPanel = classes.ScriptsInspectorPanel .. TableInspectorPanel
 
@@ -138,6 +162,7 @@ tbug.panelClassNames["scriptInspector"] = ScriptsInspectorPanel
 
 
 function ScriptsInspectorPanel:__init__(control, ...)
+--d("[TBUG]ScriptsInspectorPanel:__init__")
     TableInspectorPanel.__init__(self, control, ...)
     self.scriptEditBox = GetControl(self.control, "ScriptBackdropBox") --tbugGlobalInspectorPanelScripts1ScriptBackdropBox
     self.scriptEditBox:SetMaxInputChars(2000) -- max chars that can be saved to SavedVariables
@@ -161,18 +186,20 @@ end
 
 
 function ScriptsInspectorPanel:bindMasterList(editTable, specialMasterListID)
+--d("[TBUG]ScriptsInspectorPanel:bindMasterList")
     self.subject = editTable
     self.specialMasterListID = specialMasterListID
 end
 
 
 function ScriptsInspectorPanel:buildMasterList()
---d("[tbug]ScriptsInspectorPanel:buildMasterList")
+--d("[TBUG]ScriptsInspectorPanel:buildMasterList")
     self:buildMasterListSpecial()
 end
 
 
 function ScriptsInspectorPanel:buildMasterListSpecial()
+--d("[TBUG]ScriptsInspectorPanel:buildMasterListSpecial")
     local editTable = self.subject
     local specialMasterListID = self.specialMasterListID
 --d(string.format("[tbug]ScriptsInspectorPanel:buildMasterListSpecial - specialMasterListID: %s, scenes: %s, fragments: %s", tos(specialMasterListID), tos(isScenes), tos(isFragments)))
@@ -189,15 +216,6 @@ function ScriptsInspectorPanel:buildMasterListSpecial()
     return true
 end
 
-
-function ScriptsInspectorPanel:canEditValue(data)
-    local dataEntry = data.dataEntry
-    if not dataEntry then return false end
-    local typeId = dataEntry.typeId
-    return typeId == RT.SCRIPTHISTORY_TABLE
-end
-
-
 function ScriptsInspectorPanel:clearMasterList(editTable)
     local masterList = self.masterList
     tbug_truncate(masterList, 0)
@@ -205,8 +223,20 @@ function ScriptsInspectorPanel:clearMasterList(editTable)
     return masterList
 end
 
+function ScriptsInspectorPanel:populateMasterList(editTable, dataType)
+--d("[TBUG]ScriptsInspectorPanel:populateMasterList")
+    local masterList, n = self.masterList, 0
+    for k, v in zo_insecureNext , editTable do
+        n = n + 1
+        local data = {key = k, value = v}
+        masterList[n] = ZO_ScrollList_CreateDataEntry(dataType, data)
+    end
+    return tbug_truncate(masterList, n)
+end
 
-function ScriptsInspectorPanel:initScrollList(control)
+
+function ScriptsInspectorPanel:initScrollList(control) --called from ObjectInspectorPanel
+--d("[TBUG]ScriptsInspectorPanel:initScrollList")
     TableInspectorPanel.initScrollList(self, control)
 
     --Check for special key colors!
@@ -369,22 +399,20 @@ function ScriptsInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, 
     end
 end
 
-function ScriptsInspectorPanel:populateMasterList(editTable, dataType)
-    local masterList, n = self.masterList, 0
-    for k, v in zo_insecureNext , editTable do
-        n = n + 1
-        local data = {key = k, value = v}
-        masterList[n] = ZO_ScrollList_CreateDataEntry(dataType, data)
-    end
-    return tbug_truncate(masterList, n)
-end
-
 --[[
 function ScriptsInspectorPanel:valueEditStart(editBox, row, data)
     d("ScriptsInspectorPanel:valueEditStart")
     ObjectInspectorPanel.valueEditStart(self, editBox, row, data)
 end
 ]]
+
+function ScriptsInspectorPanel:canEditValue(data)
+    local dataEntry = data.dataEntry
+    if not dataEntry then return false end
+    local typeId = dataEntry.typeId
+    return typeId == RT.SCRIPTHISTORY_TABLE
+end
+
 
 function ScriptsInspectorPanel:valueEditConfirmed(editBox, evalResult)
     local editData = self.editData

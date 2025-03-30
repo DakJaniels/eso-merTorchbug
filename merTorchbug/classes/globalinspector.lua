@@ -52,6 +52,32 @@ function GlobalInspectorPanel:buildMasterList(libAsyncTask)
 end
 
 
+
+------------------------ Generic functions for panel
+function tbug.makePanel(selfClassVar, panelClass, title, panelData)
+    if selfClassVar == nil then return end
+    local panelClassName
+    if panelData ~= nil then
+        panelClassName = panelData.panelClassName
+        if panelClassName ~= nil and panelClassName ~= "" then
+            panelClass = panelClassName2panelClass[panelClassName]
+            if panelClass == nil then
+                panelClass = GlobalInspectorPanel --fallback: GlobalInspectorPanel
+            end
+        end
+    end
+--d("[TB]makePanel-title: " ..tostring(title) .. ", panelClass: " ..tostring(panelClass) .. ", panelClassName: " ..tostring(panelClassName))
+    if panelClass == nil then return end
+
+    local panel = selfClassVar:acquirePanel(panelClass)
+    --local tabControl = self:insertTab(title, panel, 0)
+    selfClassVar:insertTab(title, panel, 0, nil, nil, true, false)
+    return panel
+end
+local tbug_makePanel = tbug.makePanel
+
+
+
 ---------------------------
 -- class GlobalInspector --
 
@@ -148,6 +174,8 @@ end
 
 ------------------------ Other functions of the class
 function GlobalInspector:makePanel(title, panelData)
+    return tbug_makePanel(self, GlobalInspectorPanel, title, panelData)
+    --[[
     local panelClass = GlobalInspectorPanel
     local panelClassName
     if panelData ~= nil then
@@ -165,6 +193,7 @@ function GlobalInspector:makePanel(title, panelData)
     --local tabControl = self:insertTab(title, panel, 0)
     self:insertTab(title, panel, 0, nil, nil, true, false)
     return panel
+    ]]
 end
 
 function GlobalInspector:connectPanels(panelName, rebuildMasterList, releaseAllTabs, tabIndex)
@@ -337,5 +366,6 @@ end
 
 function GlobalInspector:release()
     -- do not release anything
+    if not self.control or not self.control.SetHidden then return end
     self.control:SetHidden(true)
 end
