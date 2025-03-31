@@ -297,11 +297,15 @@ function TableInspectorPanel:buildMasterListSpecial()
         local typeSpecialMasterListTable = type(specialMasterListTable)
 
         if typeSpecialMasterListTable == funcType then
-d(">specialMasterListPassedIn = function")
-tbug._debugSelfTableInspectorPanel = self
+            if tbug.doDebug then
+                d(">specialMasterListPassedIn = function")
+                tbug._debugSelfTableInspectorPanel = self
+            end
             return specialMasterListTable(self, editTable)
         elseif typeSpecialMasterListTable == tableType then
-d(">specialMasterListPassedIn = table")
+            if tbug.doDebug then
+                d(">specialMasterListPassedIn = table")
+            end
             self:populateMasterList(editTable, specialMasterListTable)
         end
     end

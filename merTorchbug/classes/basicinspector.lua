@@ -226,7 +226,7 @@ function BasicInspectorPanel:filterScrollList(libAsyncTask)
 --d(">filterFuncIsFunc: " .. tos(filterFuncIsFunc) .. ", dropdownFilterFuncIsFunc: " ..tos(dropdownFilterFuncIsFunc))
         local j = 1
 --[[
-if TBUG._debugNow then
+if TBUG.doDebugNow then
     TBUG._debugLastMasterList = ZO_ShallowTableCopy(masterList)
     local dropdownFilterFuncCopy = dropdownFilterFunc
     TBUG._debugDropdownFilterFunc = dropdownFilterFuncCopy

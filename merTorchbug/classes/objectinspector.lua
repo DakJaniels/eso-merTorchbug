@@ -99,6 +99,24 @@ local function updateTabBreadCrumbs(tabControl, tabControlCurrentlyActive, isMOC
     tins(tabControl.breadCrumbs, newTabsBreadCrumbData)
 end
 
+
+local function getNextFreeControlName(templateName, id)
+    local secCounter = 1
+    local controlName
+    while controlName == nil or secCounter <= 50 do
+        secCounter = secCounter + 1
+        controlName = templateName .. id
+        if _G[controlName] ~= nil then
+            if tbug.doDebug then d(">controlName exists already: " .. tos(controlName)) end
+            id = id + 1
+            controlName = nil
+        else
+            return controlName, id
+        end
+    end
+    return nil, id
+end
+
 --------------------------------
 -- class ObjectInspectorPanel --
 local classes = tbug.classes
@@ -601,19 +619,13 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
                 if tbug.doDebug then d(">Class.nextObjectId: " .. tos(Class._nextObjectId) .. ", Class==ObjectInspector? " .. tos(Class==ObjectInspector)) end
                 local id = Class._nextObjectId
                 local templateName = inspectorTemplate or Class._templateName
-                local controlName = templateName .. id
-
-                if _G[controlName] ~= nil then
-                    if tbug.doDebug then d(">controlName exists already: " .. tos(controlName)) end
-                    Class._nextObjectId = Class._nextObjectId + 1
-                    id = Class._nextObjectId
-                    controlName = templateName .. id
-                end
+                local controlName
+                controlName, id = getNextFreeControlName(templateName, id)
 
                 if tbug.doDebug then d(">no inspector found, after remove, creating new one. ControlName: " .. tos(controlName) ..", templateName: " ..tos(templateName) .. "; Current nextObjectId: " ..tos(id)) end
                 local control = wm:CreateControlFromVirtual(controlName, nil,
                         templateName)
-                Class._nextObjectId = id + 1
+                Class._nextObjectId = id  + 1 --increase for next inspector
                 inspector = Class(id, control)
             end
             if Class._lastActive then
@@ -681,6 +693,7 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
 
     --20250121 Is this a ScriptsInspector?
     local isScriptsInspector = (self.isScriptsInspector ~= nil and self.isScriptsInspector) or false
+    local isScriptsViewer = (self.isScriptsViewer ~= nil and self.isScriptsViewer) or false
 
 
     -- try to find an existing tab inspecting the given object
@@ -689,7 +702,7 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
             --d(">found existing tab by object -> Selecting it now")
             self:selectTab(tabControlLoop, isMOC)
 
-            if isScriptsInspector == true then
+            if isScriptsInspector == true or isScriptsViewer == true then
                 local panel = (self.activeTab ~= nil and self.activeTab.panel) or nil
                 if panel then
                     panel:testScript(nil, nil, nil, title, false)
@@ -705,7 +718,7 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
 
     local titleClean = title --for the breadCrumbs, without any "[]" suffix etc.
 
-    local panelClass = (isScriptsInspector == true and classes.ScriptsInspectorPanel) or nil
+    local panelClass = (isScriptsInspector == true and classes.ScriptsInspectorPanel) or (isScriptsViewer == true and classes.ScriptsViewerPanel) or nil
 
     if type(object) == "table" then
         --d(">table")
@@ -765,7 +778,7 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
         panel:refreshData() --> Calls panel's buildMasterList etc. -> BasicInspectorPanel:refreshData()
         self:selectTab(tabControl, isMOC)
 
-        if isScriptsInspector == true then
+        if isScriptsInspector == true or isScriptsViewer == true then
             panel:testScript(nil, nil, nil, title, false)
         end
     --else

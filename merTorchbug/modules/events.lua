@@ -147,11 +147,13 @@ local tbEvents_EventHandler = tbEvents.EventHandler
 
 function tbug.UpdateEventsTrackingButton(selfVar)
     getGlobalInspector = getGlobalInspector or tbug.getGlobalInspector
---todo 20250110 remove debug data
-tbug._debugUpdateEventsTrackingButton = {
-    selfVar = selfVar,
-    globalInspector = getGlobalInspector(),
-}
+    --todo 20250110 remove debug data
+    if tbug.doDebug then
+        tbug._debugUpdateEventsTrackingButton = {
+            selfVar = selfVar,
+            globalInspector = getGlobalInspector(),
+        }
+    end
 
     selfVar = selfVar or getGlobalInspector()
     local eventsButton = (selfVar and selfVar.eventsButton) or nil

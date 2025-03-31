@@ -131,13 +131,14 @@ local changeScriptHistory = tbug.changeScriptHistory
 
 
 ------------------------------------------------------------------------------------------------------------------------
--- class ScriptsInspector --
+-- class ScriptsInspector / ScriptsViewer --
 local BasicInspector = classes.BasicInspector
 local ObjectInspector = classes.ObjectInspector
 local ScriptsInspector = classes.ScriptsInspector .. ObjectInspector
+local ScriptsViewer = classes.ScriptsViewer .. ScriptsInspector
 
 --Update the table tbug.panelClassNames with the ScriptInspectorPanel class
-tbug.specialMasterListType2InspectorClass["ScriptsViewer"] = ScriptsInspector
+tbug.specialMasterListType2InspectorClass["ScriptsViewer"] = ScriptsViewer
 
 function ScriptsInspector:__init__(id, control)
     if tbug.doDebug then d("[TBUG]ScriptsInspector:__init__") end
@@ -148,17 +149,32 @@ function ScriptsInspector:__init__(id, control)
     self.isScriptsInspector = true
 end
 
+function ScriptsViewer:__init__(id, control)
+    if tbug.doDebug then d("[TBUG]ScriptsViewer:__init__") end
+    BasicInspector.__init__(self, id, control)
+
+    self.conf = tbug.savedTable("ScriptsViewer" .. id)
+    self:configure(self.conf)
+    self.isScriptsViewer = true
+end
+
+
 ------------------------------------------------------------------------------------------------------------------------
--- class ScriptsInspectorPanel --
+-- class ScriptsInspectorPanel / ScriptsViewerPanel --
 
 local TableInspectorPanel = classes.TableInspectorPanel
-local ScriptsInspectorPanel = classes.ScriptsInspectorPanel .. TableInspectorPanel
 
+local ScriptsInspectorPanel = classes.ScriptsInspectorPanel .. TableInspectorPanel
 ScriptsInspectorPanel.CONTROL_PREFIX = "$(parent)PanelScripts"
 ScriptsInspectorPanel.TEMPLATE_NAME = "tbugScriptsInspectorPanel"
-
 --Update the table tbug.panelClassNames with the ScriptInspectorPanel class
 tbug.panelClassNames["scriptInspector"] = ScriptsInspectorPanel
+
+local ScriptsViewerPanel = classes.ScriptsViewerPanel .. ScriptsInspectorPanel
+ScriptsViewerPanel.CONTROL_PREFIX = "$(parent)PanelScriptsViewer"
+ScriptsViewerPanel.TEMPLATE_NAME = "tbugScriptsViewerPanel"
+tbug.panelClassNames["scriptViewer"] = ScriptsViewerPanel
+
 
 
 function ScriptsInspectorPanel:__init__(control, ...)

@@ -549,8 +549,8 @@ local function inspectResults(specialInspectionString, searchData, data, source,
             end
         end
 
-        --Do not flag this inspector as the first inspector if it was a Scripts Inspector!
-        if firstInspector and not firstInspector.isScriptsInspector then
+        --Do not flag this inspector as the first inspector if it was a Scripts Inspector/Viewer!
+        if firstInspector and not firstInspector.isScriptsInspector and not firstInspector.isScriptsViewer then
             tbug.firstInspector = firstInspector
         end
     end
@@ -775,7 +775,7 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
         end
     end
 
-    if useCustomInspectorClass == true then
+    if useCustomInspectorClass == true and inspector then
         inspector.usesCustomInspectorClass = true
     end
 

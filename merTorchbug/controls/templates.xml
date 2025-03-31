@@ -134,6 +134,31 @@
 			</Controls>
 		</Control>
 
+		<Control name="tbugScriptsViewerList" virtual="true" tier="LOW" layer="CONTROLS" level="1">
+			<Controls>
+				<Backdrop name="$(parent)ScriptBackdrop" inherits="ZO_MultiLineEditBackdrop_Keyboard" alpha="1.0" tier="LOW" layer="CONTROLS" level="1">
+				    <Dimensions y="150" />
+					<Anchor point="BOTTOMLEFT" relativeTo="$(parent)" relativePoint="BOTTOMLEFT" offsetY="-35" offsetX="10" />
+				  	<Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMRIGHT" offsetY="-35" offsetX="-10" />
+				    <Controls>
+				  	  <EditBox name="$(parent)Box" inherits="ZO_DefaultEditMultiLineForBackdrop ZO_EditDefaultText" tier="LOW" layer="CONTROLS" level="2"/>
+				    </Controls>
+				</Backdrop>
+				<Button name="$(parent)TestButton" inherits="ZO_DefaultButton" text="Test script" tier="LOW" layer="CONTROLS" level="2">
+					<Dimensions x="100" y="25" />
+					<Anchor point="BOTTOM" relativePoint="BOTTOM" relativeTo="$(parent)" offsetY="-5" offsetX="-110" />
+				</Button>
+				<Button name="$(parent)SaveButton" inherits="ZO_DefaultButton" text="Save script" tier="LOW" layer="CONTROLS" level="2">
+					<Dimensions x="100" y="25" />
+					<Anchor point="BOTTOM" relativePoint="BOTTOM" relativeTo="$(parent)" offsetY="-5" offsetX="10" />
+				</Button>
+				<Control name="$(parent)List" inherits="ZO_ScrollList" tier="LOW" layer="CONTROLS" level="2">
+					<Anchor point="TOPLEFT" offsetY="0" />
+					<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$(parent)ScriptBackdrop" offsetY="0" offsetX="0" />
+				</Control>
+			</Controls>
+		</Control>
+
 		<Control name="tbugSavedInspectorsList" virtual="true" tier="LOW" layer="CONTROLS" level="1">
 			<Controls>
 				<Control name="$(parent)List" inherits="ZO_ScrollList" tier="LOW" layer="CONTROLS" level="2">
@@ -451,6 +476,9 @@
 		</Control>
 
 		<Control name="tbugScriptsInspectorPanel" virtual="true" inherits="tbugScriptsList">
+		</Control>
+
+		<Control name="tbugScriptsViewerPanel" virtual="true" inherits="tbugScriptsViewerList">
 		</Control>
 
 		<Control name="tbugSavedInspectorsPanel" virtual="true" inherits="tbugSavedInspectorsList">
