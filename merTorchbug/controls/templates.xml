@@ -138,7 +138,7 @@
 			<Controls>
 				<Backdrop name="$(parent)ScriptBackdrop" inherits="ZO_MultiLineEditBackdrop_Keyboard" alpha="1.0" tier="LOW" layer="CONTROLS" level="1">
 				    <Dimensions y="150" />
-					<Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="TOPLEFT" offsetY="-12" offsetX="10" />
+					<Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="TOPLEFT" offsetY="0" offsetX="10" />
 				  	<Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMRIGHT" offsetY="-35" offsetX="-10" />
 				    <Controls>
 				  	  <EditBox name="$(parent)Box" inherits="ZO_DefaultEditMultiLineForBackdrop ZO_EditDefaultText" tier="LOW" layer="CONTROLS" level="2"/>

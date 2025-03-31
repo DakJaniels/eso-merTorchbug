@@ -212,18 +212,23 @@ function ScriptsViewerPanel:__init__(control, ...)
 
     local mainControl = self.control
 
-    tbug._debugScriptsViewerPanel = {
-        self = self,
-        mainControl = mainControl,
-    }
+    if tbug.doDebug then
+        tbug._debugScriptsViewerPanel = {
+            self = self,
+            mainControl = mainControl,
+        }
+    end
 
     --At the ScriptsViewer completely hide the scrollList
     self.isScriptsViewer = true
     self.list:SetHidden(true)
     self.list:SetMouseEnabled(false)
-    local filter = GetControl(mainControl, "Filter")
-    filter:SetHidden(true)
-    filter:SetMouseEnabled(false)
+    local filter = self.inspector and self.inspector.filterEdit and self.inspector.filterEdit:GetParent()
+    if filter then
+        filter:SetDimensions(0, 0)
+        filter:SetHidden(true)
+        filter:SetMouseEnabled(false)
+    end
 
     self.scriptEditBox = GetControl(mainControl, "ScriptBackdropBox") --tbugGlobalInspectorPanelScripts1ScriptBackdropBox
     self.scriptEditBox:SetMaxInputChars(2000) -- max chars that can be saved to SavedVariables
