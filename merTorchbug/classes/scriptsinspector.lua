@@ -212,11 +212,16 @@ function ScriptsViewerPanel:__init__(control, ...)
 
     local mainControl = self.control
 
+    tbug._debugScriptsViewerPanel = {
+        self = self,
+        mainControl = mainControl,
+    }
+
     --At the ScriptsViewer completely hide the scrollList
     self.isScriptsViewer = true
     self.list:SetHidden(true)
     self.list:SetMouseEnabled(false)
-    local filter = GetControl(control, "Filter")
+    local filter = GetControl(mainControl, "Filter")
     filter:SetHidden(true)
     filter:SetMouseEnabled(false)
 
