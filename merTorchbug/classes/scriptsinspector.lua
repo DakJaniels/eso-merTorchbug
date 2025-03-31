@@ -163,6 +163,7 @@ end
 -- class ScriptsInspectorPanel / ScriptsViewerPanel --
 
 local TableInspectorPanel = classes.TableInspectorPanel
+local ObjectInspectorPanel = classes.ObjectInspectorPanel
 
 local ScriptsInspectorPanel = classes.ScriptsInspectorPanel .. TableInspectorPanel
 ScriptsInspectorPanel.CONTROL_PREFIX = "$(parent)PanelScripts"
@@ -170,20 +171,24 @@ ScriptsInspectorPanel.TEMPLATE_NAME = "tbugScriptsInspectorPanel"
 --Update the table tbug.panelClassNames with the ScriptInspectorPanel class
 tbug.panelClassNames["scriptInspector"] = ScriptsInspectorPanel
 
+
+local ObjectInspectorPanel = classes.ObjectInspectorPanel
 local ScriptsViewerPanel = classes.ScriptsViewerPanel .. ScriptsInspectorPanel
 ScriptsViewerPanel.CONTROL_PREFIX = "$(parent)PanelScriptsViewer"
 ScriptsViewerPanel.TEMPLATE_NAME = "tbugScriptsViewerPanel"
 tbug.panelClassNames["scriptViewer"] = ScriptsViewerPanel
 
 
-
 function ScriptsInspectorPanel:__init__(control, ...)
---d("[TBUG]ScriptsInspectorPanel:__init__")
+    --d("[TBUG]ScriptsInspectorPanel:__init__")
     TableInspectorPanel.__init__(self, control, ...)
-    self.scriptEditBox = GetControl(self.control, "ScriptBackdropBox") --tbugGlobalInspectorPanelScripts1ScriptBackdropBox
+
+    local mainControl = self.control
+
+    self.scriptEditBox = GetControl(mainControl, "ScriptBackdropBox") --tbugGlobalInspectorPanelScripts1ScriptBackdropBox
     self.scriptEditBox:SetMaxInputChars(2000) -- max chars that can be saved to SavedVariables
 
-    self.scriptTestButton = GetControl(self.control, "TestButton") --tbugGlobalInspectorPanelScripts1TestButton
+    self.scriptTestButton = GetControl(mainControl, "TestButton") --tbugGlobalInspectorPanelScripts1TestButton
     local function onTestScriptButtonClicked(selfButton)
         local currentScriptEditBoxText = self.scriptEditBox:GetText()
         if currentScriptEditBoxText == nil or currentScriptEditBoxText == "" then return end
@@ -191,18 +196,56 @@ function ScriptsInspectorPanel:__init__(control, ...)
     end
     self.scriptTestButton:SetHandler("OnClicked", onTestScriptButtonClicked)
 
-    self.scriptSaveButton = GetControl(self.control, "SaveButton") --tbugGlobalInspectorPanelScripts1SaveButton
-    local function onSaveScriptButtonClicked(selfButton)
+    self.scriptSaveButton = GetControl(mainControl, "SaveButton") --tbugGlobalInspectorPanelScripts1SaveButton
+    local function onSaveScriptButtonClicked(selfButton, isScriptsViewer)
         local currentScriptEditBoxText = self.scriptEditBox:GetText()
         if currentScriptEditBoxText == nil or currentScriptEditBoxText == "" then return end
-        tbug_addScriptHistory(currentScriptEditBoxText)
+        tbug_addScriptHistory(currentScriptEditBoxText, isScriptsViewer)
     end
-    self.scriptSaveButton:SetHandler("OnClicked", onSaveScriptButtonClicked)
+    local selfVar = self
+    self.scriptSaveButton:SetHandler("OnClicked", function(buttonObj) onSaveScriptButtonClicked(buttonObj, false) end)
+end
+
+function ScriptsViewerPanel:__init__(control, ...)
+    --d("[TBUG]ScriptsViewerPanel:__init__")
+    TableInspectorPanel.__init__(self, control, ...)
+
+    local mainControl = self.control
+
+    --At the ScriptsViewer completely hide the scrollList
+    self.isScriptsViewer = true
+    self.list:SetHidden(true)
+    self.list:SetMouseEnabled(false)
+    local filter = GetControl(control, "Filter")
+    filter:SetHidden(true)
+    filter:SetMouseEnabled(false)
+
+    self.scriptEditBox = GetControl(mainControl, "ScriptBackdropBox") --tbugGlobalInspectorPanelScripts1ScriptBackdropBox
+    self.scriptEditBox:SetMaxInputChars(2000) -- max chars that can be saved to SavedVariables
+
+    self.scriptTestButton = GetControl(mainControl, "TestButton") --tbugGlobalInspectorPanelScripts1TestButton
+    local function onTestScriptButtonClicked(selfButton)
+        local currentScriptEditBoxText = self.scriptEditBox:GetText()
+        if currentScriptEditBoxText == nil or currentScriptEditBoxText == "" then return end
+        runLua(currentScriptEditBoxText)
+    end
+    self.scriptTestButton:SetHandler("OnClicked", onTestScriptButtonClicked)
+
+    self.scriptSaveButton = GetControl(mainControl, "SaveButton") --tbugGlobalInspectorPanelScripts1SaveButton
+    local function onSaveScriptButtonClicked(selfButton, isScriptsViewer)
+        local currentScriptEditBoxText = self.scriptEditBox:GetText()
+        if currentScriptEditBoxText == nil or currentScriptEditBoxText == "" then return end
+        tbug_addScriptHistory(currentScriptEditBoxText, isScriptsViewer)
+    end
+    local selfVar = self
+    self.scriptSaveButton:SetHandler("OnClicked", function(buttonObj) onSaveScriptButtonClicked(buttonObj, selfVar.isScriptsViewer) end)
 end
 
 
 function ScriptsInspectorPanel:bindMasterList(editTable, specialMasterListID)
---d("[TBUG]ScriptsInspectorPanel:bindMasterList")
+    --d("[TBUG]ScriptsInspectorPanel:bindMasterList")
+    if self.isScriptsViewer then return end
+
     self.subject = editTable
     self.specialMasterListID = specialMasterListID
 end
@@ -210,12 +253,16 @@ end
 
 function ScriptsInspectorPanel:buildMasterList()
 --d("[TBUG]ScriptsInspectorPanel:buildMasterList")
+    if self.isScriptsViewer then return end
+
     self:buildMasterListSpecial()
 end
 
 
 function ScriptsInspectorPanel:buildMasterListSpecial()
 --d("[TBUG]ScriptsInspectorPanel:buildMasterListSpecial")
+    if self.isScriptsViewer then return end
+
     local editTable = self.subject
     local specialMasterListID = self.specialMasterListID
 --d(string.format("[tbug]ScriptsInspectorPanel:buildMasterListSpecial - specialMasterListID: %s, scenes: %s, fragments: %s", tos(specialMasterListID), tos(isScenes), tos(isFragments)))
@@ -233,6 +280,8 @@ function ScriptsInspectorPanel:buildMasterListSpecial()
 end
 
 function ScriptsInspectorPanel:clearMasterList(editTable)
+    if self.isScriptsViewer then return end
+
     local masterList = self.masterList
     tbug_truncate(masterList, 0)
     self.subject = editTable
@@ -241,6 +290,8 @@ end
 
 function ScriptsInspectorPanel:populateMasterList(editTable, dataType)
 --d("[TBUG]ScriptsInspectorPanel:populateMasterList")
+    if self.isScriptsViewer then return end
+
     local masterList, n = self.masterList, 0
     for k, v in zo_insecureNext , editTable do
         n = n + 1
@@ -253,6 +304,8 @@ end
 
 function ScriptsInspectorPanel:initScrollList(control) --called from ObjectInspectorPanel
 --d("[TBUG]ScriptsInspectorPanel:initScrollList")
+    if self.isScriptsViewer then return end
+
     TableInspectorPanel.initScrollList(self, control)
 
     --Check for special key colors!
@@ -357,6 +410,8 @@ end
 
 function ScriptsInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shift)
     --d("[tbug]ScriptsInspectorPanel:onRowClicked-wasDoubleClicked: " .. tos(wasDoubleClicked))
+    if self.isScriptsViewer then return end
+
     if mouseButton == MOUSE_BUTTON_INDEX_RIGHT then
         TableInspectorPanel.onRowClicked(self, row, data, mouseButton, ctrl, alt, shift)
     else
@@ -380,6 +435,9 @@ end
 function ScriptsInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, alt, shift)
 --("tbug:ScriptsInspectorPanel:onRowDoubleClicked - shift: " .. tos(shift) .. ", wasDoubleClicked: " .. tos(wasDoubleClicked))
     hideContextMenus()
+
+    if self.isScriptsViewer then return end
+
     if mouseButton == MOUSE_BUTTON_INDEX_LEFT then
         wasDoubleClicked = true
 
@@ -418,11 +476,14 @@ end
 --[[
 function ScriptsInspectorPanel:valueEditStart(editBox, row, data)
     d("ScriptsInspectorPanel:valueEditStart")
+    if self.isScriptsViewer then return end
     ObjectInspectorPanel.valueEditStart(self, editBox, row, data)
 end
 ]]
 
 function ScriptsInspectorPanel:canEditValue(data)
+    if self.isScriptsViewer then return end
+
     local dataEntry = data.dataEntry
     if not dataEntry then return false end
     local typeId = dataEntry.typeId
@@ -431,6 +492,8 @@ end
 
 
 function ScriptsInspectorPanel:valueEditConfirmed(editBox, evalResult)
+    if self.isScriptsViewer then return end
+
     local editData = self.editData
     --d(">editBox.updatedColumnIndex: " .. tos(editBox.updatedColumnIndex))
     local function confirmEditBoxValueChange(p_setIndex, p_editTable, p_key, p_evalResult)

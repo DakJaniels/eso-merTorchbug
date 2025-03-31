@@ -138,7 +138,7 @@
 			<Controls>
 				<Backdrop name="$(parent)ScriptBackdrop" inherits="ZO_MultiLineEditBackdrop_Keyboard" alpha="1.0" tier="LOW" layer="CONTROLS" level="1">
 				    <Dimensions y="150" />
-					<Anchor point="BOTTOMLEFT" relativeTo="$(parent)" relativePoint="BOTTOMLEFT" offsetY="-35" offsetX="10" />
+					<Anchor point="TOPLEFT" relativeTo="$(parent)" relativePoint="TOPLEFT" offsetY="-12" offsetX="10" />
 				  	<Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMRIGHT" offsetY="-35" offsetX="-10" />
 				    <Controls>
 				  	  <EditBox name="$(parent)Box" inherits="ZO_DefaultEditMultiLineForBackdrop ZO_EditDefaultText" tier="LOW" layer="CONTROLS" level="2"/>
@@ -152,9 +152,10 @@
 					<Dimensions x="100" y="25" />
 					<Anchor point="BOTTOM" relativePoint="BOTTOM" relativeTo="$(parent)" offsetY="-5" offsetX="10" />
 				</Button>
-				<Control name="$(parent)List" inherits="ZO_ScrollList" tier="LOW" layer="CONTROLS" level="2">
-					<Anchor point="TOPLEFT" offsetY="0" />
-					<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$(parent)ScriptBackdrop" offsetY="0" offsetX="0" />
+				<Control name="$(parent)List" inherits="ZO_ScrollList" tier="LOW" layer="CONTROLS" level="2" hidden="true">
+					<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$(parent)ScriptBackdrop" offsetY="0" offsetX="0" />
+					<Dimensions x="0" y="0"/>
+					<DimensionConstraints minX="0" minY="0" maxX="0" maxY="0"/>
 				</Control>
 			</Controls>
 		</Control>

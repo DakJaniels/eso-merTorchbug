@@ -288,9 +288,9 @@ end
 
 
 function BasicInspectorPanel:initScrollList(control)
---d("[TBUG]BasicInspectorPanel:initScrollList")
-
+    --d("[TBUG]BasicInspectorPanel:initScrollList")
     local list = assert(control:GetNamedChild("List"))
+
     tbug.inspectorScrollLists[list] = self
 
     self.list = list
@@ -333,7 +333,7 @@ function BasicInspectorPanel:initScrollList(control)
     end
 
     local function onScrollBarMouseDown(selfScrollbarVar, mouseButton)
---d("[tbug]onScrollBarMouseDown")
+        --d("[tbug]onScrollBarMouseDown")
         valueEdit_CancelThrottled(self.editBox, 100)
         valueSlider_CancelThrottled(self.sliderControl, 100)
         hideContextMenus()

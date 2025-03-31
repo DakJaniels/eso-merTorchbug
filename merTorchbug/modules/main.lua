@@ -599,12 +599,12 @@ local function acquireInspector(inspectorClass, subject, name, reuseActiveInspec
 
     --local useCustomClass = inspectorClass ~= objInsp and true or false
 
-d("[tbug]acquireInspector - reuse: " ..tos(reuseActiveInspector) ..", class: " .. tos((inspectorClass ~= nil and (inspectorClass == objInsp and "ObjectInspector") or (inspectorClass == tbug.specialMasterListType2InspectorClass["ScriptsViewer"] and "ScriptsViewer"))) or "n/a")
+    if tbug.doDebug then d("[tbug]acquireInspector - reuse: " ..tos(reuseActiveInspector) ..", class: " .. tos((inspectorClass ~= nil and (inspectorClass == objInsp and "ObjectInspector") or (inspectorClass == tbug.specialMasterListType2InspectorClass["ScriptsViewer"] and "ScriptsViewer"))) or "n/a") end
     if inspectorClass ~= nil and inspectorClass.acquire ~= nil then
 
         local inspector = inspectorClass:acquire(subject, name, reuseActiveInspector, titleName, data)
         if inspector ~= nil then
-d(">inspector.usesCustomInspectorClass: " ..tos(inspector.usesCustomInspectorClass))
+            if tbug.doDebug then d(">inspector.usesCustomInspectorClass: " ..tos(inspector.usesCustomInspectorClass)) end
 
             inspector.control:SetHidden(false)
             inspector:refresh(isMOC, false, wasClickedAtGlobalInspector)
@@ -1557,7 +1557,8 @@ local tbug_slashCommandLanguage = tbug.slashCommandLanguage
 
 
 --Add a script to the script history
-function tbug.addScriptHistory(scriptToAdd)
+function tbug.addScriptHistory(scriptToAdd, isScriptsViewer) --todo 20250331 add support for isScriptsViewer -> save the entries of ScriptsViewer editbox to the global inspector's scripts history too
+d("[TBUG]addScriptHistory - scriptToAdd: " ..tos(scriptToAdd) .. ", isScriptsViewer: " ..tos(isScriptsViewer))
     if scriptToAdd == nil or scriptToAdd == "" then return end
     --Check if script is not already in
     if tbug.savedVars and tbug.savedVars.scriptHistory then

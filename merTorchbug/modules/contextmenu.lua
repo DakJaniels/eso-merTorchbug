@@ -376,7 +376,7 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
         --Value
         scriptStr = tos(value)
     end
-d("[TBUG]useForScript - scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isKey) .. "; valueType: " .. tos(type(value)) ..", showInNewTab: " ..tos(showInNewTab))
+    if tbug.doDebug then d("[TBUG]useForScript - scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isKey) .. "; valueType: " .. tos(type(value)) ..", showInNewTab: " ..tos(showInNewTab)) end
     if scriptStr == "" then return end
 
     if not isFunctionsDataType and value ~= nil and type(value) == "function" then
@@ -392,7 +392,7 @@ d("[TBUG]useForScript - scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isK
         else
             lookupName = tbug_glookup(subject)
         end
---d(">lookupName1: " ..tos(lookupName))
+        --d(">lookupName1: " ..tos(lookupName))
 
         if lookupName ~= nil and lookupName ~= "_G" then
             scriptStr = tos(lookupName) .. (isFunctionsDataType and ":" or ".") .. scriptStr
@@ -400,7 +400,7 @@ d("[TBUG]useForScript - scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isK
     else
         if isKey and type(value) == "table" then
             local lookupName = tbug_glookup(value)
---d(">lookupName2: " ..tos(lookupName))
+            --d(">lookupName2: " ..tos(lookupName))
             if lookupName ~= nil and lookupName ~= "_G" and _G[lookupName] ~= nil and _G[lookupName][key] ~= nil then
                 scriptStr = lookupName .. "." .. scriptStr
             end
@@ -416,14 +416,14 @@ d("[TBUG]useForScript - scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isK
     local panels = globalInspector ~= nil and globalInspector.panels
     if panels == nil then return end
     if panels.scriptHistory == nil then return end
---d(">found scriptHistory panel")
+    --d(">found scriptHistory panel")
 
     --Show the global inspector scripts tab, or open a new inspector with scripts viewer window
     if showInNewTab == true then
         tbug_slashCommandWrapper(scriptStr, nil, true, { specialMasterlistType = "ScriptsViewer" })
     else
         tbug_slashCommandWrapper("scripts", nil, false, nil)
-    --d(">>tab selected - set script to editbox now")
+        --d(">>tab selected - set script to editbox now")
         --Set the script text
         local testScriptEditBox = panels.scriptHistory:testScript(p_row, p_data, isKey, scriptStr, false)
         testScriptEditBox:TakeFocus()
