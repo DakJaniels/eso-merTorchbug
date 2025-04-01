@@ -47,7 +47,7 @@ tbug.author =   "merlight, current: Baertram"
 
 
 -- [Working on]
---Add ScrieptsViewer contextenu to saved script history to open it in a new ScriptsViewer inspector
+--Add ScriptsViewer contextmenu to saved script history to open it in a new ScriptsViewer inspector
 --Saved events viewer should not show the number of saved event as left key but the date and time, and the event string as right key (like normal event tab does)
 
 
@@ -67,6 +67,7 @@ tbug.author =   "merlight, current: Baertram"
 --Some XML fixed height and width values versus resizeToFitDescendents ESO log errors
 --Show chat output only if TBUG.doDebug == true
 --Scrolling tabs won't resize to invisibly small anymore if window size is changed to very small (or below 0), or if many tabs added
+--Fixed delayed calls to slash commands to accept negative values
 
 --
 ------------------------------------------------------------------------------------------------------------------------

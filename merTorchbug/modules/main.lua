@@ -451,7 +451,7 @@ local function inspectResults(specialInspectionString, searchData, data, source,
         local res = select(ires, ...)
         calledRes = calledRes +1
         if rawequal(res, _G) then
-            if not globalInspector then
+            --if not globalInspector then
                 if doDebug then d(">>globalInspector shows _G var") end
                 tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
                 globalInspector = globalInspector or tbug_getGlobalInspector()
@@ -459,7 +459,7 @@ local function inspectResults(specialInspectionString, searchData, data, source,
                 globalInspector.control:SetHidden(false)
                 globalInspector.control:BringWindowToTop()
                 getSearchDataAndUpdateInspectorSearchEdit(searchData, globalInspector)
-            end
+            --end
         else
             if doDebug then d(">>no _G var") end
             local tabTitle = ""
@@ -899,11 +899,11 @@ local function iterateInspectorsWithCallback(globalInspectorToo, firstInspectorS
     globalInspectorToo = globalInspectorToo or false
     firstInspectorSeparate = firstInspectorSeparate or false
     totalRefresh = totalRefresh or false
+    tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
+    globalInspector = globalInspector or tbug_getGlobalInspector(true)
 
     local firstInspector
     if globalInspectorToo == true then
-        tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
-        globalInspector = globalInspector or tbug_getGlobalInspector(true)
         callbackFunc(globalInspector, nil, nil, nil)
         totalRefreshFunc(totalRefresh, globalInspector)
     end
@@ -1393,6 +1393,7 @@ function tbug.slashCommandDelayed(args)
         --Multiple arguments given after the slash command
         local secondsToDelay = ton(argsOptions[1])
         if not secondsToDelay or type(secondsToDelay) ~= "number" then return end
+        if secondsToDelay < 0 then secondsToDelay = 0 end
         --Get the other arguments / search string
         local searchValuesStr
         local argsLeftStr = ""
@@ -1405,7 +1406,7 @@ function tbug.slashCommandDelayed(args)
             --No search string provided
             argsLeftStr = argsOptions[2]
         end
-        d(strformat("[TBUG]Delayed call to: \'%s\', searchValues: %s (delay=%ss)", argsLeftStr, tos(searchValuesStr), tos(secondsToDelay)))
+        d(strformat("[TBUG]Delayed call to: \'%s\', searchValues: %s (delay=%ss)", argsLeftStr, tos(searchValuesStr == nil and "" or searchValuesStr), tos(secondsToDelay)))
         if argsLeftStr ~= "" then
             zo_callLater(function()
                 tbug_slashCommand(argsLeftStr, searchValuesStr)
@@ -1421,6 +1422,7 @@ function tbug.slashCommandMOCDelayed(args)
     local argsOptions = parseSlashCommandArgumentsAndReturnTable(args, false)
     local secondsToDelay = (argsOptions ~= nil and ton(argsOptions[1])) or nil
     if not secondsToDelay or type(secondsToDelay) ~= "number" then return end
+    if secondsToDelay < 0 then secondsToDelay = 0 end
     local searchValuesStr
 
     if argsOptions ~= nil then
@@ -1429,10 +1431,11 @@ function tbug.slashCommandMOCDelayed(args)
             searchValuesStr = tcon(argsOptions, " ", 2, numArgOptions)
         end
     end
-    d(strformat("[TBUG]Delayed call to mouse cursor inspect, searchValues: %s  (delay=%ss)", tos(searchValuesStr), tos(secondsToDelay)))
+    d(strformat("[TBUG]Delayed call to mouse cursor inspect, searchValues: %s  (delay=%ss)", tos(searchValuesStr == nil and "" or searchValuesStr), tos(secondsToDelay)))
     zo_callLater(function()
-                tbug_slashCommandMOC(nil, searchValuesStr)
-            end, secondsToDelay * 1000)
+        d(strformat("[TBUG]Executed mouse cursor inspect, searchValues: %s  (delay=%ss)", tos(searchValuesStr == nil and "" or searchValuesStr), tos(secondsToDelay)))
+        tbug_slashCommandMOC(nil, searchValuesStr)
+    end, secondsToDelay * 1000)
 end
 local tbug_slashCommandMOCDelayed = tbug.slashCommandMOCDelayed
 
