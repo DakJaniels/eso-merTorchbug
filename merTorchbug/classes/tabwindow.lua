@@ -47,6 +47,9 @@ local characterIdToName
 
 local defaultScrollableContextMenuOptions = tbug.defaultScrollableContextMenuOptions
 local hideLoadingSpinner = tbug.hideLoadingSpinner
+local updateTitleSizeInfo = tbug.updateTitleSizeInfo
+local checkIfScriptsViewerAndHideStuff = tbug.CheckIfScriptsViewerAndHideStuff
+local getSavedVariablesTableName
 
 ------------------------------------------------------------------------------------------------------------------------
 local function resetTabControlData(tabControl)
@@ -771,14 +774,11 @@ function TabWindow:__init__(control, id)
             refreshButton:setEnabled(not toggleState)
             refreshButton:setMouseEnabled(not toggleState)
 
-            local sv
             local globalInspector = tbug.getGlobalInspector()
             local isGlobalInspectorWindow = (selfVar == globalInspector) or false
-            if not isGlobalInspectorWindow then
-                sv = tbug.savedTable("objectInspector" .. id)
-            else
-                sv = tbug.savedTable("globalInspector1")
-            end
+            getSavedVariablesTableName = getSavedVariablesTableName or tbug.GetSavedVariablesTableName
+            local sv = getSavedVariablesTableName(selfVar, isGlobalInspectorWindow, id)
+
             local width, height
             local widthDefault  = 400
             local heightDefault = 600
@@ -847,11 +847,14 @@ function TabWindow:__init__(control, id)
                 selfVar.contents:SetDrawLayer(DL_BACKGROUND)
                 selfVar.contents:SetDrawLevel(1)
             end
+
         end
         onMouseExitHideTooltip(toggleSizeButton.control)
         local activeTabPanel = getActiveTabPanel(selfVar)
         hideEditAndSliderControls(selfVar, activeTabPanel)
-        tbug.updateTitleSizeInfo(selfVar)
+
+        updateTitleSizeInfo(selfVar)
+        checkIfScriptsViewerAndHideStuff(selfVar)
     end
 
     toggleSizeButton:fitText("^", 12)

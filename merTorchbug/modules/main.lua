@@ -71,6 +71,10 @@ local specialMasterListType2InspectorClass = tbug.specialMasterListType2Inspecto
 
 local tbug_inspect
 local objInsp
+local globalInspector
+local tbug_getGlobalInspector
+local tbug_savedTable
+
 
 local function evalString(source, funcOnly)
     funcOnly = funcOnly or false
@@ -176,6 +180,30 @@ local function showFunctionReturnValue(object, tabTitle, winTitle, objectParent)
         end
     end
 end
+
+local function getSavedVariablesTableName(selfVar, isGlobalInspector, id)
+    if not isGlobalInspector then
+        if selfVar then
+            tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
+            globalInspector = globalInspector or tbug_getGlobalInspector()
+            isGlobalInspector = (globalInspector ~= nil and globalInspector == selfVar and true) or false
+        end
+    end
+
+    tbug_savedTable = tbug_savedTable or tbug.savedTable
+    if not isGlobalInspector then
+        if selfVar.isScriptsViewer then
+            return tbug_savedTable("ScriptsViewer" .. id)
+        else
+            return tbug_savedTable("objectInspector" .. id)
+        end
+    else
+        return tbug_savedTable("globalInspector1")
+    end
+end
+tbug.GetSavedVariablesTableName = getSavedVariablesTableName
+
+
 
 local function valueEdit_CancelThrottled(editBox, delay)
     if not editBox or not editBox.panel or not editBox.panel.valueEditCancel then return end
@@ -406,7 +434,6 @@ local function inspectResults(specialInspectionString, searchData, data, source,
     end
     local firstInspectorShow = false
     local firstInspector = tbug.firstInspector
-    local globalInspector = nil
     local nres = select("#", ...)
     if doDebug then d(">nres: " ..tos(nres)) end
     local numTabs = 0
@@ -426,7 +453,8 @@ local function inspectResults(specialInspectionString, searchData, data, source,
         if rawequal(res, _G) then
             if not globalInspector then
                 if doDebug then d(">>globalInspector shows _G var") end
-                globalInspector = tbug.getGlobalInspector()
+                tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
+                globalInspector = globalInspector or tbug_getGlobalInspector()
                 globalInspector:refresh()
                 globalInspector.control:SetHidden(false)
                 globalInspector.control:BringWindowToTop()
@@ -670,7 +698,9 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
 
     if rawequal(object, _G) then
         if doDebug then d(">rawequal _G") end
-        inspector = tbug.getGlobalInspector()
+        tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
+        globalInspector = globalInspector or tbug_getGlobalInspector()
+        inspector = globalInspector
         inspector.control:SetHidden(false)
         inspector:refresh() --will remove all tabs and create them again
         getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
@@ -685,7 +715,8 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
             elseif wasClickedAtGlobalInspector == true and winTitle == nil then
                 wasClickedAtGlobalInspector = false
                 --Check which is the active tab at the global inspector and add it in front of the title
-                local globalInspector = tbug.getGlobalInspector(true)
+                tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
+                globalInspector = globalInspector or tbug_getGlobalInspector()
                 if globalInspector ~= nil then
                     local globalInspectorActiveTab = globalInspector.activeTab
                     if globalInspectorActiveTab ~= nil then
@@ -869,9 +900,10 @@ local function iterateInspectorsWithCallback(globalInspectorToo, firstInspectorS
     firstInspectorSeparate = firstInspectorSeparate or false
     totalRefresh = totalRefresh or false
 
-    local globalInspector, firstInspector
+    local firstInspector
     if globalInspectorToo == true then
-        globalInspector = tbug.getGlobalInspector(true)
+        tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
+        globalInspector = globalInspector or tbug_getGlobalInspector(true)
         callbackFunc(globalInspector, nil, nil, nil)
         totalRefreshFunc(totalRefresh, globalInspector)
     end
@@ -891,16 +923,16 @@ local function iterateInspectorsWithCallback(globalInspectorToo, firstInspectorS
     end
 end
 
-local callbackFuncForClose = function(inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
+local callbackFuncForClose = function(inspectorData, inspectorWindowIndex, p_globalInspector, firstInspector)
     if inspectorData == nil then return end
-    if inspectorWindowIndex == nil and globalInspector == nil and firstInspector == nil then
+    if inspectorWindowIndex == nil and p_globalInspector == nil and firstInspector == nil then
         if inspectorData.release ~= nil then
             inspectorData.release()
             return true
         end
     elseif inspectorWindowIndex ~= nil then
         if (firstInspector == nil or (firstInspector ~= nil and inspectorData ~= firstInspector))
-                and (globalInspector == nil or (globalInspector ~= nil and inspectorData ~= globalInspector)) then
+                and (p_globalInspector == nil or (p_globalInspector ~= nil and inspectorData ~= p_globalInspector)) then
             if inspectorData.control ~= nil and not inspectorData.control:IsHidden() then
                 inspectorData:release()
                 return true
@@ -910,16 +942,16 @@ local callbackFuncForClose = function(inspectorData, inspectorWindowIndex, globa
     return false
 end
 
-local callbackFuncForRefresh = function(inspectorData, inspectorWindowIndex, globalInspector, firstInspector)
+local callbackFuncForRefresh = function(inspectorData, inspectorWindowIndex, p_globalInspector, firstInspector)
     if inspectorData == nil then return end
-    if inspectorWindowIndex == nil and globalInspector == nil and firstInspector == nil then
+    if inspectorWindowIndex == nil and p_globalInspector == nil and firstInspector == nil then
         if inspectorData.refresh ~= nil then
             inspectorData:refresh()
             return true
         end
     elseif inspectorWindowIndex ~= nil then
         if (firstInspector == nil or (firstInspector ~= nil and inspectorData ~= firstInspector))
-                and (globalInspector == nil or (globalInspector ~= nil and inspectorData ~= globalInspector)) then
+                and (p_globalInspector == nil or (p_globalInspector ~= nil and inspectorData ~= p_globalInspector)) then
             if inspectorData.control ~= nil and not inspectorData.control:IsHidden() then
                 if inspectorData.control.refresh ~= nil then
                     inspectorData.control:refresh()
@@ -945,7 +977,32 @@ local function refreshVisibleInspectors(globalInspectorToo, totalRefresh)
 end
 tbug.RefreshVisibleInspectors = refreshVisibleInspectors
 
+local function checkIfScriptsViewerAndHideStuff(selfVar)
+--d("[TBUG]checkIfScriptsViewerAndHideStuff: " .. tos(selfVar.isScriptsViewer))
+    if not selfVar.isScriptsViewer then return end
 
+    --At the ScriptsViewer completely hide the scrollList and filters
+    if selfVar.list then
+        selfVar.list:SetHidden(true)
+        selfVar.list:SetMouseEnabled(false)
+    end
+    local filter = selfVar.inspector and selfVar.inspector.filterEdit and selfVar.inspector.filterEdit:GetParent()
+    if filter then
+        filter:SetDimensions(0, 0)
+        filter:SetHidden(true)
+        filter:SetMouseEnabled(false)
+
+        for i=1, filter:GetNumChildren(), 1 do
+            local filterChild = filter:GetChild(i)
+            if filterChild and filterChild.SetHidden then
+                filterChild:SetHidden(true)
+                filterChild:SetMouseEnabled(false)
+                filterChild:SetDimensions(0, 0)
+            end
+        end
+    end
+end
+tbug.CheckIfScriptsViewerAndHideStuff = checkIfScriptsViewerAndHideStuff
 
 
 --Select the tab at the global inspector
@@ -1445,7 +1502,8 @@ function tbug.dumpConstants()
     merTorchbugSavedVars_Dumps[worldName][APIVersion]["Constants"] = {}
     merTorchbugSavedVars_Dumps[worldName][APIVersion]["SI_String_Constants"] = {}
     --Save the "Constants" tab of the global inspector to the DUMP SVs
-    local globalInspector = tbug.getGlobalInspector()
+    tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
+    globalInspector = globalInspector or tbug_getGlobalInspector()
     if not globalInspector then return end
     local constants = globalInspector.panels.constants
     if not constants then return end

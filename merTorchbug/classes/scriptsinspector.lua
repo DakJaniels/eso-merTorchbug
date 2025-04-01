@@ -21,6 +21,7 @@ local tbug_checkIfInspectorPanelIsShown = tbug.checkIfInspectorPanelIsShown
 local hideContextMenus = tbug.HideContextMenus
 
 local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
+local checkIfScriptsViewerAndHideStuff = tbug.CheckIfScriptsViewerAndHideStuff
 
 --------------------------------
 
@@ -210,6 +211,8 @@ function ScriptsViewerPanel:__init__(control, ...)
     --d("[TBUG]ScriptsViewerPanel:__init__")
     TableInspectorPanel.__init__(self, control, ...)
 
+    self.isScriptsViewer = true
+
     local mainControl = self.control
 
     if tbug.doDebug then
@@ -219,16 +222,7 @@ function ScriptsViewerPanel:__init__(control, ...)
         }
     end
 
-    --At the ScriptsViewer completely hide the scrollList
-    self.isScriptsViewer = true
-    self.list:SetHidden(true)
-    self.list:SetMouseEnabled(false)
-    local filter = self.inspector and self.inspector.filterEdit and self.inspector.filterEdit:GetParent()
-    if filter then
-        filter:SetDimensions(0, 0)
-        filter:SetHidden(true)
-        filter:SetMouseEnabled(false)
-    end
+    checkIfScriptsViewerAndHideStuff(self)
 
     self.scriptEditBox = GetControl(mainControl, "ScriptBackdropBox") --tbugGlobalInspectorPanelScripts1ScriptBackdropBox
     self.scriptEditBox:SetMaxInputChars(2000) -- max chars that can be saved to SavedVariables
