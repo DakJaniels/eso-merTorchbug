@@ -207,6 +207,7 @@ function ScriptsInspectorPanel:__init__(control, ...)
     self.scriptSaveButton:SetHandler("OnClicked", function(buttonObj) onSaveScriptButtonClicked(buttonObj, false) end)
 end
 
+
 function ScriptsViewerPanel:__init__(control, ...)
     --d("[TBUG]ScriptsViewerPanel:__init__")
     TableInspectorPanel.__init__(self, control, ...)

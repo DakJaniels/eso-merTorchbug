@@ -1616,7 +1616,7 @@ local tbug_slashCommandLanguage = tbug.slashCommandLanguage
 
 --Add a script to the script history
 function tbug.addScriptHistory(scriptToAdd, isScriptsViewer) --todo 20250331 add support for isScriptsViewer -> save the entries of ScriptsViewer editbox to the global inspector's scripts history too
-d("[TBUG]addScriptHistory - scriptToAdd: " ..tos(scriptToAdd) .. ", isScriptsViewer: " ..tos(isScriptsViewer))
+    if tbug.doDebug then d("[TBUG]addScriptHistory - scriptToAdd: " ..tos(scriptToAdd) .. ", isScriptsViewer: " ..tos(isScriptsViewer)) end
     if scriptToAdd == nil or scriptToAdd == "" then return end
     --Check if script is not already in
     if tbug.savedVars and tbug.savedVars.scriptHistory then
@@ -1630,6 +1630,10 @@ d("[TBUG]addScriptHistory - scriptToAdd: " ..tos(scriptToAdd) .. ", isScriptsVie
             tbug.refreshInspectorPanel("globalInspector", "scriptHistory")
             --TODO: Why does a single data refresh not work directly where a manual click on the update button does work?! Even a delayed update does not work properly...
             tbug_refreshInspectorPanel("globalInspector", "scriptHistory")
+        end
+        if isScriptsViewer then
+            local newScriptNum = #scriptHistory
+            d("[tBug]Saved script as #" ..tos(newScriptNum) .. " into GlobalInspector's ScriptsHistory")
         end
     end
 end

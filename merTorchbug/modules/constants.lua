@@ -42,24 +42,25 @@ tbug.author =   "merlight, current: Baertram"
 --New opened inspector get their icons top right changed in size if font size at global inspector context menu is changed, but it does not always change back (at all opened inspector windows!) to new font size if changed later
 --20250107 Warning: tbugGlobalInspectorTabsContainerTab2 has a set height but has resizeToFitDescendents enabled. If this is intended, use resizeToFitConstrains="X".|r
 --20250330 Entering in chat editbox: GetItemRewardItemLink('|H1:item:119704:5:1:0:0:0:199:13:23:2:0:0:0:0:0:0:0:0:0:0:50000|h|h') raises an error Checking type on argument rewardId failed in GetItemRewardItemLink_lua
---20250330 Opening a new scriptsViewer as "firstInspector" will reuse that firstInspector always for the next opened "non script" values, and vice versa (if firstInspector was no script it cannot show the scripts later)
 
 -- [Planned features]
---Events auto activation after reloadui and more event comfort like savedvariables with last run events & compare current to these saved ones
 
 
 -- [Working on]
---ScriptsViewer inspector: Create new scripts inspector(s) having the same look and entries like the global inspector's scripts tab (opened via SHIFT + context menu send to script, or via SHIFT + /tbs command)
+--Add ScrieptsViewer contextenu to saved script history to open it in a new ScriptsViewer inspector
+--Saved events viewer should not show the number of saved event as left key but the date and time, and the event string as right key (like normal event tab does)
+
 
 
 --------------------------------------- Version 1.75 - Baertram (last updated 2025-01-12)
 ---- [Added]
 --Libraries detection via "lib" prefix
---Objects, class & libs detection at context menu so one can send <object or lib>:<functionName> or <.variableName> to scripts tab
 --Added context menu enties to the events e/E char at the title bar (and at the event inspector rows):
---Start/Stop event tracking
---Setting to automatically start the event tracking as addon loads (button to enable that and reload the UI now)
---Save and load events tracked. Load shows them in an extra inspector using the eventviewer layout so you can compare them to current event viewer's tracked events
+---Start/Stop event tracking
+---Setting to automatically start the event tracking as addon loads (button to enable that and reload the UI now)
+---Save and load events tracked. Load shows them in an extra inspector using the eventviewer layout so you can compare them to current event viewer's tracked events
+--Objects, class & libs detection at context menu so one can send <object or lib>:<functionName> or <.variableName> to scripts tab
+--ScriptsViewer inspector: Created new ScriptsViewer inspector(s) able to run scripts in a separate window
 
 
 ---- [Fixed]
