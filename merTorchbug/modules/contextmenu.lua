@@ -369,6 +369,12 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
 
     local scriptStr = ""
     local key, value = p_data.key, p_data.value
+
+    --Key is a number only? No need to run a script on it, try it on the value then!
+    if ton(key) == "number" then
+        isKey = false
+    end
+
     if isKey then
         --Key
         scriptStr = tos(key)
@@ -945,10 +951,11 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
             local eventTrackingSettingsLoadSavedSubmenu = {}
             for k, v in ipairs(savedEvents) do
                 local timeStampStr = (v._timeStamp ~= nil and os.date("%c", v._timeStamp)) or ""
+                local loadDetailsStr = tostring(k) .. ". " .. timeStampStr .. " (#" .. tos(NonContiguousCount(v.events)) ..")"
                 local eventTrackingSettingsLoadSubmenuEntry = {
-                    label = "Load #" ..tostring(k) .. " (" .. timeStampStr .. ")" ,
+                    label = "Load " .. loadDetailsStr,
                     callback = function()
-                        tbug.LoadEventsTracked(k)
+                        tbug.LoadEventsTracked(k, loadDetailsStr)
                     end,
                 }
                 table.insert(eventTrackingSettingsLoadSavedSubmenu, eventTrackingSettingsLoadSubmenuEntry)
@@ -1493,7 +1500,14 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 --Use as script entries
                 AddCustomScrollableMenuEntry("Script actions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
                 AddCustomScrollableMenuEntry("Use key as script", function() useForScript(p_self, p_row, p_data, true, isFunctionsDataType, false) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
-                addScriptContextMenuEntriesForClassOrObjectIdentifierKey(key, p_self, p_row, p_data, isFunctionsDataType)
+                local wasAddedScriptsContextMenus = addScriptContextMenuEntriesForClassOrObjectIdentifierKey(key, p_self, p_row, p_data, isFunctionsDataType)
+                --if not wasAddedScriptsContextMenus or isScriptHistoryDataType then
+                if rowActionsSuffix == "" or isScriptHistoryDataType then
+                    AddCustomScrollableMenuEntry("Show in ScriptViewer", function()
+                        useForScript(p_self, p_row, p_data, (not isScriptHistoryDataType and true) or false, isFunctionsDataType, false, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
+                    )
+                end
+
 
                 --Search entries
                 local searchValuesAdded = {}

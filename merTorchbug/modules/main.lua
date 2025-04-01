@@ -452,13 +452,13 @@ local function inspectResults(specialInspectionString, searchData, data, source,
         calledRes = calledRes +1
         if rawequal(res, _G) then
             --if not globalInspector then
-                if doDebug then d(">>globalInspector shows _G var") end
-                tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
-                globalInspector = globalInspector or tbug_getGlobalInspector()
-                globalInspector:refresh()
-                globalInspector.control:SetHidden(false)
-                globalInspector.control:BringWindowToTop()
-                getSearchDataAndUpdateInspectorSearchEdit(searchData, globalInspector)
+            if doDebug then d(">>globalInspector shows _G var") end
+            tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
+            globalInspector = globalInspector or tbug_getGlobalInspector()
+            globalInspector:refresh()
+            globalInspector.control:SetHidden(false)
+            globalInspector.control:BringWindowToTop()
+            getSearchDataAndUpdateInspectorSearchEdit(searchData, globalInspector)
             --end
         else
             if doDebug then d(">>no _G var") end
@@ -469,12 +469,16 @@ local function inspectResults(specialInspectionString, searchData, data, source,
                 tabTitle = titleMocTemplate
             end
             ]]
-            if not isMOC and specialInspectionString and specialInspectionString ~= "" then
-                tabTitle = specialInspectionString
+            if data and data.title then
+                tabTitle = data.title
             else
-                tabTitle = strformat("%d", ton(numTabs) or ires)
+                if not isMOC and specialInspectionString and specialInspectionString ~= "" then
+                    tabTitle = specialInspectionString
+                else
+                    tabTitle = strformat("%d", ton(numTabs) or ires)
+                end
+                tabTitle = strformat(titleTemplate, tos(tabTitle))
             end
-            tabTitle = strformat(titleTemplate, tos(tabTitle))
             if doDebug then d(">>tabTitle: " ..tos(tabTitle)) end
 
 

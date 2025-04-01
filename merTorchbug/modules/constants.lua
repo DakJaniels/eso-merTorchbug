@@ -47,9 +47,8 @@ tbug.author =   "merlight, current: Baertram"
 
 
 -- [Working on]
---Add ScriptsViewer contextmenu to saved script history to open it in a new ScriptsViewer inspector
---Saved events viewer should not show the number of saved event as left key but the date and time, and the event string as right key (like normal event tab does)
-
+--EVENT_DISPLAY_ACTIVE_COMBAT_TIP 131531 shows as EVENT_TUTORIAL_TRIGGER_COMPLETED 131535 in the (saved) events data? _eventName is wrong, _eventId is correct. Name and id do not match?
+--->local lookupEventName = tbug.Events.eventList
 
 
 --------------------------------------- Version 1.75 - Baertram (last updated 2025-01-12)
@@ -61,6 +60,7 @@ tbug.author =   "merlight, current: Baertram"
 ---Save and load events tracked. Load shows them in an extra inspector using the eventviewer layout so you can compare them to current event viewer's tracked events
 --Objects, class & libs detection at context menu so one can send <object or lib>:<functionName> or <.variableName> to scripts tab
 --ScriptsViewer inspector: Created new ScriptsViewer inspector(s) able to run scripts in a separate window
+--Added ScriptsViewer contextmenu to saved script history to open it in a new ScriptsViewer inspector
 
 
 ---- [Fixed]

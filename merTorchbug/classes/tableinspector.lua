@@ -62,37 +62,6 @@ local classes = tbug.classes
 --Special passed in masterlist type at BuildMasterList function?
 local specialMasterListTypePassedInToMasterList = {
     ["EventsViewer"] = RT.EVENTS_TABLE,
---[[
-    --todo 20250120 Does not work as this opens a new inspector with a tab and clicking that tab opens the ScriptViewer then (each time) ...
-    -->todo 20250120 The ScriptViewer tab needs to open diretly from main.lua -> tbug.inspect -> inspector = objInsp:acquire(object, tabTitle, recycleActive, title, data)
-    -->todo 20250120 it needs to directly know that we do not want to inspect a table or object etc.
-    ["ScriptsViewer"] = function(selfVar, dataTable)
-d(">>> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        local TableInspectorPanel = classes.TableInspectorPanel
-        local ScriptsInspectorPanel = classes.ScriptsInspectorPanel .. TableInspectorPanel
-
-        if ScriptsInspectorPanel == nil then return false end
-d("[TBUG]ScriptsViewer - ScriptsInspectorPanel class found")
-        --ScriptsViewer needs to create and use a new instance of the ScriptsInspectorPanel class
-        --todo 20250120 selfVar = TableInspector"Panel" and not the BasicInspector below that! So how do we get the actual BasicInspector of the current TableInspectorPanel?
-        local inspectorCurrentlyShown = selfVar.inspector
-
-        --Remove all shown tabs at the new inspector as it was only addin the tab as a a placeholder to add the new tab "ScriptsViewer"
-        local panel = tbug_makePanel(inspectorCurrentlyShown, ScriptsInspectorPanel, "ScriptsViewer", nil)
-d(">Panel: " .. tos(panel))
-tbug._debugScriptsViewerPanels = tbug._debugScriptsViewerPanels or {}
-tbug._debugScriptsViewerPanels[#tbug._debugScriptsViewerPanels +1] = panel
-d("<<< ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
-        if panel == nil then return false end
-        inspectorCurrentlyShown:removeTab(selfVar.subject or 1)
-
-
-        panel:buildMasterList() --> Calls ScriptsInspectorPanel:buildMasterList()
-
-        return true
-    end,
-]]
 }
 
 
@@ -298,13 +267,13 @@ function TableInspectorPanel:buildMasterListSpecial()
 
         if typeSpecialMasterListTable == funcType then
             if tbug.doDebug then
-                d(">specialMasterListPassedIn = function")
+                d(">specialMasterListPassedIn = function: " ..tos(specialMasterlistType))
                 tbug._debugSelfTableInspectorPanel = self
             end
             return specialMasterListTable(self, editTable)
         elseif typeSpecialMasterListTable == tableType then
             if tbug.doDebug then
-                d(">specialMasterListPassedIn = table")
+                d(">specialMasterListPassedIn = table: " ..tos(specialMasterlistType))
             end
             self:populateMasterList(editTable, specialMasterListTable)
         end
@@ -400,6 +369,8 @@ function TableInspectorPanel:initScrollList(control)
         return newType
     end
 
+    local setupEventTable
+
     local function setupValue(cell, typ, val, isKey)
         isKey = isKey or false
         cell:SetColor(typeColors[typ]:UnpackRGBA())
@@ -466,9 +437,15 @@ function TableInspectorPanel:initScrollList(control)
     end
 
     local function setupGeneric(row, data, list)
-        local k, tk = setupCommon(row, data, list)
+        --This is a saved and now loaded eventsViewer table?
         local v = data.value
         local tv = type(v)
+        if tv == "table" and v._eventId ~= nil then
+            return setupEventTable(row, data, list, true)
+        end
+
+
+        local k, tk = setupCommon(row, data, list)
         local isNumber = tv == "number" or false
         local isKeyRightUsed = false
 
@@ -696,34 +673,63 @@ function TableInspectorPanel:initScrollList(control)
     end
     ]]
 
-    local function setupEventTable(row, data, list)
+    function setupEventTable(row, data, list, isLoadedEventViewerTable)
         local k, tk = setupCommon(row, data, list)
         local v = data.value
         local tv = type(v)
 
-        if row.cKeyLeft then
-            local timeStampAdded = data.value._timeStamp
-            --local frameTimeAdded = data.value._frameTime
-            if timeStampAdded then
-                row.cKeyLeft:SetText(osdate("%c", timeStampAdded))
-            end
-        end
-
-        if tv == tableType and next(v) == nil then
-            setupValue(row.cVal, tv, "{}")
-        elseif tv == userDataType then
-            setupValueLookup(row.cVal, tv, v)
-        else
-            setupValueLookup(row.cVal, tv, v)
-            if rawequal(v, self.subject) then
-                if row.cKeyRight then
-                    setupValue(row.cKeyRight, tv, "self")
+        if not isLoadedEventViewerTable then
+            if row.cKeyLeft then
+                local timeStampAdded = data.value._timeStamp
+                --local frameTimeAdded = data.value._frameTime
+                if timeStampAdded then
+                    row.cKeyLeft:SetText(osdate("%c", timeStampAdded))
                 end
             end
-        end
 
-        if row.cKeyRight then
-            setupValue(row.cKeyRight, "event", data.value._eventName)
+            if tv == tableType and next(v) == nil then
+                setupValue(row.cVal, tv, "{}")
+            elseif tv == userDataType then
+                setupValueLookup(row.cVal, tv, v)
+            else
+                setupValueLookup(row.cVal, tv, v)
+                if rawequal(v, self.subject) then
+                    if row.cKeyRight then
+                        setupValue(row.cKeyRight, tv, "self")
+                    end
+                end
+            end
+
+            if row.cKeyRight then
+                setupValue(row.cKeyRight, "event", data.value._eventName)
+            end
+
+
+        else
+            if row.cKeyLeft then
+                local timeStampAdded = data.value._timeStamp
+                --local frameTimeAdded = data.value._frameTime
+                if timeStampAdded then
+                    row.cKeyLeft:SetText(osdate("%c", timeStampAdded))
+                end
+            end
+
+            if tv == tableType and next(v) == nil then
+                setupValue(row.cVal, tv, "{}")
+            elseif tv == userDataType then
+                setupValueLookup(row.cVal, tv, v)
+            else
+                setupValueLookup(row.cVal, tv, v)
+                if rawequal(v, self.subject) then
+                    if row.cKeyRight then
+                        setupValue(row.cKeyRight, tv, "self")
+                    end
+                end
+            end
+
+            if row.cKeyRight then
+                setupValue(row.cKeyRight, "event", data.value._eventName)
+            end
         end
     end
 

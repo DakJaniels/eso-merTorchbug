@@ -341,11 +341,11 @@ function tbug.SaveEventsTracked()
     end
 end
 
-function tbug.LoadEventsTracked(key)
+function tbug.LoadEventsTracked(key, loadDetailsStr)
     local savedEvents = tbug.savedVars.savedEvents
     if key == nil or savedEvents == nil or savedEvents[key] == nil or savedEvents[key].events == nil then return end
     --Load the saved events and show them in an inspector UI, passing on data.specialMasterlistType to the BuildMasterList func of the panel (TableInspectorPanel)
-    tbug_slashCommandWrapper("TBUG.savedVars.savedEvents["..tostring(key).."].events", nil, true, { specialMasterlistType = "EventsViewer" })
+    tbug_slashCommandWrapper("TBUG.savedVars.savedEvents["..tostring(key).."].events", nil, true, { specialMasterlistType = "EventsViewer", title = "Saved events: " .. tostring(loadDetailsStr) })
 end
 
 

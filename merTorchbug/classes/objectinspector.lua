@@ -588,7 +588,7 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
             local createNew = false
 
             if not overrideInspectorCreation then
-                if tbug.doDebug then d(">removing _inactiveObjects to get the inspector") end
+                if tbug.doDebug then d(">removing _inactiveObjects to get the next free matching inspector") end
                 inspector = trem(Class._inactiveObjects)
 
                 if inspector then
@@ -627,6 +627,7 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
                         templateName)
                 Class._nextObjectId = id  + 1 --increase for next inspector
                 inspector = Class(id, control)
+                inspector.usesCustomInspectorClass = (customClassUsed == true and true) or nil
             end
             if Class._lastActive then
                 Class._lastActive.titleIcon:SetDesaturation(0)
@@ -634,6 +635,7 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
             Class._lastActive = inspector
             Class._lastActive.titleIcon:SetDesaturation(1)
         end
+
         Class._activeObjects[subject] = inspector
         inspector.subject = subject
         inspector._parentSubject = (dataProvided and data._parentSubject) or nil
