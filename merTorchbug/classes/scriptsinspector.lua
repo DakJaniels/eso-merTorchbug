@@ -25,7 +25,7 @@ local checkIfScriptsViewerAndHideStuff = tbug.CheckIfScriptsViewerAndHideStuff
 
 --------------------------------
 
-local function runLua(command)
+local function runLua(command, isScriptsViewer)
     --[[
     local f = zo_ls(command)
     if f ~= nil then
@@ -45,7 +45,9 @@ local function runLua(command)
     assert(zo_ls(command))
     ]]
     --Instead of only using LoadString, sue TBUG inspector to check code for functin, or control/table to inspect etc.
+    tbug.isScriptViewerRunningScript = isScriptsViewer
     tbug_slashCommand(command)
+    tbug.isScriptViewerRunningScript = nil
 end
 
 local function loadScriptByClick(selfVar, row, data)
@@ -223,18 +225,20 @@ function ScriptsViewerPanel:__init__(control, ...)
         }
     end
 
-    checkIfScriptsViewerAndHideStuff(self)
+    local selfVar = self
+
+    checkIfScriptsViewerAndHideStuff(selfVar)
 
     self.scriptEditBox = GetControl(mainControl, "ScriptBackdropBox") --tbugGlobalInspectorPanelScripts1ScriptBackdropBox
     self.scriptEditBox:SetMaxInputChars(2000) -- max chars that can be saved to SavedVariables
 
     self.scriptTestButton = GetControl(mainControl, "TestButton") --tbugGlobalInspectorPanelScripts1TestButton
-    local function onTestScriptButtonClicked(selfButton)
+    local function onTestScriptButtonClicked(selfButton, isScriptsViewer)
         local currentScriptEditBoxText = self.scriptEditBox:GetText()
         if currentScriptEditBoxText == nil or currentScriptEditBoxText == "" then return end
-        runLua(currentScriptEditBoxText)
+        runLua(currentScriptEditBoxText, isScriptsViewer)
     end
-    self.scriptTestButton:SetHandler("OnClicked", onTestScriptButtonClicked)
+    self.scriptTestButton:SetHandler("OnClicked", function(buttonObj) onTestScriptButtonClicked(buttonObj, selfVar.isScriptsViewer) end)
 
     self.scriptSaveButton = GetControl(mainControl, "SaveButton") --tbugGlobalInspectorPanelScripts1SaveButton
     local function onSaveScriptButtonClicked(selfButton, isScriptsViewer)
@@ -242,7 +246,6 @@ function ScriptsViewerPanel:__init__(control, ...)
         if currentScriptEditBoxText == nil or currentScriptEditBoxText == "" then return end
         tbug_addScriptHistory(currentScriptEditBoxText, isScriptsViewer)
     end
-    local selfVar = self
     self.scriptSaveButton:SetHandler("OnClicked", function(buttonObj) onSaveScriptButtonClicked(buttonObj, selfVar.isScriptsViewer) end)
 end
 

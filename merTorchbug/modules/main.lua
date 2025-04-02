@@ -639,7 +639,7 @@ local function acquireInspector(inspectorClass, subject, name, reuseActiveInspec
             if tbug.doDebug then d(">inspector.usesCustomInspectorClass: " ..tos(inspector.usesCustomInspectorClass)) end
 
             inspector.control:SetHidden(false)
-            inspector:refresh(isMOC, false, wasClickedAtGlobalInspector)
+            inspector:refresh(isMOC, false, wasClickedAtGlobalInspector, data)
             getSearchDataAndUpdateInspectorSearchEdit(searchData, inspector)
             return inspector
         end
@@ -675,9 +675,13 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
     objInsp = objInsp or classes.ObjectInspector
     local newInspectorClass = objInsp
     local useCustomInspectorClass = false
+    local dataTitle
 
     --Any custom inspector class passed in?
     if data ~= nil then
+        dataTitle = data.title
+        if tbug.doDebug then d(">data.title: " .. tos(dataTitle)) end
+
         if not recycleActive then
             --Shall the inspector be opened with a new one and a special class? e.g ScriptsViewer
             local specialMasterlistType = data.specialMasterlistType
@@ -739,7 +743,9 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
                     end
                 end
             end
-            if not endsWith(title, "]") and not endsWith(title, "[]") then title = title .. "[]" end
+            if dataTitle == nil then
+                if not endsWith(title, "]") and not endsWith(title, "[]") then title = title .. "[]" end
+            end
             inspector = acquireInspector(newInspectorClass, object, tabTitle, recycleActive, title, data, searchData, isMOC, wasClickedAtGlobalInspector)
             --[[
             objInsp = objInsp or classes.ObjectInspector

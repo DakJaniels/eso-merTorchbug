@@ -358,7 +358,7 @@ local searchExternalURL = tbug.searchExternalURL
 
 
 --Show the "Scripts" tab and put the key/value, and if it's a function an opening and closing () behind it, to the "test script" editbox
-local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, isClassOrObjectOrLibrary, showInNewTab)
+local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, isClassOrObjectOrLibrary, showInNewTab, scriptStrIsValue)
     if not p_self or not p_row or not p_data or isKey == nil then return end
     isFunctionsDataType = isFunctionsDataType or false
     isClassOrObjectOrLibrary = isClassOrObjectOrLibrary or false
@@ -367,54 +367,60 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
     end
     tbug_glookup = tbug_glookup or tbug.glookup
 
-    local scriptStr = ""
     local key, value = p_data.key, p_data.value
+    local scriptStr = ""
 
-    --Key is a number only? No need to run a script on it, try it on the value then!
-    if ton(key) == "number" then
-        isKey = false
-    end
-
-    if isKey then
-        --Key
-        scriptStr = tos(key)
+    if scriptStrIsValue then
+       scriptStr =  tos(value)
+       if scriptStr == "" then return end
+       if tbug.doDebug then d("[TBUG]useForScript - scriptStrIsValue! scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isKey) .. "; valueType: " .. tos(type(value)) ..", showInNewTab: " ..tos(showInNewTab)) end
     else
-        --Value
-        scriptStr = tos(value)
-    end
-    if tbug.doDebug then d("[TBUG]useForScript - scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isKey) .. "; valueType: " .. tos(type(value)) ..", showInNewTab: " ..tos(showInNewTab)) end
-    if scriptStr == "" then return end
+        --Key is a number only? No need to run a script on it, try it on the value then!
+        if ton(key) == "number" then
+            isKey = false
+        end
 
-    if not isFunctionsDataType and value ~= nil and type(value) == "function" then
-        isFunctionsDataType = true
-    end
-
-    if isClassOrObjectOrLibrary == true then
-        local lookupName
-        local subject = (p_self._parentSubject ~= nil and p_self._parentSubject) or nil
-        if subject == nil then
-            subject = p_self.subject
-            lookupName = ((p_self.subjectName ~= nil and p_self.subjectName) or (subject ~= nil and tbug_glookup(subject))) or nil
+        if isKey then
+            --Key
+            scriptStr = tos(key)
         else
-            lookupName = tbug_glookup(subject)
+            --Value
+            scriptStr = tos(value)
         end
-        --d(">lookupName1: " ..tos(lookupName))
+        if tbug.doDebug then d("[TBUG]useForScript - scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isKey) .. "; valueType: " .. tos(type(value)) ..", showInNewTab: " ..tos(showInNewTab)) end
+        if scriptStr == "" then return end
 
-        if lookupName ~= nil and lookupName ~= "_G" then
-            scriptStr = tos(lookupName) .. (isFunctionsDataType and ":" or ".") .. scriptStr
+        if not isFunctionsDataType and value ~= nil and type(value) == "function" then
+            isFunctionsDataType = true
         end
-    else
-        if isKey and type(value) == "table" then
-            local lookupName = tbug_glookup(value)
-            --d(">lookupName2: " ..tos(lookupName))
-            if lookupName ~= nil and lookupName ~= "_G" and _G[lookupName] ~= nil and _G[lookupName][key] ~= nil then
-                scriptStr = lookupName .. "." .. scriptStr
+
+        if isClassOrObjectOrLibrary == true then
+            local lookupName
+            local subject = (p_self._parentSubject ~= nil and p_self._parentSubject) or nil
+            if subject == nil then
+                subject = p_self.subject
+                lookupName = ((p_self.subjectName ~= nil and p_self.subjectName) or (subject ~= nil and tbug_glookup(subject))) or nil
+            else
+                lookupName = tbug_glookup(subject)
+            end
+            --d(">lookupName1: " ..tos(lookupName))
+
+            if lookupName ~= nil and lookupName ~= "_G" then
+                scriptStr = tos(lookupName) .. (isFunctionsDataType and ":" or ".") .. scriptStr
+            end
+        else
+            if isKey and type(value) == "table" then
+                local lookupName = tbug_glookup(value)
+                --d(">lookupName2: " ..tos(lookupName))
+                if lookupName ~= nil and lookupName ~= "_G" and _G[lookupName] ~= nil and _G[lookupName][key] ~= nil then
+                    scriptStr = lookupName .. "." .. scriptStr
+                end
             end
         end
-    end
 
-    if isFunctionsDataType then
-        scriptStr = scriptStr .. "()"
+        if isFunctionsDataType then
+            scriptStr = scriptStr .. "()"
+        end
     end
     --d("[tbug]useForScript - scriptStr: " .. tos(scriptStr) .. ", isFunction: " .. tos(isFunctionsDataType))
 
@@ -426,7 +432,8 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
 
     --Show the global inspector scripts tab, or open a new inspector with scripts viewer window
     if showInNewTab == true then
-        tbug_slashCommandWrapper(scriptStr, nil, true, { specialMasterlistType = "ScriptsViewer" })
+        local tabTitle = scriptStrIsValue and scriptStr or nil
+        tbug_slashCommandWrapper(scriptStr, nil, true, { specialMasterlistType = "ScriptsViewer", title = tabTitle })
     else
         tbug_slashCommandWrapper("scripts", nil, false, nil)
         --d(">>tab selected - set script to editbox now")
@@ -1504,7 +1511,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 --if not wasAddedScriptsContextMenus or isScriptHistoryDataType then
                 if rowActionsSuffix == "" or isScriptHistoryDataType then
                     AddCustomScrollableMenuEntry("Show in ScriptViewer", function()
-                        useForScript(p_self, p_row, p_data, (not isScriptHistoryDataType and true) or false, isFunctionsDataType, false, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
+                        useForScript(p_self, p_row, p_data, (not isScriptHistoryDataType and true) or false, isFunctionsDataType, true, true, isScriptHistoryDataType) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
                     )
                 end
 

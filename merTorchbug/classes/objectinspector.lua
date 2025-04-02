@@ -541,6 +541,7 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
     local dataProvided = data ~= nil
     local inspectorTemplate        = (dataProvided and data.inspectorTemplate) or nil
     local customClassUsed          = Class ~= ObjectInspector and true or false
+    local isScriptViewerRunningScript = tbug.isScriptViewerRunningScript --Did we click "Test Script" at a script viewer?
 
     if tbug.doDebug then
         tbug._debugObjectInspectorAcquire = tbug._debugObjectInspectorAcquire or {}
@@ -558,12 +559,19 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
     end
 
 
-    local inspector = Class._activeObjects[subject]
-    if tbug.doDebug then d("[TBUG]ObjectInspector.acquire-name: " ..tos(name) .. ", inspectorTemplate: " ..tos(inspectorTemplate) ..", recycleActive: " ..tos(recycleActive) .. ", titleName: " ..tos(titleName) .. ", lastActive: " ..tos(lastActive) .. ", lastActiveSubject: " ..tos(lastActiveSubject) .. ", inspectorFound: " .. tos(inspector) ..", Current ID: " ..tos(Class._nextObjectId) .. ", customClassUsed: " ..tos(customClassUsed)) end
+    local overrideInspectorCreation = false
+    local inspector
+    if not isScriptViewerRunningScript then
+        inspector = Class._activeObjects[subject]
+    else
+        overrideInspectorCreation = true
+    end
+
+    if tbug.doDebug then d("[TBUG]ObjectInspector.acquire-name: " ..tos(name) .. ", inspectorTemplate: " ..tos(inspectorTemplate) ..", recycleActive: " ..tos(recycleActive) .. ", titleName: " ..tos(titleName) .. ", lastActive: " ..tos(lastActive) .. ", lastActiveSubject: " ..tos(lastActiveSubject) .. ", inspectorFound: " .. tos(inspector) ..", Current ID: " ..tos(Class._nextObjectId) .. ", customClassUsed: " ..tos(customClassUsed) .. ", overrideInspectorCreation: " ..tos(overrideInspectorCreation) ..", isScriptViewerRunningScript: " ..tos(isScriptViewerRunningScript)) end
 
     --Opening an inspector as custom class and we currently show the same object/subject in a normal objectinspector?
-    local overrideInspectorCreation = false
-    if not recycleActive and inspector then
+
+    if not recycleActive and inspector and not overrideInspectorCreation then
         if customClassUsed then
             if not inspector.usesCustomInspectorClass then
                 if tbug.doDebug then d(">Found inspector does not use customClass, but we want to show one!") end
@@ -650,6 +658,9 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
         inspector.subjectName = name
         inspector.titleName = titleName
     end
+
+    tbug.isScriptViewerRunningScript = nil
+
     return inspector
 end
 ------------------------------------------------------------------------------------------------------------------------
@@ -670,6 +681,8 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
     openedFromExistingInspector = openedFromExistingInspector or false
     local newTabIndex = 0
     local panel, tabControl
+
+    local dataTitle = (data ~= nil and data.title) or nil
 
     --Only for debugging:
     --if tbug.doDebug then
@@ -718,16 +731,17 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
 
     --df("[ObjectInspector:openTabFor]object %s, title: %s, inspectorTitle: %s, newTabIndex: %s", tos(object), tos(title), tos(inspectorTitle), tos(newTabIndex))
 
-    local titleClean = title --for the breadCrumbs, without any "[]" suffix etc.
-
+    local titleClean = (isScriptsViewer and dataTitle ~= nil and dataTitle) or title --for the breadCrumbs, without any "[]" suffix etc.
     local panelClass = (isScriptsInspector == true and classes.ScriptsInspectorPanel) or (isScriptsViewer == true and classes.ScriptsViewerPanel) or nil
 
     if type(object) == "table" then
         --d(">table")
         title = tbug_glookup(object) or title or tos(object)
         titleClean = title --for the breadCrumbs
-        if title and title ~= "" and not endsWith(title, "[]") then
-            title = title .. "[]"
+        if not isScriptsViewer and not dataTitle then
+            if title and title ~= "" and not endsWith(title, "[]") then
+                title = title .. "[]"
+            end
         end
         panel = self:acquirePanel(panelClass or classes.TableInspectorPanel)
     elseif isControl(object) then
@@ -791,15 +805,16 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
 end
 
 
-function ObjectInspector:refresh(isMOC, openedFromExistingInspector, wasClickedAtGlobalInspector)
+function ObjectInspector:refresh(isMOC, openedFromExistingInspector, wasClickedAtGlobalInspector, data)
     --df("[TBUG]ObjectInspector:refresh %s (%s / %s)", tos(self.subject), tos(self.subjectName), tos(self.titleName))
     --self:removeAllTabs() --do not remove all tabs as this will clear the current inspectors tabs if you click something
     --in the global inspector e.g.-> Always happened if tbug.inspect was called, and not inspector:openTabFor!
-    local data = {}
+    data = data or {}
     data._parentSubject = self._parentSubject
     data.childName = self.childName
-    data.inspectorTemplate = self.inspectorTemplate
-    data.specialMasterlistType = self.specialMasterlistType
+
+    data.inspectorTemplate = data.inspectorTemplate or self.inspectorTemplate
+    data.specialMasterlistType = data.specialMasterlistType or self.specialMasterlistType
 
     self:openTabFor(self.subject, self.subjectName, self.titleName, wasClickedAtGlobalInspector, data, isMOC, openedFromExistingInspector)
 end
