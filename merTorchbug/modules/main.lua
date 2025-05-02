@@ -1742,8 +1742,11 @@ function tbug.UpdateAddOnsAndLibraries()
         local numAddOns = ADDON_MANAGER:GetNumAddOns()
         for i = 1, numAddOns do
             local name, title, author, description, enabled, state, isOutOfDate, isLibrary = ADDON_MANAGER:GetAddOnInfo(i)
+local debugHere = false
+--if name == "LibGPS" then debugHere = true end
             local addonVersion = ADDON_MANAGER:GetAddOnVersion(i)
             local addonDirectory = ADDON_MANAGER:GetAddOnRootDirectoryPath(i)
+if debugHere then d(">enabled: " ..tos(enabled) .. ", state: " .. tos(state) .. ", isLibrary: " .. tos(isLibrary)) end
             if enabled == true and state == ADDON_STATE_ENABLED then
                 if isLibrary == true then
                     local libData = {
@@ -1755,6 +1758,7 @@ function tbug.UpdateAddOnsAndLibraries()
                 end
                 --Is the currently looped addon loaded (no matter if library or real AddOn)?
                 local addonIsLoaded = addonsLoaded[name] == true or false
+if debugHere then d(">addonIsLoaded: " ..tos(addonIsLoaded)) end
                 if addonIsLoaded == true then
                     --Add the addonManager data of the addon to the table addOns
                     local addonIndexInTbugAddOns
@@ -1764,6 +1768,7 @@ function tbug.UpdateAddOnsAndLibraries()
                             break
                         end
                     end
+if debugHere then d(">addonIndexInTbugAddOns: " ..tos(addonIndexInTbugAddOns)) end
                     if addonIndexInTbugAddOns ~= nil then
                         local addonDataOfTbugAddOns = addOns[addonIndexInTbugAddOns]
                         addonDataOfTbugAddOns.author = author
@@ -1887,7 +1892,7 @@ end
 
 
 function tbug.refreshAddOnsAndLibraries()
---d(">refreshLibraries")
+--d("[tbug]refreshAddOnsAndLibraries")
     --Update and refresh the libraries list
     tbug_UpdateAddOnsAndLibraries()
 
@@ -2032,6 +2037,12 @@ end
 
 
 local function onPlayerActivated(event)
+    if not EVENT_ADDONS_LOADED then
+        --Update libs and AddOns
+        tbug_refreshAddOnsAndLibraries()
+        --Find and update global SavedVariable tables
+        tbug_refreshSavedVariablesTable()
+    end
 end
 
 --The possible slash commands in the chat editbox
@@ -2252,6 +2263,8 @@ local function onAddOnLoaded(event, addOnName)
     }
     tins(addOns, currentlyLoadedAddOnTab)
 
+
+    --TBUG was loaded now?
     if addOnName ~= myNAME then return end
 
     tbug.initSavedVars()
@@ -2271,10 +2284,15 @@ local function onAddOnLoaded(event, addOnName)
     env.env = setmetatable(env, {__index = _G})
     tbug.env = env
 
-    --Update libs and AddOns
-    tbug_refreshAddOnsAndLibraries()
-    --Find and update global SavedVariable tables
-    tbug_refreshSavedVariablesTable()
+    --Too early here! Addons might load after TBUG loaded so we need to move this to EVENT_ADDONS_LOADED or EVENT_PLAYER_ACTIVATED
+    --[[
+    if not EVENT_ADDONS_LOADED then
+        --Update libs and AddOns
+        tbug_refreshAddOnsAndLibraries()
+        --Find and update global SavedVariable tables
+        tbug_refreshSavedVariablesTable()
+    end
+    ]]
 
     --Load the slash commands
     slashCommands()
@@ -2303,7 +2321,7 @@ local function onAddOnLoaded(event, addOnName)
     --Add a global OnMouseDown handler so we can track mouse button left + right + shift key for the "inspection start"
     local mouseUpBefore = {}
     function onGlobalMouseUp(eventId, button, ctrl, alt, shift, command)
-    --d(string.format("[merTorchbug]onGlobalMouseUp-button %s, ctrl %s, alt %s, shift %s, command %s", tos(button), tos(ctrl), tos(alt), tos(shift), tos(command)))
+        --d(string.format("[merTorchbug]onGlobalMouseUp-button %s, ctrl %s, alt %s, shift %s, command %s", tos(button), tos(ctrl), tos(alt), tos(shift), tos(command)))
         if not shift == true then return end
 
         local goOn = false
@@ -2363,7 +2381,7 @@ local function onAddOnLoaded(event, addOnName)
                 if dlvUIList == nil then return end
 
                 if dlvUIList:IsHidden() then
---CHAT_ROUTER:AddSystemMessage("DLV UI is hidden!")
+                    --CHAT_ROUTER:AddSystemMessage("DLV UI is hidden!")
                     return
                 end
 
@@ -2372,7 +2390,7 @@ local function onAddOnLoaded(event, addOnName)
                     local l_dlvUIList = dlvUIList or DebugLogViewerMainWindowList
                     if l_dlvUIList == nil then return end
 
---CHAT_ROUTER:AddSystemMessage("Scrolling to 999999")
+                    --CHAT_ROUTER:AddSystemMessage("Scrolling to 999999")
                     --local scrollBar = l_dlvUIList.scrollbar
                     --if scrollBar == nil then return end
                     --ZO_ScrollList_ScrollAbsolute(l_dlvUIList, 100)
@@ -2394,7 +2412,7 @@ local function onAddOnLoaded(event, addOnName)
     local function checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
         local panelOfInspector = tbug_inspectorScrollLists[selfScrollList]
         if panelOfInspector ~= nil then
---d(">found panelOfInspector")
+            --d(">found panelOfInspector")
             --Hide the editBox and sliderControl at the inspector panel rows, if shown
             --panelOfInspector:valueEditCancel(panelOfInspector.editBox)
             valueEdit_CancelThrottled(panelOfInspector.editBox, 100)
@@ -2405,29 +2423,39 @@ local function onAddOnLoaded(event, addOnName)
 
     --For the mouse wheel and up/down button press
     SecurePostHook("ZO_ScrollList_ScrollRelative", function(selfScrollList, delta, onScrollCompleteCallback, animateInstantly)
---tbug._selfScrollList = selfScrollList
+        --tbug._selfScrollList = selfScrollList
         --d("[tbug]ZO_ScrollList_ScrollRelative")
         checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
     end)
     --For the click on the scroll bar control
     SecurePostHook("ZO_Scroll_ScrollAbsoluteInstantly", function(selfScrollList, value)
---tbug._selfScrollList = selfScrollList
+        --tbug._selfScrollList = selfScrollList
         --d("[tbug]ZO_Scroll_ScrollAbsoluteInstantly")
         checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
     end)
     SecurePostHook("ZO_ScrollList_ScrollAbsolute", function(selfScrollList, value)
---tbug._selfScrollList = selfScrollList
+        --tbug._selfScrollList = selfScrollList
         --d("[tbug]ZO_ScrollList_ScrollAbsolute")
         checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
     end)
 
     updateTbugGlobalMouseUpHandler(isMouseRightAndLeftAndSHIFTClickEnabled(true))
 
-    --EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated)
+    EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated)
 end
 
 
 EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADD_ON_LOADED, onAddOnLoaded)
+
+if EVENT_ADDONS_LOADED then
+    local function onAllAddOnsLoaded()
+        --Update libs and AddOns
+        tbug_refreshAddOnsAndLibraries()
+        --Find and update global SavedVariable tables
+        tbug_refreshSavedVariablesTable()
+    end
+    EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADDONS_LOADED, onAllAddOnsLoaded)
+end
 
 
 
