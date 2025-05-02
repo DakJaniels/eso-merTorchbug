@@ -11,6 +11,7 @@ local osdate = os.date
 local stringType = "string"
 local funcType = "function"
 local tableType = "table"
+local numberType = "number"
 local userDataType = "userdata"
 
 local prefixForLeftKey = tbug.prefixForLeftKey
@@ -709,7 +710,7 @@ function TableInspectorPanel:initScrollList(control)
             if row.cKeyLeft then
                 local timeStampAdded = data.value._timeStamp
                 --local frameTimeAdded = data.value._frameTime
-                if timeStampAdded then
+                if type(timeStampAdded) == numberType then
                     row.cKeyLeft:SetText(osdate("%c", timeStampAdded))
                 end
             end
