@@ -2037,7 +2037,7 @@ end
 
 
 local function onPlayerActivated(event)
-    if not EVENT_ADDONS_LOADED then
+    if not EVENT_ADD_ONS_LOADED then
         --Update libs and AddOns
         tbug_refreshAddOnsAndLibraries()
         --Find and update global SavedVariable tables
@@ -2284,9 +2284,9 @@ local function onAddOnLoaded(event, addOnName)
     env.env = setmetatable(env, {__index = _G})
     tbug.env = env
 
-    --Too early here! Addons might load after TBUG loaded so we need to move this to EVENT_ADDONS_LOADED or EVENT_PLAYER_ACTIVATED
+    --Too early here! Addons might load after TBUG loaded so we need to move this to EVENT_ADD_ONS_LOADED or EVENT_PLAYER_ACTIVATED
     --[[
-    if not EVENT_ADDONS_LOADED then
+    if not EVENT_ADD_ONS_LOADED then
         --Update libs and AddOns
         tbug_refreshAddOnsAndLibraries()
         --Find and update global SavedVariable tables
@@ -2447,14 +2447,14 @@ end
 
 EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADD_ON_LOADED, onAddOnLoaded)
 
-if EVENT_ADDONS_LOADED then
+if EVENT_ADD_ONS_LOADED then
     local function onAllAddOnsLoaded()
         --Update libs and AddOns
         tbug_refreshAddOnsAndLibraries()
         --Find and update global SavedVariable tables
         tbug_refreshSavedVariablesTable()
     end
-    EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADDONS_LOADED, onAllAddOnsLoaded)
+    EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADD_ONS_LOADED, onAllAddOnsLoaded)
 end
 
 
