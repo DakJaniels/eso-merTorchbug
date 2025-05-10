@@ -3,6 +3,32 @@ local myNAME = TBUG.name
 
 local EM = EVENT_MANAGER
 
+local tos = tostring
+local ton = tonumber
+local strformat = string.format
+local strfind = string.find
+local strgmatch = string.gmatch
+local strlower = string.lower
+local strsub = string.sub
+local strlen = string.len
+local zo_ls = zo_loadstring
+local tins = table.insert
+local trem = table.remove
+local tsort = table.sort
+local tcon = table.concat
+local zo_strf = zo_strformat
+local zo_strspl = zo_strsplit
+local rawget = rawget
+
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
+
 local sessionStartTime = tbug.sessionStartTime
 local ADDON_MANAGER
 
@@ -29,21 +55,6 @@ local unitConstants = tbug.unitConstants
 local unitPlayer = unitConstants.player
 local serversShort = tbug.serversShort
 
-local tos = tostring
-local ton = tonumber
-local strformat = string.format
-local strfind = string.find
-local strgmatch = string.gmatch
-local strlower = string.lower
-local strsub = string.sub
-local strlen = string.len
-local zo_ls = zo_loadstring
-local tins = table.insert
-local trem = table.remove
-local tsort = table.sort
-local tcon = table.concat
-local zo_strf = zo_strformat
-local zo_strspl = zo_strsplit
 
 local firstToUpper = tbug.firstToUpper
 local startsWith = tbug.startsWith
@@ -55,8 +66,7 @@ local panelNames = tbug.panelNames
 
 local customKeysForInspectorRows = tbug.customKeysForInspectorRows
 local customKey__usedInScenes = customKeysForInspectorRows.usedInScenes
-local stringType = "string"
-local tableType = "table"
+
 
 local tbug_glookup = tbug.glookup
 local tbug_getKeyOfObject = tbug.getKeyOfObject
@@ -159,8 +169,44 @@ local function showDoesNotExistError(object, winTitle, tabTitle)
     df(errText, title, tos(object))
 end
 
+local function isPrivateOrProtectedFunction(object, funcName)
+    --d("[tbug]isPrivateOrProtectedFunction - object: " .. tos(object) .. ", funcName: " ..tos(funcName))
+    if object == nil then return false end
+    if funcName == nil then
+        local functionRef = object
+        if type(object) ~= functionType then
+            if object.funcName == nil or type(object.funcName) ~= functionType then
+                return false
+            else
+                functionRef = object.funcName
+            end
+        end
+        funcName = tbug_glookup(functionRef)
+    else
+        funcName = tbug.cleanKey(funcName)
+    end
+    --d(">funcName is now: " ..tos(funcName))
+    if type(funcName) ~= stringType then return false end
+    return IsPrivateFunction(funcName) or IsProtectedFunction(funcName)
+end
+tbug.isPrivateOrProtectedFunction = isPrivateOrProtectedFunction
+
 local function showFunctionReturnValue(object, tabTitle, winTitle, objectParent)
-    local wasRunWithoutErrors, resultsOfFunc = pcall(setfenv(object, tbug.env))
+    --local objectType = type(object)
+    --local isPrivOrProtectedFunc = isPrivateOrProtectedFunction(((objectType == functionType or objectType == tableType) and object) or nil, tabTitle)
+    local wasRunWithoutErrors, resultsOfFunc
+
+    --if isPrivOrProtectedFunc == true then
+--        wasRunWithoutErrors, resultsOfFunc = pcall(setfenv(object, tbug.env))
+--    else
+        wasRunWithoutErrors, resultsOfFunc = pcall(setfenv(object, tbug.env))
+--    end
+
+--d("[tbug]showFunctionReturnValue - isPrivOrProtectedFunc: " .. tos(isPrivOrProtectedFunc) .. ", wasRunWithoutErrors: " ..tos(wasRunWithoutErrors) .. ", resultsOfFunc: " .. tos(resultsOfFunc))
+--tbug._debugResultsOfFunc = resultsOfFunc
+
+
+
     local title = (winTitle and tos(winTitle)) or tos(tabTitle) or ""
     title = (objectParent and objectParent ~= "" and objectParent .. "." or "") .. title
 
@@ -329,7 +375,7 @@ local function buildSearchData(searchValues, delay)
         --Else: Use it as normal search string part
         searchMode = ton(searchOptions[1])
         --{ [1]="str", [2]="pat", [3]="val", [4]="con" }
-        if searchMode ~= nil and type(searchMode) == "number" and filterModes[searchMode] ~= nil then
+        if searchMode ~= nil and type(searchMode) == numberType and filterModes[searchMode] ~= nil then
             searchText = tcon(searchOptions, " ", 2, #searchOptions)
         else
             searchText = tcon(searchOptions, " ", 1, #searchOptions)
@@ -356,7 +402,7 @@ tbug.closeAllTabs = closeAllTabs
 local function hasMember(tab, keyPattern, valueType, maxDepth)
     if type(tab) == tableType and maxDepth > 0 then
         for k, v in zo_insecureNext, tab do
-            if type(v) == valueType and type(k) == "string" and strfind(k, keyPattern) then
+            if type(v) == valueType and type(k) == stringType and strfind(k, keyPattern) then
                 return true
             elseif hasMember(v, keyPattern, valueType, maxDepth - 1) then
                 return true
@@ -401,7 +447,7 @@ local function inspectResults(specialInspectionString, searchData, data, source,
         local foundNotAllowedCharacters = zo_plainstrfind(source, "=")
         if doDebug then d("[TB]inspectResults - execution of '" .. tos(source) .."' resulted in an error. foundNotAllowedCharacters: " ..tos(foundNotAllowedCharacters)) end
         --Passed in params 2ff are maybe a search string and not something to execute?
-        if not preventEndlessLoop and source ~= nil and type(source) == "string"
+        if not preventEndlessLoop and source ~= nil and type(source) == stringType
                 and not foundNotAllowedCharacters --no = (assignment) in the string
                 and (searchData == nil or (searchData ~= nil and searchData.searchText == "")) then
             if doDebug then d(">testing other args") end
@@ -502,10 +548,10 @@ local function inspectResults(specialInspectionString, searchData, data, source,
 
             --Only reuse the firstInspector if no custom inspector class is acquired, or if it wasn't created with a custom inspector class
             if firstInspector ~= nil then
-                if type(source) ~= "string" then
+                if type(source) ~= stringType then
                     source = getControlName(res)
                 else
-                    if not isMOC and not specialInspectionString and type(ton(tabTitle)) == "number" then
+                    if not isMOC and not specialInspectionString and type(ton(tabTitle)) == numberType then
                         local objectKey = tbug_getKeyOfObject(source)
                         if objectKey and objectKey ~= "" then
                             tabTitle = objectKey
@@ -551,7 +597,7 @@ local function inspectResults(specialInspectionString, searchData, data, source,
             else
                 if doDebug then d(">Creating firstInspector") end
                 --Create new firstInspector
-                if not isMOC and not specialInspectionString and source and source ~= "" and type(source) == "string" and type(ton(tabTitle)) == "number" then
+                if not isMOC and not specialInspectionString and source and source ~= "" and type(source) == stringType and type(ton(tabTitle)) == numberType then
                     local objectKey = tbug_getKeyOfObject(source)
                     if objectKey and objectKey ~= "" then
                         tabTitle = objectKey
@@ -610,7 +656,7 @@ function tbug.prepareItemLink(control, asPlainText)
         end
     end
 
-    if bagId and slotIndex and type(bagId) == "number" and type(slotIndex) == "number" then
+    if bagId and slotIndex and type(bagId) == numberType and type(slotIndex) == numberType then
         itemLink = GetItemLink(bagId, slotIndex, LINK_STYLE_BRACKETS)
     end
     if itemLink and itemLink ~= "" and asPlainText == true then
@@ -760,7 +806,7 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
         elseif isControl(object) then
             if doDebug then d(">isControl") end
             local title = ""
-            if type(winTitle) == "string" then
+            if type(winTitle) == stringType then
                 title = winTitle
             else
                 title = getControlName(object)
@@ -782,7 +828,7 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
                 inspector = acquireInspector(newInspectorClass, object, tabTitle, recycleActive, winTitle, data, searchData, isMOC, nil)
 
             else
-                if resType == "function" then
+                if resType == functionType then
                     if doDebug then d(">function") end
                     showFunctionReturnValue(object, tabTitle, winTitle, objectParent)
                 else
@@ -905,7 +951,7 @@ end
 
 
 local function iterateInspectorsWithCallback(globalInspectorToo, firstInspectorSeparate, callbackFunc, totalRefresh)
-    if type(callbackFunc) ~= "function" then return end
+    if type(callbackFunc) ~= functionType then return end
     globalInspectorToo = globalInspectorToo or false
     firstInspectorSeparate = firstInspectorSeparate or false
     totalRefresh = totalRefresh or false
@@ -1187,7 +1233,7 @@ function tbug.slashCommand(args, searchValues)
             --Check if only a number was passed in and then select the tab index of that number
             if not isSupportedGlobalInspectorArg then
                 local firstArgNum = ton(argOne)
-                if firstArgNum ~= nil and type(firstArgNum) == "number" and panelNames[firstArgNum] ~= nil then
+                if firstArgNum ~= nil and type(firstArgNum) == numberType and panelNames[firstArgNum] ~= nil then
                     argOne = panelNames[firstArgNum].slashCommand[1] -- use the 1st slashCommand of that panel as arguent 1 now
                     isSupportedGlobalInspectorArg = true
                 end
@@ -1381,7 +1427,7 @@ function tbug.slashCommandSavedInspectors(saveOrLoad, args)
         if not moreThanOneArg then
             --Check if param is a number -> Then load it if it exists
             local loadInspectorNumber = tonumber(argOne)
-            if type(loadInspectorNumber) == "number" then
+            if type(loadInspectorNumber) == numberType then
                 tbug.loadSavedInspectors(loadInspectorNumber, wasShiftpressed)
             end
             --If not: Open the "savedInsp" tab!
@@ -1402,7 +1448,7 @@ function tbug.slashCommandDelayed(args)
     if moreThanOneArg then
         --Multiple arguments given after the slash command
         local secondsToDelay = ton(argsOptions[1])
-        if not secondsToDelay or type(secondsToDelay) ~= "number" then return end
+        if not secondsToDelay or type(secondsToDelay) ~= numberType then return end
         if secondsToDelay < 0 then secondsToDelay = 0 end
         --Get the other arguments / search string
         local searchValuesStr
@@ -1431,7 +1477,7 @@ function tbug.slashCommandMOCDelayed(args)
     clearDataForInspector()
     local argsOptions = parseSlashCommandArgumentsAndReturnTable(args, false)
     local secondsToDelay = (argsOptions ~= nil and ton(argsOptions[1])) or nil
-    if not secondsToDelay or type(secondsToDelay) ~= "number" then return end
+    if not secondsToDelay or type(secondsToDelay) ~= numberType then return end
     if secondsToDelay < 0 then secondsToDelay = 0 end
     local searchValuesStr
 
@@ -1535,7 +1581,7 @@ function tbug.dumpConstants()
         if key ~= nil then
             local value = data.value
             if value ~= nil then
-                local tvIsNumber = (type(value) == "number") or false
+                local tvIsNumber = (type(value) == numberType) or false
                 if tvIsNumber == true and string.match(key, '^SI_(.*)') ~= nil then
                     merTorchbugSavedVars_Dumps[worldName][APIVersion]["SI_String_Constants"][key] = value
                     cntSIConstants = cntSIConstants + 1
@@ -1816,7 +1862,7 @@ if debugHere then d(">addonIndexInTbugAddOns: " ..tos(addonIndexInTbugAddOns)) e
                 local libWasAdded = false
                 for _, nameToCheckInGlobal in ipairs(checkNameTable) do
                     if _G[nameToCheckInGlobal] ~= nil then
-                        local isFunction = (type(_G[nameToCheckInGlobal]) == "function" and true) or false
+                        local isFunction = (type(_G[nameToCheckInGlobal]) == functionType and true) or false
 
                         --d(">>>global was found!")
                         tbug.LibrariesData[addonName] = {
@@ -1947,7 +1993,7 @@ function tbug.refreshSavedVariablesTable()
     local specialAddonSVTableNames = tbug.svSpecialTableNames
     local servers = tbug.servers
     local patternVersion = "^version$"
-    local patternNumber = "number"
+    local patternNumber = numberType
 
     --First check the addons found for possible "similar" global SV tables
     if tbug.addOnsLoaded ~= nil then

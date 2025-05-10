@@ -3,6 +3,14 @@ local tos = tostring
 local type = type
 --local zo_ls = zo_loadstring
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
 local tins = table.insert
 local trem = table.remove
 
@@ -111,7 +119,7 @@ local function loadSavedInspectorsByClick(selfVar, row, data, openAllInSameInspe
 --tbug._dataClickedSavedInspectors = data
     local value = data.value
     local dataEntry = data.dataEntry
-    if value ~= nil and type(value) == "table" and dataEntry ~= nil and dataEntry.typeId == RT_savedInspectors then
+    if value ~= nil and type(value) == tableType and dataEntry ~= nil and dataEntry.typeId == RT_savedInspectors then
         loadSavedInspectorsNow(value, data.key, openAllInSameInspector)
     end
 end
@@ -378,10 +386,10 @@ function SavedInspectorsPanel:initScrollList(control)
 --d(">>tv: " ..tos(tv) .. "; k: " ..tos(k) .. "; key: " ..tos(data.key))
 
         row.cVal:SetText("")
-        if tv == "string" then
+        if tv == stringType then
             setupValue(row.cVal, tv, v)
         else
-            if tv == "table" then
+            if tv == tableType then
                 local tooltipOutput = {}
                 local tooltipText = ""
                 local tooltipLine = ""
@@ -422,7 +430,7 @@ function SavedInspectorsPanel:initScrollList(control)
                     row.tooltipLine = tooltipLine
                     data.tooltipLine = tooltipLine
                 end
-                setupValue(row.cVal, "string", tooltipLine)
+                setupValue(row.cVal, stringType, tooltipLine)
             end
         end
         if row.cVal2 then
@@ -449,7 +457,7 @@ end
 --Clicking on a tables index (e.g.) 6 should not open a new tab called 6 but tableName[6] instead
 function SavedInspectorsPanel:BuildWindowTitleForTableKey(data)
     local winTitle
-    if data.key and type(tonumber(data.key)) == "number" then
+    if data.key and type(tonumber(data.key)) == numberType then
         winTitle = self.inspector.activeTab.label:GetText()
         if winTitle and winTitle ~= "" then
             winTitle = tbug.cleanKey(winTitle)
@@ -492,7 +500,7 @@ function SavedInspectorsPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, a
                 sliderCtrl.panel:valueSliderCancel(sliderCtrl)
             end
             if self:canEditValue(data) then
-                if typeValue == "string" then
+                if typeValue == stringType then
                     if value ~= "" and data.dataEntry.typeId == RT.SAVEDINSPECTORS_TABLE then
 
                     end

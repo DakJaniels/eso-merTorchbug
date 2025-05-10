@@ -1,5 +1,18 @@
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+local isObjectType = {
+    [tableType]    = true,
+    [userDataType] = true,
+    [functionType] = true,
+}
+
 local libAS = LibAsync
 
 local autovivify = tbug.autovivify
@@ -21,17 +34,6 @@ local EsoStrings = EsoStrings
 
 local DEBUG = 1
 local SI_LAST = SI_NONSTR_PUBLICALLINGAMESGAMEPADSTRINGS_LAST_ENTRY --10944, old one was: SI_NONSTR_INGAMESHAREDSTRINGS_LAST_ENTRY  10468
-
-local stringType = "string"
-local numberType = "number"
-local functionType = "function"
-local tableType = "table"
-local userDataType = "userdata"
-local isObjectType = {
-    [tableType]    = true,
-    [userDataType] = true,
-    [functionType] = true,
-}
 
 local g_objects = tbug.LookupTabs["_G"] -- = {}
 

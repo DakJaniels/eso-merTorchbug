@@ -9,6 +9,14 @@ local type = type
 local strfind = string.find
 local tinsert = table.insert
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
 
 local eventsInspectorControl
 local globalInspector
@@ -47,7 +55,7 @@ tbEvents.AreAllEventsRegistered = false
 local l_globalprefixes = function(prefix)
 	local l_safeglobalnext = function(tab,index)
 		for k, v in zo_insecureNext, tab, index do
-			if type(k) == "string" and strfind(k, prefix, 1, true) == 1 then
+			if type(k) == stringType and strfind(k, prefix, 1, true) == 1 then
 				return k, v
 			end
 		end
@@ -57,7 +65,7 @@ end
 
 --Add the possible events of the game (from _G table) to the eventsList
 for k,v in l_globalprefixes("EVENT_") do
-	if not blacklistedEventIds[v] and type(v)=="number" then
+	if not blacklistedEventIds[v] and type(v)==numberType then
         --Lookup the real eventname
         local eventName = realESOEventNames[v] or k
         lookupEventName[v]=eventName
@@ -203,7 +211,7 @@ local RegisterAllEvents = tbEvents.RegisterAllEvents
 function tbEvents.UnRegisterAllEvents(inspectorControl, excludedEventsFromUnregisterTable, override)
     if not inspectorControl then return end
     override = override or false
-    local keepEventsRegistered = (excludedEventsFromUnregisterTable ~= nil and type(excludedEventsFromUnregisterTable) == "table") or false
+    local keepEventsRegistered = (excludedEventsFromUnregisterTable ~= nil and type(excludedEventsFromUnregisterTable) == tableType) or false
     if not keepEventsRegistered then
         if not override == true and tbEvents.IsEventTracking == true then return end
         if not tbEvents.AreAllEventsRegistered then return end

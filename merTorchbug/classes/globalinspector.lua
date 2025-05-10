@@ -6,7 +6,13 @@ local classes = tbug.classes
 local BasicInspector = classes.BasicInspector
 local GlobalInspector = classes.GlobalInspector .. BasicInspector
 
-local stringType = "string"
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
 
 local panelClassName2panelClass = tbug.panelClassNames
 local panelNames = tbug.panelNames
@@ -127,9 +133,9 @@ function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
 
     if not tabIndex then return end
     local tabIndexType = type(tabIndex)
-    if tabIndexType == "number" then
+    if tabIndexType == numberType then
         --All okay
-    elseif tabIndexType == "string" then
+    elseif tabIndexType == stringType then
         --Get pael's tabIndex number
         tabIndex = getTBUGGlobalInspectorPanelIdByName(tabIndex)
     else
@@ -148,7 +154,7 @@ function GlobalInspector:connectFilterComboboxToPanel(tabIndex)
         if not ZO_IsTableEmpty(filterDataToAdd) then
             --Add the filter data to the combobox's dropdown
             for controlType, controlTypeName in pairs(filterDataToAdd) do
-                if type(controlType) == "number" and controlType > -1 then
+                if type(controlType) == numberType and controlType > -1 then
                     local entry = comboBox:CreateItemEntry(controlTypeName)
                     entry.filterType = controlType
                     comboBox:AddItem(entry)
@@ -280,7 +286,7 @@ function GlobalInspector:refresh()
     --Refresh ALL tab's data!
     for k, v in zo_insecureNext, _G do
         local tv = type(v)
-        if tv == "userdata" then
+        if tv == userDataType or tv == structType then
             if v.IsControlHidden then
                 pushToMasterlist(controls, RT.GENERIC, k, v)
             elseif v.GetFontInfo then
@@ -288,7 +294,7 @@ function GlobalInspector:refresh()
             else
                 pushToMasterlist(objects, RT.GENERIC, k, v)
             end
-        elseif tv == "table" then
+        elseif tv == tabType then
             if rawget(v, "__index") then
                 --v[isClassKey] = true
                 local classTabName = tbug_glookup(v)
@@ -313,19 +319,19 @@ function GlobalInspector:refresh()
 
                 pushToMasterlist(objects, RT.GENERIC, k, v)
             end
-        elseif tv == "function" then
+        elseif tv == functionType then
             pushToMasterlist(functions, RT.GENERIC, k, v)
             --Check if functionName is starting with IsItemLink or GetItemLink or CheckItemLink or *Itemlink*
             --and add them to the itemLinkFunctions table for later context menu usage
             -->Will add it to tbug.functionsItemLink
             local l_updated = checkIfItemLinkFunc(k, v) --> Should have been filled in glookup.lua already while parsing the _G table. Only adding missing ones here
             if l_updated == true then itemLinkFunctionsUpdated = true end
-        elseif tv ~= "string" or type(k) ~= "string" then
+        elseif tv ~= stringType or type(k) ~= stringType then
             pushToMasterlist(constants, RT.GENERIC, k, v)
         elseif IsPrivateFunction(k) then
-            pushToMasterlist(functions, RT.GENERIC, k, "function: private")
+            pushToMasterlist(functions, RT.GENERIC, k, "function: |cFF0000private|r")
         elseif IsProtectedFunction(k) then
-            pushToMasterlist(functions, RT.GENERIC, k, "function: protected")
+            pushToMasterlist(functions, RT.GENERIC, k, "function: |c0000D2protected|r")
         else
             pushToMasterlist(constants, RT.GENERIC, k, v)
         end

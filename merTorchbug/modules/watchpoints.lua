@@ -181,15 +181,15 @@ d("[TBUG]addWatchpointTo]tab: " ..tos(tableRef)..", var: " ..tos(variableName) .
     if callbackFunction == nil then callbackFunction = variableChangedOutput end
     if (tableRef == nil and _G[tableRef] == nil) or variableName == nil then return end
     local tableRefType = type(tableRef)
-    local isTableRefString = tableRefType == "string"
+    local isTableRefString = tableRefType == stringType
     if not isTableRefString and tableRef ~= nil then
 d(">1")
-        if tableRefType ~= "table" and tableRefType ~= "userdata" then return end
+        if tableRefType ~= tableType and tableRefType ~= userDataType then return end
         if tableRef[variableName] == nil then return end
     elseif isTableRefString == true and _G[tableRef] ~= nil then
 d(">2")
         tableRefType = type(_G[tableRef])
-        if tableRefType ~= "table" and tableRefType ~= "userdata" then return end
+        if tableRefType ~= tableType and tableRefType ~= userDataType then return end
         if _G[tableRef][variableName] == nil then return end
 d(">3")
         tableRef = _G[tableRef]

@@ -12,11 +12,20 @@ local trem = table.remove
 
 local EM = EVENT_MANAGER
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
 local searchURLs              = tbug.searchURLs
 local tbug_GetDefaultTemplate = tbug.GetDefaultTemplate
 local tbug_GetTemplate        = tbug.GetTemplate
 --local tbug_getControlName     = tbug.getControlName
 local tbug_glookup
+
 
 --LibScrollableMenu
 local lsm = LibScrollableMenu
@@ -211,9 +220,9 @@ tbug._debug.setChatEditTextFromContextMenu = {
             --Copy raw value?
             if not isKey then
                 local valueType = type(value)
-                if valueType == "userdata" then
+                if valueType == userDataType then
                     --d(">>>value = userdata")
-                    --Get name of the "userdata" from global table _G
+                    --Get name of the userDataType from global table _G
                     local objectName = tbug.glookup(value)
                     if objectName ~= nil and objectName ~= "" and objectName ~= value then
                         valueToCopy = objectName
@@ -376,7 +385,7 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
        if tbug.doDebug then d("[TBUG]useForScript - scriptStrIsValue! scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isKey) .. "; valueType: " .. tos(type(value)) ..", showInNewTab: " ..tos(showInNewTab)) end
     else
         --Key is a number only? No need to run a script on it, try it on the value then!
-        if ton(key) == "number" then
+        if ton(key) == numberType then
             isKey = false
         end
 
@@ -390,7 +399,7 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
         if tbug.doDebug then d("[TBUG]useForScript - scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isKey) .. "; valueType: " .. tos(type(value)) ..", showInNewTab: " ..tos(showInNewTab)) end
         if scriptStr == "" then return end
 
-        if not isFunctionsDataType and value ~= nil and type(value) == "function" then
+        if not isFunctionsDataType and value ~= nil and type(value) == functionType then
             isFunctionsDataType = true
         end
 
@@ -409,7 +418,7 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
                 scriptStr = tos(lookupName) .. (isFunctionsDataType and ":" or ".") .. scriptStr
             end
         else
-            if isKey and type(value) == "table" then
+            if isKey and type(value) == tableType then
                 local lookupName = tbug_glookup(value)
                 --d(">lookupName2: " ..tos(lookupName))
                 if lookupName ~= nil and lookupName ~= "_G" and _G[lookupName] ~= nil and _G[lookupName][key] ~= nil then
@@ -1408,7 +1417,7 @@ function tbug.buildRowContextMenuData(p_self, p_row, p_data, p_contextMenuForKey
     local keyType      = type(key)
     local currentValue = p_data.value
     local valType      = type(currentValue)
-    local valueIsTable = (valType == "table" and true) or false
+    local valueIsTable = (valType == tableType and true) or false
     local prop         = p_data.prop
     local propName = prop and prop.name
     local dataPropOrKey = (propName ~= nil and propName ~= "" and propName) or key
@@ -1471,7 +1480,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
             elseif key ~= nil then
                 local rowActionsSuffix = ""
                 local keyNumber = ton(key)
-                if "number" == type(keyNumber) then
+                if numberType == type(keyNumber) then
                     rowActionsSuffix = " - #" .. tos(key)
                 end
 
@@ -1520,7 +1529,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 local searchValuesAdded = {}
                 local searchSubmenu = {}
                 local keyStr = key
-                if keyType == "number" then
+                if keyType == numberType then
                     keyStr = p_data.keyText
                         or (
                                 (isSpecialTableKeySoUseKeyNumber and valueIsTable == true and tos(key))
@@ -1540,7 +1549,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         }
                 )
                 searchValuesAdded[keyStr] = true
-                if valType == "string" or valType == "number" then
+                if valType == stringType or valType == numberType then
                     tins(searchSubmenu,
                             {
                                 name =     "Search value",
@@ -1656,7 +1665,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             }
                     )
                 end
-                if subjectName ~= nil and subjectName ~= keyStr and type(subjectName) == "string" then
+                if subjectName ~= nil and subjectName ~= keyStr and type(subjectName) == stringType then
                     tins(externalSearchSubmenu,
                             {
                                 name =     strformat(externalUrlGitHubSearchString, subjectName),
@@ -1664,7 +1673,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                             }
                     )
                 end
-                if parentSubjectName ~= nil and parentSubjectName ~= subjectName and parentSubjectName ~= keyStr and type(parentSubjectName) == "string" then
+                if parentSubjectName ~= nil and parentSubjectName ~= subjectName and parentSubjectName ~= keyStr and type(parentSubjectName) == stringType then
                     tins(externalSearchSubmenu,
                             {
                                 name =     strformat(externalUrlGitHubSearchString, parentSubjectName),
@@ -1686,7 +1695,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
 
                 --Is key a string ending on "SCENE_NAME" and the value is a string e.g. "trading_house"
                 -->Show a context menu entry "Open scene"
-                if type(key) == "string" and valType == "string" and (tbug_endsWith(key, "_SCENE_NAME") == true or tbug_endsWith(key, "_SCENE_IDENTIFIER") == true) then
+                if type(key) == stringType and valType == stringType and (tbug_endsWith(key, "_SCENE_NAME") == true or tbug_endsWith(key, "_SCENE_IDENTIFIER") == true) then
                     local slashCmdToShowScene = "SCENE_MANAGER:Show(\'" ..tos(currentValue) .. "\')"
                     AddCustomScrollableMenuEntry("Scene actions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
                     AddCustomScrollableMenuEntry("Show scene", function() tbug_slashCommand(slashCmdToShowScene) end, LSM_ENTRY_TYPE_NORMAL, nil, nil)
@@ -1976,7 +1985,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     end
                     ------------------------------------------------------------------------------------------------------------------------
                     --number or string entries
-                elseif valType == "number" or valType == "string" then
+                elseif valType == numberType or valType == stringType then
                     --Do we have a setter function given?
                     --Check if any enumeration is provided and add the givenenum entries to the context menu entries
                     local enumsWereAdded = false
@@ -2105,7 +2114,7 @@ local function updateSizeOnTabWindowAndCallResizeHandler(p_control, newWidth, ne
     p_control:SetDimensions(newWidth, newHeight)
 
     local OnResizeStopHandler = p_control:GetHandler("OnResizeStop")
-    if OnResizeStopHandler and type(OnResizeStopHandler) == "function" then
+    if OnResizeStopHandler and type(OnResizeStopHandler) == functionType then
         OnResizeStopHandler(p_control)
     end
 end

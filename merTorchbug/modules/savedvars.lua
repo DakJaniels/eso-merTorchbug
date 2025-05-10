@@ -1,6 +1,14 @@
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 local cm = CALLBACK_MANAGER
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
 local panelNames = tbug.panelNames
 
 local firstToUpper = tbug.firstToUpper
@@ -24,17 +32,18 @@ local defaults =
         ["nil"]      = "hsl(120, 50, 70)",
         ["boolean"]  = "hsl(120, 50, 70)",
         ["event"]    = "hsl(60, 90, 70)",
-        ["number"]   = "hsl(120, 50, 70)",
-        ["string"]   = "hsl(30, 90, 70)",
-        ["function"] = "hsl(270, 90, 80)",
-        ["table"]    = "hsl(210, 90, 75)",
-        ["userdata"] = "hsl(0, 0, 75)",
+        [numberType]   = "hsl(120, 50, 70)",
+        [stringType]   = "hsl(30, 90, 70)",
+        [functionType] = "hsl(270, 90, 80)",
+        [tableType]    = "hsl(210, 90, 75)", --light blue
+        [userDataType] = "hsl(0, 0, 75)",
         ["obsolete"] = "hsl(0, 100, 50)", --red
         ["comment"]  = "hsl(0, 0, 100)", --white
         ["object"]  = "hsl(248, 53, 58)", --lila
         ["sceneName"]= "hsla(319, 100, 50)", --pink
         ["__isClass"] = "hsl(0, 0, 100)", --white
         ["__isObject"] = "hsl(0, 0, 100)", --white
+        [structType]    = "hsl(210, 90, 50)", --light blue, bit darker than a table
     },
     scriptHistory = {},
     scriptHistoryComments = {},
@@ -62,8 +71,8 @@ local function copyDefaults(dst, src)
     for k, v in zo_insecureNext , src do
         local dk = dst[k]
         local tv = type(v)
-        if tv == "table" then
-            if type(dk) == "table" then
+        if tv == tableType then
+            if type(dk) == tableType then
                 copyDefaults(dk, v)
             else
                 dst[k] = copyDefaults({}, v)

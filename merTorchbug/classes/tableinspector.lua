@@ -8,11 +8,13 @@ local strlow = string.lower
 local type = type
 local osdate = os.date
 
-local stringType = "string"
-local funcType = "function"
-local tableType = "table"
-local numberType = "number"
-local userDataType = "userdata"
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
 
 local prefixForLeftKey = tbug.prefixForLeftKey
 
@@ -69,7 +71,7 @@ local specialMasterListTypePassedInToMasterList = {
 --------------------------------
 local function getSpecialInspectorRightKeyValue(key, value, row, data)
     local specialRightKeyValueFunc = keyToSpecialRightKeyFunc[key]
-    if type(specialRightKeyValueFunc) ~= funcType then return end
+    if type(specialRightKeyValueFunc) ~= functionType then return end
     local rightKeyValue = specialRightKeyValueFunc(value)
 --d(">key: " .. tos(key) ..", rightKeyValue: " .. tos(rightKeyValue))
     return rightKeyValue
@@ -266,7 +268,7 @@ function TableInspectorPanel:buildMasterListSpecial()
         if specialMasterListTable == nil then return false end
         local typeSpecialMasterListTable = type(specialMasterListTable)
 
-        if typeSpecialMasterListTable == funcType then
+        if typeSpecialMasterListTable == functionType then
             if tbug.doDebug then
                 d(">specialMasterListPassedIn = function: " ..tos(specialMasterlistType))
                 tbug._debugSelfTableInspectorPanel = self
@@ -441,13 +443,13 @@ function TableInspectorPanel:initScrollList(control)
         --This is a saved and now loaded eventsViewer table?
         local v = data.value
         local tv = type(v)
-        if tv == "table" and v._eventId ~= nil then
+        if tv == tableType and v._eventId ~= nil then
             return setupEventTable(row, data, list, true)
         end
 
 
         local k, tk = setupCommon(row, data, list)
-        local isNumber = tv == "number" or false
+        local isNumber = tv == numberType or false
         local isKeyRightUsed = false
 
 --d("[tbug]setupGeneric-k: " ..tos(k) ..", v: " ..tos(v) ..", tk: " ..tos(tk) ..", tv: " ..tos(tv) .. ", rightKey: " .. tos(row.cKeyRight))
@@ -521,7 +523,7 @@ function TableInspectorPanel:initScrollList(control)
         end
 
         --Other special key: Key is number and tabTitleClean is e.g. bagTo*
-        if not isKeyRightUsed and row.cKeyRight and tk == "number" then
+        if not isKeyRightUsed and row.cKeyRight and tk == numberType then
             local keyRightText = getSpecialTabTitleCleanAtInspectorKeyConstant(self, k, v, row, data)
             if keyRightText ~= nil and keyRightText ~= "" then
                 setupValue(row.cKeyRight, type(keyRightText), prefixForLeftKey .. keyRightText, true) -- <- to show the rightKey belongs to the left key and not the value!
@@ -637,7 +639,7 @@ function TableInspectorPanel:initScrollList(control)
         local v = data.value
         local tv = type(v)
 
-        if tk == "number" then
+        if tk == numberType then
             local si = rawget(tbug_glookupEnum("SI"), k)
             row.cKeyLeft:SetText(si or k)
             data[localizationStringKeyText] = si
@@ -759,7 +761,7 @@ end
 --Clicking on a tables index (e.g.) 6 should not open a new tab called 6 but tableName[6] instead
 function TableInspectorPanel:BuildWindowTitleForTableKey(data)
     local winTitle
-    if data.key and type(tonumber(data.key)) == "number" then
+    if data.key and type(tonumber(data.key)) == numberType then
         winTitle = self.inspector.activeTab.label:GetText()
         if winTitle and winTitle ~= "" then
             winTitle = tbug.cleanKey(winTitle)
@@ -819,7 +821,7 @@ function TableInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, shi
                     end
                 end
                 data._parentSubject = _parentSubject
-            elseif type(value) == funcType and shift == true and not ctrl then
+            elseif type(value) == functionType and shift == true and not ctrl then
 --d(">>function!")
                 _parentSubject = self._parentSubject or (self.subject ~= nil and self.subject[customKey__Object])
                 if _parentSubject ~= nil then

@@ -9,6 +9,14 @@ local tos = tostring
 
 local osdate = os.date
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
 local libAS = nil --LibAsync --> Disabled 20241103
 
 local UPDATE_NONE = 0
@@ -221,8 +229,8 @@ function BasicInspectorPanel:filterScrollList(libAsyncTask)
     ZO_ScrollList_Clear(self.list)
 
     if filterFunc ~= nil or dropdownFilterFunc ~= nil then
-        local filterFuncIsFunc = (filterFunc ~= nil and type(filterFunc) == "function" and true) or false
-        local dropdownFilterFuncIsFunc = (dropdownFilterFunc ~= nil and type(dropdownFilterFunc) == "function" and true) or false
+        local filterFuncIsFunc = (filterFunc ~= nil and type(filterFunc) == functionType and true) or false
+        local dropdownFilterFuncIsFunc = (dropdownFilterFunc ~= nil and type(dropdownFilterFunc) == functionType and true) or false
 --d(">filterFuncIsFunc: " .. tos(filterFuncIsFunc) .. ", dropdownFilterFuncIsFunc: " ..tos(dropdownFilterFuncIsFunc))
         local j = 1
 --[[
@@ -367,7 +375,7 @@ function BasicInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ...)
 end
 
 local function isTextureRow(rowText)
-    if not rowText or type(rowText) ~= "string" or rowText == "" then return end
+    if not rowText or type(rowText) ~= stringType or rowText == "" then return end
     local textureString = rowText:match('(%.dds)$')
     if textureString == ".dds" then return true end
     return false
@@ -376,7 +384,7 @@ end
 local function isMouseCursorRow(row, cursorConstant)
     --d(">isMouseCursorRow: " ..tos(rowText))
     if row._isCursorConstant then return true end
-    if not cursorConstant or type(cursorConstant) ~= "string" or cursorConstant == "" then return end
+    if not cursorConstant or type(cursorConstant) ~= stringType or cursorConstant == "" then return end
     local mouseCursorName = cursorConstant:match('^MOUSE_CURSOR_GENERIC_.*')
     if mouseCursorName ~= nil then return false end
     mouseCursorName = cursorConstant:match('^MOUSE_CURSOR_.*')
@@ -388,7 +396,7 @@ local blockedTimeStampKeys = {
     ["_frametime"] = true
 }
 local function isNotBlockedTimeStampKeyOrProp(keyOrProp)
-    if type(keyOrProp) == "string" then
+    if type(keyOrProp) == stringType then
         local keyLow = strlow(keyOrProp)
         if not blockedTimeStampKeys[keyLow] and keyLow ~= nil and ((keyLow:match('time') ~= nil or keyLow:match('date') ~= nil)) then
             return true
@@ -403,7 +411,7 @@ local function isTimeStampRow(row, data, value)
     local prop = data.prop
     local propName = prop and prop.name
 --d(">isTimeStampRow: " ..tos(value) .. ", key: " ..tos(key) .. ", propName: " ..tos(propName))
-    if type(value) == "number" and (value >= earliestTimeStamp and value <= latestTimeStamp) then
+    if type(value) == numberType and (value >= earliestTimeStamp and value <= latestTimeStamp) then
         if isNotBlockedTimeStampKeyOrProp(key) then
             return true
         else
@@ -421,7 +429,7 @@ local function isTranslationTextRow(row, data, value)
     local prop = data.prop
     local propName = prop and prop.name
 --d(">isTranslationTextRow: " ..tos(value) .. ", key: " ..tos(key) .. ", propName: " ..tos(propName))
-    if value and type(value) == "number" and EsoStrings[value] ~= nil then --Check against SI* constant valid in table tbug.tmpStringIds
+    if value and type(value) == numberType and EsoStrings[value] ~= nil then --Check against SI* constant valid in table tbug.tmpStringIds
         --tooltipText exists? Then descriptor is no number for GetString but just a number
         --todo
         local list = row:GetParent():GetParent()
@@ -435,12 +443,12 @@ local function isTranslationTextRow(row, data, value)
             end
         end
 
-        if key ~= nil and type(key) == "string" then
+        if key ~= nil and type(key) == stringType then
             local keyLow = strlow(key)
             if keyLow ~= nil and possibleTranslationTextKeys[keyLow] then
                 return true
             end
-        elseif propName ~= nil and type(propName) == "string"  then
+        elseif propName ~= nil and type(propName) == stringType  then
             local propNameLow = strlow(propName)
             if propNameLow ~= nil and possibleTranslationTextKeys[propNameLow] then
                 return true
@@ -526,7 +534,7 @@ tbug._BasicInspectorPanel_onRowMouseEnter = {
                 end
             else
                 --Show table's # of entries as tooltip
-                if type(value) == "table" and value ~= _G then
+                if type(value) == tableType and value ~= _G then
                     local tableEntries = NonContiguousCount(value)
                     if tableEntries ~= nil then
                         InitializeTooltip(InformationTooltip, row, LEFT, 20, 0, RIGHT)

@@ -1,5 +1,13 @@
 local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
 local strformat = string.format
 
 local ROW_TYPE_HEADER = 6

@@ -6,6 +6,15 @@ local tos = tostring
 local tins = table.insert
 local trem = table.remove
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
+
 local BLUE = ZO_ColorDef:New(0.8, 0.8, 1.0)
 local RED  = ZO_ColorDef:New(1.0, 0.2, 0.2)
 
@@ -734,7 +743,7 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
     local titleClean = (isScriptsViewer and dataTitle ~= nil and dataTitle) or title --for the breadCrumbs, without any "[]" suffix etc.
     local panelClass = (isScriptsInspector == true and classes.ScriptsInspectorPanel) or (isScriptsViewer == true and classes.ScriptsViewerPanel) or nil
 
-    if type(object) == "table" then
+    if type(object) == tableType then
         --d(">table")
         title = tbug_glookup(object) or title or tos(object)
         titleClean = title --for the breadCrumbs

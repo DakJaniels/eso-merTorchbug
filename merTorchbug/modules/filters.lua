@@ -4,6 +4,15 @@ local tos = tostring
 local strfind = string.find
 local strlower = string.lower
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
+
 local RT = tbug.RT
 local RT_local_string = RT.LOCAL_STRING
 local rowTypes = tbug.RowTypes
@@ -159,7 +168,7 @@ function FilterFactory.str(expr)
             --local si = rawget(tbug.glookupEnum("SI"), data.key)
             local si = data[localizationStringKeyText]
             if si == nil then si = rawget(tbug_glookupEnum("SI"), data.key) end
-            if type(si) == "string" then
+            if type(si) == stringType then
                 return strfind(tosFunc(si), expr, 1, true)
             end
         end
@@ -177,7 +186,7 @@ function FilterFactory.str(expr)
 --tbug_DEBUG[keyOrig].expr = expr
 
 --tbug_DEBUG[keyOrig] = { keyOrig = keyOrig, key = key }
-            if type(tonumber(key)) == "number" then
+            if type(tonumber(key)) == numberType then
 --tbug_DEBUG[keyOrig].isKeyNuber = true
                 if findSI(data) then
 --tbug_DEBUG[keyOrig].isKeySI_Str = true
@@ -238,7 +247,7 @@ function FilterFactory.val(expr)
 
         if data.value ~= nil then
 --d(">value: " ..tos(data.value) .. ", result: " ..tos(result))
-            if type(data.value) == "string" and type(result) == "string" then
+            if type(data.value) == stringType and type(result) == stringType then
                 if rawequal(string.lower(data.value), string.lower(result)) == true then
                     return true
                 end
@@ -282,7 +291,7 @@ d("FilterFactory.ctrl-key: " ..tos(key) .. "; value: " ..tos(data.value) .. "; r
 end
 ]]
 
-        if key ~= nil and type(key) == "string" then
+        if key ~= nil and type(key) == stringType then
             --Check if the value is a control and if the control type matches
             retVar = isAControlOfTypes(data, selectedDropdownFilters)
         end

@@ -110,7 +110,7 @@ function TextButton:setEnabled(value)
 end
 
 function TextButton:insertOnMouseEnterHandler(func, index)
-    if not func or type(func) ~= "function" then return end
+    if not func or type(func) ~= functionType then return end
     local handlerCurrent = self.onMouseEnter
     if handlerCurrent then
         index = index or (#handlerCurrent + 1)
@@ -121,7 +121,7 @@ function TextButton:insertOnMouseEnterHandler(func, index)
 end
 
 function TextButton:insertOnMouseExitHandler(func, index)
-    if not func or type(func) ~= "function" then return end
+    if not func or type(func) ~= functionType then return end
     local handlerCurrent = self.onMouseExit
     if handlerCurrent then
         index = index or (#handlerCurrent + 1)

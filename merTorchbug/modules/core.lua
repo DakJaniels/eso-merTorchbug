@@ -31,7 +31,13 @@ local tsort = table.sort
 
 local osdate = os.date
 
-local stringType = "string"
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
 
 local prefixForLeftKey = tbug.prefixForLeftKey
 local prefixForLeftKeyLen = strlen(prefixForLeftKey)
@@ -53,6 +59,7 @@ local tbug_glookup = tbug.glookup
 local tbug_glookupEnum = tbug.glookupEnum
 local functionsItemLink = tbug.functionsItemLink
 local functionsItemLinkSorted = tbug.functionsItemLinkSorted
+local isPrivateOrProtectedFunction
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -99,7 +106,7 @@ end
 tbug.strSplit = strsplit
 
 local function isSplittableString(str, sepparator)
-    if type(str) ~= "string" then return false, nil end
+    if type(str) ~= stringType then return false, nil end
     local splitTab = strsplit(str, sepparator)
     local isSplittable = (splitTab ~= nil and #splitTab > 1 and true) or false
     return isSplittable, splitTab
@@ -108,7 +115,7 @@ tbug.isSplittableString = isSplittableString
 
 local function findUpperCaseCharsAndReturnOffsetsTab(str)
     local retTab = {}
-    if type(str) ~= "string" then return retTab end
+    if type(str) ~= stringType then return retTab end
 
     --Only repeat the string.find 20 times at max (prevent endless loop)
     local counter = 20
@@ -190,7 +197,7 @@ tbug.invoke = invoke
 
 
 function tbug.isControl(object)
-    return type(object) == "userdata" and type(object.IsControlHidden) == "function"
+    return type(object) == userDataType and type(object.IsControlHidden) == functionType
 end
 
 
@@ -216,7 +223,7 @@ end
 getControlType = tbug.getControlType
 
 local function getGlobalInspectorPanelTabName(tabName)
-    if type(tabName) ~= "string" then return end
+    if type(tabName) ~= stringType then return end
     for k, globalInspectrTabData in ipairs(panelNames) do
         if globalInspectrTabData.key == tabName or globalInspectrTabData.name == tabName then
             return globalInspectrTabData.key
@@ -292,7 +299,7 @@ function tbug.subtable(tab, ...)
     for i = 1, select("#", ...) do
         local key = select(i, ...)
         local sub = tab[key]
-        if type(sub) ~= "table" then
+        if type(sub) ~= tableType then
             sub = {}
             tab[key] = sub
         end
@@ -329,11 +336,11 @@ local typeOrder =
 {
     ["nil"] = 0,
     ["boolean"] = 1,
-    ["number"] = 2,
-    ["string"] = 3,
-    ["table"] = 4,
-    ["userdata"] = 5,
-    ["function"] = 6,
+    [numberType] = 2,
+    [stringType] = 3,
+    [tableType] = 4,
+    [userDataType] = 5,
+    [functionType] = 6,
 }
 
 setmetatable(typeOrder,
@@ -349,8 +356,8 @@ local typeCompare =
 {
     ["nil"] = function(a, b) return false end,
     ["boolean"] = function(a, b) return not a and b end,
-    ["number"] = function(a, b) return a < b end,
-    ["string"] = function(a, b)
+    [numberType] = function(a, b) return a < b end,
+    [stringType] = function(a, b)
         local _, na = a:find(typeComparePattern)
         local _, nb = b:find(typeComparePattern)
         if na ~= nb then
@@ -359,9 +366,9 @@ local typeCompare =
             return a < b
         end
     end,
-    ["table"] = function(a, b) return tostring(a) < tostring(b) end,
-    ["userdata"] = function(a, b) return tostring(a) < tostring(b) end,
-    ["function"] = function(a, b) return tostring(a) < tostring(b) end,
+    [tableType] = function(a, b) return tostring(a) < tostring(b) end,
+    [userDataType] = function(a, b) return tostring(a) < tostring(b) end,
+    [functionType] = function(a, b) return tostring(a) < tostring(b) end,
 }
 
 function tbug.typeSafeLess(a, b)
@@ -407,17 +414,21 @@ local function isObjectOrClassOrLibrary(subject, key)
 
     if not isObject and not isClass and not isLibrary then
         local tv = type(subject)
-        if tv == "table" then
+        if tv == tableType then
             if subject == _G then
-                -- d(">_G table = subject")
+                isPrivateOrProtectedFunction = isPrivateOrProtectedFunction or tbug.isPrivateOrProtectedFunction
+                local isKeyPrivOrProtFunc = isPrivateOrProtectedFunction(subject, key) --do not invoke __index metatables etc. so priv or protected functions raise errors
+--d(">isKeyPrivOrProtFunc: " ..tostring(isKeyPrivOrProtFunc))
+                if isKeyPrivOrProtFunc == true then return false, false, false, nil end
+
                 -- Check if the value is a function before proceeding
                 local value = (key ~= nil and _G[key]) or nil
                 if value == nil then return false, false, false, lookupName end
 
                 local valueType = type(value)
-                if valueType == "function" then
+                if valueType == functionType then
                     return false, false, false, nil
-                elseif valueType == "table" then
+                elseif valueType == tableType then
                     -- Only proceed with rawget if we know it's a table
                     lookupName = tbug_glookup(value) or nil
                     -- d(">>lookupName: " ..tostring(lookupName))
@@ -559,12 +570,12 @@ function tbug.isSupportedInventoryRowPattern(controlName)
 end
 
 function tbug.formatTime(timeStamp)
-    if type(timeStamp) ~= "number" then return end
+    if type(timeStamp) ~= numberType then return end
     return osdate("%F %T.%%03.0f %z", timeStamp / 1000):format(timeStamp % 1000)
 end
 
 function tbug.formatTimestamp(timeStamp)
-    if type(timeStamp) ~= "number" then return end
+    if type(timeStamp) ~= numberType then return end
     return osdate("%c", timeStamp)
 end
 
@@ -623,7 +634,7 @@ local function checkForSpecialDataEntryAsKey(data, isRightKey)
                 if not isOkay then return key end
 
                 local typeReplaceFunc = type(specialReturnValue.replaceFunc)
-                if typeReplaceFunc == "function" then
+                if typeReplaceFunc == functionType then
                     local replaceFunc = specialReturnValue.replaceFunc() --get tbug.formatTime
 --d(">specialReturnValue.replaceFunc CALL")
                     key = replaceFunc(key)
@@ -661,7 +672,7 @@ function tbug.isAControlOfTypes(data, searchedControlTypes)
     local value = data.value
 
     --d("[TBUG]isAControlOfTypes-key: " ..tostring(key) .. ", value: " ..tostring(value))
-    if key == nil or (value == nil or (value ~= nil and (value.SetHidden == nil) or (type(value) ~= "userdata"))) then return false end
+    if key == nil or (value == nil or (value ~= nil and (value.SetHidden == nil) or (type(value) ~= userDataType))) then return false end
 
     if searchedControlTypes == nil then
         --No dropdown filterTypes selected -> Allow all
@@ -702,7 +713,7 @@ local isNotGetParentInvokerNameAttributes = tbug.isNotGetParentInvokerNameAttrib
 function tbug.getRelevantNameForCall(refVar)
     local relevantNameForCallOfRefVar
     tbug_glookup = tbug_glookup or tbug.glookup
-    if isNotGetParentInvokerNameAttributes(refVar) and type(refVar) == "userdata" then
+    if isNotGetParentInvokerNameAttributes(refVar) and type(refVar) == userDataType then
         relevantNameForCallOfRefVar = (refVar.GetName ~= nil and refVar:GetName()) or nil
     end
     --ComboBoxes and other global controls using m_* attributes
@@ -716,7 +727,7 @@ function tbug.getRelevantNameForCall(refVar)
         --Try to get the name by help of global table _G
         relevantNameForCallOfRefVar = tbug_glookup(refVar)
     end
-    if type(relevantNameForCallOfRefVar) ~= "string" then relevantNameForCallOfRefVar = nil end
+    if type(relevantNameForCallOfRefVar) ~= stringType then relevantNameForCallOfRefVar = nil end
     return relevantNameForCallOfRefVar
 end
 
@@ -793,7 +804,7 @@ function tbug.SetTemplate(control, ...)
     if control ~= nil then
         if height ~= nil and control.SetHeight ~= nil then
             control:SetHeight(height)
-        elseif type(control) == "table" then
+        elseif type(control) == tableType then
             for _, ctrl in ipairs(control) do
                 local label = ctrl.label or ctrl
                 if label ~= nil then

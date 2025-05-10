@@ -3,6 +3,14 @@ local tos = tostring
 local type = type
 --local zo_ls = zo_loadstring
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
 local trem = table.remove
 
 local classes = tbug.classes
@@ -34,7 +42,7 @@ local function runLua(command, isScriptsViewer)
     f = zo_ls("return " ..command)
     if f ~= nil then
         local ret = f()
-        if type(ret) == "function" then
+        if type(ret) == functionType then
             d(tostring(ret))
         else
             d(ret)
@@ -53,7 +61,7 @@ end
 local function loadScriptByClick(selfVar, row, data)
     local value = data.value
     local dataEntry = data.dataEntry
-    if value ~= nil and type(value) == "string" and value ~= "" and dataEntry ~= nil and dataEntry.typeId == RT_scriptHistory then
+    if value ~= nil and type(value) == stringType and value ~= "" and dataEntry ~= nil and dataEntry.typeId == RT_scriptHistory then
         --Load the clicked script text to the script multi line edit box
         selfVar:testScript(row, data, row.key, value, false)
     end
@@ -355,7 +363,7 @@ function ScriptsInspectorPanel:initScrollList(control) --called from ObjectInspe
         local tv = type(v)
 
         row.cVal:SetText("")
-        if tv == "string" then
+        if tv == stringType then
             setupValue(row.cVal, tv, v)
         end
         if row.cVal2 then
@@ -382,7 +390,7 @@ end
 --Clicking on a tables index (e.g.) 6 should not open a new tab called 6 but tableName[6] instead
 function ScriptsInspectorPanel:BuildWindowTitleForTableKey(data)
     local winTitle
-    if data.key and type(tonumber(data.key)) == "number" then
+    if data.key and type(tonumber(data.key)) == numberType then
         winTitle = self.inspector.activeTab.label:GetText()
         if winTitle and winTitle ~= "" then
             winTitle = tbug.cleanKey(winTitle)
@@ -459,7 +467,7 @@ function ScriptsInspectorPanel:onRowDoubleClicked(row, data, mouseButton, ctrl, 
                 valueSlider_CancelThrottled(sliderCtrl, 50)
             end
             if self:canEditValue(data) then
-                if typeValue == "string" then
+                if typeValue == stringType then
                     if value ~= "" and data.dataEntry.typeId == RT.SCRIPTHISTORY_TABLE then
                         local chatEditBox = CHAT_SYSTEM.textEntry
                         if chatEditBox ~= nil then

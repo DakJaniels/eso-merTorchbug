@@ -72,6 +72,22 @@ tbug.author =   "merlight, current: Baertram"
 --
 ------------------------------------------------------------------------------------------------------------------------
 
+local stringType = "string"
+local numberType = "number"
+local functionType = "function"
+local tableType = "table"
+local userDataType = "userdata"
+local structType = "struct"
+tbug.types = {}
+local types = tbug.types
+types.string = stringType
+types.number = numberType
+types.func = functionType
+types.table = tableType
+types.userdata = userDataType
+types.struct = structType
+
+
 --Global inspector default and min/max width/height values
 tbug.defaultInspectorWindowWidth        = 760
 tbug.defaultInspectorWindowHeight       = 800

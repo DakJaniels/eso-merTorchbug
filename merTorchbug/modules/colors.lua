@@ -5,6 +5,14 @@ local floor = math.floor
 local strmatch = string.match
 local tonumber = tonumber
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
 tbug.interfaceColorChanges = ZO_CallbackObject:New()
 tbug.makeColorDef = {}
 
@@ -200,7 +208,7 @@ end
 
 function tbug.parseColorDef(...)
 --d("[tbug]parseColorDef " .. tostring(...))
-    if type(...) ~= "string" then
+    if type(...) ~= stringType then
 --d("<type ~= string")
         return ZO_ColorDef:New(...)
     end

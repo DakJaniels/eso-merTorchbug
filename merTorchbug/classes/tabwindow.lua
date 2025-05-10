@@ -18,6 +18,15 @@ local strmatch = string.match
 local strlen = string.len
 local osdate = os.date
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
+
 local panelData = tbug.panelNames
 
 local filterModes = tbug.filterModes
@@ -134,12 +143,12 @@ local function buildTabTitleOrTooltip(tabControl, keyText, isGeneratingTitle)
             --The title is generated?
             if isGeneratingTitle == true then
 
-                --"Mouse over control" tab? titleClean will just contain the "number" of the tab
+                --"Mouse over control" tab? titleClean will just contain the numberType of the tab
                 --which leads to e.g. 1.tableName or 2.tableName.__index in the inspector in the end
                 --> We will exchange the titleClean variable with the lookupName or controlName here for MOC tabs' titles and tooltips
                 if isMOC == true then
                     local titleCleanNumber = ton(tabTitleClean)
-                    if type(titleCleanNumber) == "number" then
+                    if type(titleCleanNumber) == numberType then
                         --1st the lookup name as it could contain the parentSubject's name
                         if lookupName ~= nil and lookupName ~= tabTitleClean then
                             tabControl.titleClean = lookupName
@@ -177,7 +186,7 @@ local function buildTabTitleOrTooltip(tabControl, keyText, isGeneratingTitle)
                             local childName = breadCrumbData.childName
                             isChild = (childName ~= nil and true) or false
 
-                            --titleClean should contain the tab#s title without any trailing [] ("table" indicator)
+                            --titleClean should contain the tab#s title without any trailing [] (tableType indicator)
                             if breadCrumbData.titleClean ~= nil then
                                 if tbug.doDebug then tbug._lastBreadCrumbData = lastBreadCrumbData end
 
@@ -195,9 +204,9 @@ local function buildTabTitleOrTooltip(tabControl, keyText, isGeneratingTitle)
                                     --Was the breadcrumb subject before a table?
                                     -->And the current breadCrumb is just a number -> Then we assume it's a table "index"
                                     if ( not isChild and (
-                                            ( (subjectOfLastBreadCrumbTabControl ~= nil and type(subjectOfLastBreadCrumbTabControl) == "table")
+                                            ( (subjectOfLastBreadCrumbTabControl ~= nil and type(subjectOfLastBreadCrumbTabControl) == tableType)
                                                     or (pKeyStrOfLastBreadCrumbTabControl ~= nil and endsWith(pKeyStrOfLastBreadCrumbTabControl, "[]")) )
-                                                    and type(clickedDataTitleCleanNumber) == "number" )
+                                                    and type(clickedDataTitleCleanNumber) == numberType )
                                     ) then
                                         breadCrumbPartStr = "[" .. clickedDataTitleClean .. "]"
                                         isTableIndex      = true
@@ -206,7 +215,7 @@ local function buildTabTitleOrTooltip(tabControl, keyText, isGeneratingTitle)
                                     end
 
                                 else
-                                    --1st breadcrumb still uses the "number" of the MOC control as titleClean variable
+                                    --1st breadcrumb still uses the numberType of the MOC control as titleClean variable
                                     -->Update it to the name of the control now too
                                     if isMOC == true then
                                         breadCrumbData.titleClean = tabTitleClean
@@ -278,8 +287,8 @@ local function buildTabTitleOrTooltip(tabControl, keyText, isGeneratingTitle)
 
                                     --Get the type of the controlName, which could be "table: 00000260ACED39A8" e.g.
                                     local typeOfControl
-                                    if startsWith(controlName, "table") then
-                                        typeOfControl = "table"
+                                    if startsWith(controlName, tableType) then
+                                        typeOfControl = tableType
                                     end
                                     if typeOfControl ~= nil and typeColors[typeOfControl] ~= nil then
                                         --local r, g, b, a = typeColors[typeOfControl]:UnpackRGBA()
@@ -1216,7 +1225,7 @@ end
 
 
 function TabWindow:getTabControl(keyOrTabControl)
-    if type(keyOrTabControl) == "number" then
+    if type(keyOrTabControl) == numberType then
         return self.tabs[keyOrTabControl]
     else
         return keyOrTabControl
@@ -1224,7 +1233,7 @@ function TabWindow:getTabControl(keyOrTabControl)
 end
 
 function TabWindow:getTabIndex(keyOrTabControl)
-    if type(keyOrTabControl) == "number" then
+    if type(keyOrTabControl) == numberType then
         return keyOrTabControl
     end
     for index, tab in ipairs(self.tabs) do
@@ -1544,7 +1553,7 @@ function TabWindow:selectTab(key, isMOC)
             --d("> found firstInspector")
             local title = firstInspector.title
             if title ~= nil and title.SetText then
-                local keyValue = tabIndex --(type(key) ~= "number" and self:getTabIndex(key)) or key
+                local keyValue = tabIndex --(type(key) ~= numberType and self:getTabIndex(key)) or key
                 local keyText = firstInspector.tabs[keyValue].tabName
                 --Set the title of the selected/active tab
                 local titleText = tabControl.titleText
@@ -1593,14 +1602,14 @@ function TabWindow:selectTab(key, isMOC)
 end
 
 function TabWindow:getSavedVariablesCharacterName(characterIdStr, subjectOfNewTab)
-    --if activeTab.breadCrumbs[1].subject in savedvariables and type(activeTab.subject) == "table" ->
+    --if activeTab.breadCrumbs[1].subject in savedvariables and type(activeTab.subject) == tableType ->
     --loop and if key == 16digits (e.g. 8798292046228569 ) then read subjectTable.$LastCharacterName and show it as cKeyRight
     local activeTab = self.activeTab
     if activeTab == nil then return end
 --d(">found activeTab-characterId: " ..tos(characterIdStr))
     local activeSubject = subjectOfNewTab or activeTab.subject
     if activeSubject == nil then return end
-    if type(activeSubject) ~= "table" then return end
+    if type(activeSubject) ~= tableType then return end
 --d(">found activeTab.subject -> is table")
 
     local breadCrumbs = activeTab.breadCrumbs
@@ -1608,7 +1617,7 @@ function TabWindow:getSavedVariablesCharacterName(characterIdStr, subjectOfNewTa
 --d(">found breadCrumbs")
     local firstBreadCrumbSubject = breadCrumbs[1].subject
     --Check if the breadCrumbs is a table and if it's in the SavedVariables found table
-    if type(firstBreadCrumbSubject) ~= "table" then return end
+    if type(firstBreadCrumbSubject) ~= tableType then return end
     local svFound = tbug.SavedVariablesTabs
     if not svFound[firstBreadCrumbSubject] then return end
 --d(">1st breadcrumb is SavedVariable")
@@ -1857,7 +1866,7 @@ function TabWindow:updateFilterEdit(searchText, searchMode, searchDelay)
     --d(">found active panel's filter editControl!")
 
     local searchTextType = type(searchText)
-    searchText = (searchTextType == "table" and tcon(searchText, " ")) or tos(searchText)
+    searchText = (searchTextType == tableType and tcon(searchText, " ")) or tos(searchText)
     if searchText == nil then return end
 --d(">searchText: " .. tos(searchText))
     editControl:SetText(searchText)

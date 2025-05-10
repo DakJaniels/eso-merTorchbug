@@ -4,7 +4,15 @@ local tos = tostring
 local ton = tonumber
 local strformat = string.format
 
-local libAS = LibAsync1
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
+
+local libAS = LibAsync_NONEXISTING --currently disabled! 20250509
 
 local typeColors = tbug.cache.typeColors
 
@@ -25,6 +33,7 @@ local getControlType = tbug.getControlType
 
 local hideContextMenus = tbug.HideContextMenus
 local valueSlider_CancelThrottled = tbug.valueSlider_CancelThrottled
+local setLastRowClickedData = tbug.setLastRowClickedData
 
 ---------------------------------
 -- class ControlInspectorPanel --
@@ -337,7 +346,7 @@ function ControlInspectorPanel:initScrollList(control)
         local getter = prop.get
         local ok, v
 
-        if type(getter) == "function" then
+        if type(getter) == functionType then
             ok, v = pcall(getter, data, self.subject, self)
         else
             ok, v = pcall(invoke, self.subject, getter)
@@ -351,14 +360,14 @@ function ControlInspectorPanel:initScrollList(control)
         setupValue(row.cKeyLeft, tk, k)
         setupValue(row.cKeyRight, tk, "")
 
-        if tv == "string" then
+        if tv == stringType then
             setupValue(row.cVal, tv, strformat("%q", v))
             if prop.isColor and prop.isColor == true then
                 setupValue(row.cKeyRight, nil, "[COLOR EXAMPLE, click to change]")
                 local currentColor = tbug.parseColorDef(v)
                 row.cKeyRight:SetColor(currentColor:UnpackRGBA())
             end
-        elseif tv == "number" then
+        elseif tv == numberType then
             local enum = prop.enum
             if enum then
                 local nv = tbug_glookupEnum(enum)[v]
@@ -367,7 +376,7 @@ function ControlInspectorPanel:initScrollList(control)
                 end
             end
             setupValue(row.cVal, tv, v)
-        elseif tv == "userdata" then
+        elseif tv == userDataType then
             local ct, ctName = getControlType(v, prop.enum)
             if ct then
                 setupValue(row.cKeyRight, type(ct), ctName)
@@ -402,7 +411,7 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
             self = self,
         }
     end
-    tbug.setLastRowClickedData("control", self, nil, nil)
+    setLastRowClickedData("control", self, nil, nil)
 
     hideContextMenus()
     local sliderCtrl = self.sliderControl
@@ -457,7 +466,7 @@ function ControlInspectorPanel:onRowClicked(row, data, mouseButton, ctrl, alt, s
                 end
             end
 
-            tbug.setLastRowClickedData("control", self, row, data)
+            setLastRowClickedData("control", self, row, data)
             if shift then
                 --object, tabTitle, winTitle, recycleActive, objectParent, currentResultIndex, allResults, data
                 local inspector = tbug_inspect(data.value, title, nil, false, nil, nil, nil, data, nil)
@@ -527,7 +536,7 @@ function ControlInspectorPanel:valueEditConfirmed(editBox, evalResult)
     if editData then
         local setter = editData.prop.set
         local ok, setResult
-        if type(setter) == "function" then
+        if type(setter) == functionType then
             ok, setResult = pcall(setter, editData, self.subject, evalResult)
         else
             ok, setResult = pcall(invoke, self.subject, setter, evalResult)
@@ -550,7 +559,7 @@ function ControlInspectorPanel:valueSliderConfirmed(sliderControl, evalResult)
     if sliderData then
         local setter = sliderData.prop.set
         local ok, setResult
-        if type(setter) == "function" then
+        if type(setter) == functionType then
             ok, setResult = pcall(setter, sliderData, self.subject, ton(evalResult))
         else
             ok, setResult = pcall(invoke, self.subject, setter, ton(evalResult))
