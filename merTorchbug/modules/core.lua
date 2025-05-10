@@ -23,7 +23,7 @@ local rawget = rawget
 local rawset = rawset
 local select = select
 local setmetatable = setmetatable
-local tostring = tostring
+local tos = tostring
 local strupper = string.upper
 local strgmatch = string.gmatch
 local tins = table.insert
@@ -85,7 +85,7 @@ tbug.HideContextMenus = hideContextMenus
 
 local function hideLoadingSpinner(control, doHide)
     if control and control.isGlobalInspector == true then
-        --d("[Tbug]hideLoadingSpinner - isGlobalInspector: true, doHide: " ..tostring(doHide))
+        --d("[Tbug]hideLoadingSpinner - isGlobalInspector: true, doHide: " ..tos(doHide))
         --Show the loading spinner at the global inspector
         local globalInspector = tbug.getGlobalInspector()
         if globalInspector ~= nil then
@@ -126,7 +126,7 @@ local function findUpperCaseCharsAndReturnOffsetsTab(str)
     while counter >= 1 do
         local startPos, endPos
         startPos, endPos = strfind(str, "%u+", foundPos)
-        --d("startPos: " ..tostring(startPos) .. ", endPos: " ..tostring(endPos))
+        --d("startPos: " ..tos(startPos) .. ", endPos: " ..tos(endPos))
         if startPos ~= nil and endPos  ~= nil then
             --Check if the offsets of any uppercase found characters are directly after the before one
             -->Then it's an uppercase string -> Combine those again until next offset of an uppercase char is not current +1
@@ -204,9 +204,9 @@ end
 function tbug.getControlName(control)
     local ok, name = pcall(invoke, control, "GetName")
     if not ok or name == "" then
-        return tostring(control)
+        return tos(control)
     else
-        return tostring(name)
+        return tos(name)
     end
 end
 
@@ -346,7 +346,7 @@ local typeOrder =
 setmetatable(typeOrder,
 {
     __index = function(t, k)
-        df("tbug: typeOrder[%q] undefined", tostring(k))
+        df("tbug: typeOrder[%q] undefined", tos(k))
         return -1
     end
 })
@@ -366,9 +366,9 @@ local typeCompare =
             return a < b
         end
     end,
-    [tableType] = function(a, b) return tostring(a) < tostring(b) end,
-    [userDataType] = function(a, b) return tostring(a) < tostring(b) end,
-    [functionType] = function(a, b) return tostring(a) < tostring(b) end,
+    [tableType] = function(a, b) return tos(a) < tos(b) end,
+    [userDataType] = function(a, b) return tos(a) < tos(b) end,
+    [functionType] = function(a, b) return tos(a) < tos(b) end,
 }
 
 function tbug.typeSafeLess(a, b)
@@ -403,23 +403,25 @@ tbug.isGetStringKey = isGetStringKey
 local function isObjectOrClassOrLibrary(subject, key)
     tbug_glookup = tbug_glookup or tbug.glookup
     local lookupName = (subject ~= nil and tbug_glookup(subject)) or nil
---d(">subject: " .. tostring(subject) ..", key: " .. tostring(key) .. ", lookupName: " ..tostring(lookupName))
+--d(">subject: " .. tos(subject) ..", key: " .. tos(key) .. ", lookupName: " ..tos(lookupName))
     if type(lookupName) ~= stringType then return nil, nil, nil, nil end
 
     local isLibrary = lookupTabLibrary[lookupName] or false
     local isClass = (not isLibrary and lookupTabClass[lookupName]) or false
     local isObject = (not isLibrary and not isClass and lookupTabObject[lookupName]) or false
 
- --d("[tbug]isObjectOrClassOrLibrary: " ..tostring(lookupName) .. ", key: " .. tostring(key) .. ", isLibrary: " .. tostring(isLibrary).. ", isClass: " .. tostring(isClass).. ", isObject: " .. tostring(isObject))
+ --d("[tbug]isObjectOrClassOrLibrary: " ..tos(lookupName) .. ", key: " .. tos(key) .. ", isLibrary: " .. tos(isLibrary).. ", isClass: " .. tos(isClass).. ", isObject: " .. tos(isObject))
 
     if not isObject and not isClass and not isLibrary then
         local tv = type(subject)
         if tv == tableType then
             if subject == _G then
                 isPrivateOrProtectedFunction = isPrivateOrProtectedFunction or tbug.isPrivateOrProtectedFunction
-                local isKeyPrivOrProtFunc = isPrivateOrProtectedFunction(subject, key) --do not invoke __index metatables etc. so priv or protected functions raise errors
---d(">isKeyPrivOrProtFunc: " ..tostring(isKeyPrivOrProtFunc))
-                if isKeyPrivOrProtFunc == true then return false, false, false, nil end
+                local isKeyPrivOrProtFunc = isPrivateOrProtectedFunction(subject, key)
+                if isKeyPrivOrProtFunc == true then
+--d(">isKeyPrivOrProtFunc: " ..tos(isKeyPrivOrProtFunc) .. ", key: " ..tos(key) .. "; subject: " .. tos(subject))
+                    return false, false, false, nil
+                end
 
                 -- Check if the value is a function before proceeding
                 local value = (key ~= nil and _G[key]) or nil
@@ -431,7 +433,7 @@ local function isObjectOrClassOrLibrary(subject, key)
                 elseif valueType == tableType then
                     -- Only proceed with rawget if we know it's a table
                     lookupName = tbug_glookup(value) or nil
-                    -- d(">>lookupName: " ..tostring(lookupName))
+                    -- d(">>lookupName: " ..tos(lookupName))
                     if type(lookupName) ~= stringType then return nil, nil, nil, nil end
 
                     if rawget(value, "__index") then
@@ -604,7 +606,7 @@ function tbug.getZoneInfo(mapTileTextureName, patternToUse)
     local zoneName, subzoneName = regexData[4], regexData[5]
     local zoneId = GetZoneId(GetCurrentMapZoneIndex())
     local parentZoneId = GetParentZoneId(zoneId)
-    d("========================================\n[TBUG.getZoneInfo]\nzone: " ..tostring(zoneName) .. ", subZone: " .. tostring(subzoneName) .. "\nmapTileTexture: " .. tostring(mapTileTextureNameLower).."\nzoneId: " ..tostring(zoneId).. ", parentZoneId: " ..tostring(parentZoneId))
+    d("========================================\n[TBUG.getZoneInfo]\nzone: " ..tos(zoneName) .. ", subZone: " .. tos(subzoneName) .. "\nmapTileTexture: " .. tos(mapTileTextureNameLower).."\nzoneId: " ..tos(zoneId).. ", parentZoneId: " ..tos(parentZoneId))
     return zoneName, subzoneName, mapTileTextureNameLower, zoneId, parentZoneId
 end
 
@@ -613,7 +615,7 @@ end
 local function checkForSpecialDataEntryAsKey(data, isRightKey)
     --Use the left key's text
     local key = data.key
---d("[TBub]checkForSpecialDataEntryAsKey - key: " ..tostring(key) .. ", isRightKey: " ..tostring(isRightKey))
+--d("[TBub]checkForSpecialDataEntryAsKey - key: " ..tos(key) .. ", isRightKey: " ..tos(isRightKey))
     local dataEntry = data.dataEntry
     if isRightKey == nil then
         local typeId = dataEntry.typeId
@@ -630,7 +632,7 @@ local function checkForSpecialDataEntryAsKey(data, isRightKey)
                 filterEnv.data = data
                 local isOkay
                 isOkay, key = pcall(funcToGetStr)
---d(">isOkay: " ..tostring(isOkay) .. ", key: " ..tostring(key))
+--d(">isOkay: " ..tos(isOkay) .. ", key: " ..tos(key))
                 if not isOkay then return key end
 
                 local typeReplaceFunc = type(specialReturnValue.replaceFunc)
@@ -671,7 +673,7 @@ function tbug.isAControlOfTypes(data, searchedControlTypes)
     local key = data.key
     local value = data.value
 
-    --d("[TBUG]isAControlOfTypes-key: " ..tostring(key) .. ", value: " ..tostring(value))
+    --d("[TBUG]isAControlOfTypes-key: " ..tos(key) .. ", value: " ..tos(value))
     if key == nil or (value == nil or (value ~= nil and (value.SetHidden == nil) or (type(value) ~= userDataType))) then return false end
 
     if searchedControlTypes == nil then
@@ -681,7 +683,7 @@ function tbug.isAControlOfTypes(data, searchedControlTypes)
         local typeOfControl, _ = getControlCTType(value)
 --[[
 if TBUG._debugNow == true then
-    d("[TBUG]isAControlOfTypes-type: " ..tostring(typeOfControl))
+    d("[TBUG]isAControlOfTypes-type: " ..tos(typeOfControl))
 end
 ]]
         if typeOfControl ~= nil then
@@ -750,11 +752,11 @@ tbug.checkIfItemLinkFunc = checkIfItemLinkFunc
 local function sortItemLinkFunctions()
     --functions panel: ItemLink functions were found? Sort them by name now
     if not ZO_IsTableEmpty(functionsItemLink) then
---d("[tbug]found itemLink functions: " ..tostring(NonContiguousCount(functionsItemLink)))
+--d("[tbug]found itemLink functions: " ..tos(NonContiguousCount(functionsItemLink)))
         local entryCount = 0
         for k, _ in pairs(functionsItemLink) do
             entryCount = entryCount + 1
---d(">entryCount added: " ..tostring(entryCount) .. " - name: " ..tostring(k))
+--d(">entryCount added: " ..tos(entryCount) .. " - name: " ..tos(k))
             functionsItemLinkSorted[entryCount] = k
         end
         tsort(functionsItemLinkSorted)

@@ -294,7 +294,7 @@ function GlobalInspector:refresh()
             else
                 pushToMasterlist(objects, RT.GENERIC, k, v)
             end
-        elseif tv == tabType then
+        elseif tv == tableType then
             if rawget(v, "__index") then
                 --v[isClassKey] = true
                 local classTabName = tbug_glookup(v)
