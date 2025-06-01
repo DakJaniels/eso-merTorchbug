@@ -520,6 +520,9 @@ local function doRefresh()
     enumBags[BAG_HOUSE_BANK_NINE]   = "BAG_HOUSE_BANK_NINE"
     enumBags[BAG_HOUSE_BANK_TEN]    = "BAG_HOUSE_BANK_TEN"
     enumBags[BAG_COMPANION_WORN]    = "BAG_COMPANION_WORN"
+    if BAG_FURNITURE_VAULT then
+        enumBags[BAG_FURNITURE_VAULT]   = "BAG_FURNITURE_VAULT"
+    end
 
 
     -- some enumerations share prefix with other unrelated constants,
