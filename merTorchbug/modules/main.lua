@@ -677,7 +677,7 @@ local function acquireInspector(inspectorClass, subject, name, reuseActiveInspec
 
     --local useCustomClass = inspectorClass ~= objInsp and true or false
 
-    if tbug.doDebug then d("[tbug]acquireInspector - reuse: " ..tos(reuseActiveInspector) ..", class: " .. tos((inspectorClass ~= nil and (inspectorClass == objInsp and "ObjectInspector") or (inspectorClass == tbug.specialMasterListType2InspectorClass["ScriptsViewer"] and "ScriptsViewer"))) or "n/a") end
+    if tbug.doDebug then d("[tbug]acquireInspector - reuse: " ..(tos(reuseActiveInspector) ..(", class: " .. (tos((inspectorClass ~= nil and (inspectorClass == objInsp and "ObjectInspector") or (inspectorClass == tbug.specialMasterListType2InspectorClass["ScriptsViewer"] and "ScriptsViewer"))) or "n/a")))) end
     if inspectorClass ~= nil and inspectorClass.acquire ~= nil then
 
         local inspector = inspectorClass:acquire(subject, name, reuseActiveInspector, titleName, data)
