@@ -2,6 +2,13 @@ local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 local classes = tbug.classes
 local TextButton = classes.TextButton
 
+local types = tbug.types
+--local stringType = types.string
+--local numberType = types.number
+local functionType = types.func
+--local tableType = types.table
+--local userDataType = types.userdata
+--local structType = types.struct
 
 function TextButton:__init__(parent, name)
     self.control = assert(parent:GetNamedChild(name))
@@ -110,7 +117,7 @@ function TextButton:setEnabled(value)
 end
 
 function TextButton:insertOnMouseEnterHandler(func, index)
-    if not func or type(func) ~= functionType then return end
+    if type(func) ~= functionType then return end
     local handlerCurrent = self.onMouseEnter
     if handlerCurrent then
         index = index or (#handlerCurrent + 1)
@@ -121,7 +128,7 @@ function TextButton:insertOnMouseEnterHandler(func, index)
 end
 
 function TextButton:insertOnMouseExitHandler(func, index)
-    if not func or type(func) ~= functionType then return end
+    if type(func) ~= functionType then return end
     local handlerCurrent = self.onMouseExit
     if handlerCurrent then
         index = index or (#handlerCurrent + 1)

@@ -24,9 +24,9 @@ function tbug.makeColorDef.hsla(h, s, l, a)
     -- https://en.wikipedia.org/wiki/HSL_and_HSV
     -- formulas adjusted to reduce the number of calculations
 
-    local h = tonumber(h) / 30 -- equals 2*H' from wiki
-    local s = tonumber(s) / 100
-    local l = tonumber(l) / 100
+    h = tonumber(h) / 30 -- equals 2*H' from wiki
+    s = tonumber(s) / 100
+    l = tonumber(l) / 100
     local c = s * (0.5 - abs(l - 0.5)) -- equals C/2 from wiki
     local r, g, b
 
@@ -68,9 +68,9 @@ end
 function tbug.makeColorDef.hsva(h, s, v, a)
     -- https://en.wikipedia.org/wiki/HSL_and_HSV
 
-    local h = tonumber(h) / 60
-    local s = tonumber(s) / 100
-    local v = tonumber(v) / 100
+    h = tonumber(h) / 60
+    s = tonumber(s) / 100
+    v = tonumber(v) / 100
     local r, g, b
 
     if h < 1 then
@@ -104,17 +104,17 @@ end
 
 
 function tbug.makeColorDef.rgb(r, g, b)
-    local r = tonumber(r) / 255
-    local g = tonumber(g) / 255
-    local b = tonumber(b) / 255
+    r = tonumber(r) / 255
+    g = tonumber(g) / 255
+    b = tonumber(b) / 255
     return ZO_ColorDef:New(r, g, b)
 end
 
 
 function tbug.makeColorDef.rgba(r, g, b, a)
-    local r = tonumber(r) / 255
-    local g = tonumber(g) / 255
-    local b = tonumber(b) / 255
+    r = tonumber(r) / 255
+    g = tonumber(g) / 255
+    b = tonumber(b) / 255
     return ZO_ColorDef:New(r, g, b, tonumber(a))
 end
 

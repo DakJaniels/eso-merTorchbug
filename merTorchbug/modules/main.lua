@@ -10,6 +10,7 @@ local strfind = string.find
 local strgmatch = string.gmatch
 local strlower = string.lower
 local strsub = string.sub
+local strgsub = string.gsub
 local strlen = string.len
 local zo_ls = zo_loadstring
 local tins = table.insert
@@ -308,7 +309,7 @@ local function cleanTitle(titleText)
                     titleMocTemplatePattern = titleMocTemplatePattern .. "%d*"
                 else
                     --is the character a normal a-zA-Z0-9?
-                    local strRepChar = string.gsub(character, '%w', '')
+                    local strRepChar = (strgsub(character, '%w', ''))
                     --Any non normal character left?
                     if strRepChar ~= "" then
                         titleMocTemplatePattern = titleMocTemplatePattern .. "%" .. character
@@ -327,11 +328,11 @@ local function cleanTitle(titleText)
         titleText = titleText:match(titleMocTemplatePattern)
     end
     --Remove any inheritance info of classes -> metaindices
-    titleText = titleText:gsub(title2ChatCleanUpIndex, '')
+    titleText = (strgsub(titleText, title2ChatCleanUpIndex, ''))
     --Remove »Child:
-    titleText = titleText:gsub(title2ChatCleanUpChild, '')
+    titleText = (strgsub(titleText, title2ChatCleanUpChild, ''))
     --Remove suffix "colored table or userdata" like " <|c86bff9table: 0000020E4A8004F0|r|r>"
-    return titleText:gsub(title2ChatCleanUpTableAndColor, '')
+    return (strgsub(titleText, title2ChatCleanUpTableAndColor, ''))
 end
 tbug.CleanTitle = cleanTitle
 
@@ -473,8 +474,8 @@ local function inspectResults(specialInspectionString, searchData, data, source,
 
         --Else: Show error message
         local err = tos(...)
-        err = err:gsub("(stack traceback)", "|cff3333%1", 1)
-        err = err:gsub("%S+/(%S+%.lua:)", "|cff3333> |c999999%1")
+        err = (strgsub(err, "(stack traceback)", "|cff3333%1", 1))
+        err = (strgsub(err, "%S+/(%S+%.lua:)", "|cff3333> |c999999%1"))
         df("[TBUG]<<<ERROR>>>\n%s", err)
         return
     end
@@ -662,7 +663,7 @@ function tbug.prepareItemLink(control, asPlainText)
     if itemLink and itemLink ~= "" and asPlainText == true then
         --Controls within ESO will show itemLinks "comiled" as clickable item's link. If we only want the ||h* plain text
         --we need to remove the leading | so that it's not recognized as an itemlink anymore
-        local ilPlaintext = itemLink:gsub("^%|", "", 1)
+        local ilPlaintext = (strgsub(itemLink, "^%|", "", 1))
         itemLink = "| " .. ilPlaintext
     end
     return itemLink
@@ -677,7 +678,7 @@ local function acquireInspector(inspectorClass, subject, name, reuseActiveInspec
 
     --local useCustomClass = inspectorClass ~= objInsp and true or false
 
-    if tbug.doDebug then d("[tbug]acquireInspector - reuse: " ..tos(reuseActiveInspector) ..", class: " .. tos((inspectorClass ~= nil and (inspectorClass == objInsp and "ObjectInspector") or (inspectorClass == tbug.specialMasterListType2InspectorClass["ScriptsViewer"] and "ScriptsViewer"))) or "n/a") end
+    if tbug.doDebug then d("[tbug]acquireInspector - reuse: " ..(tos(reuseActiveInspector) ..(", class: " .. (tos((inspectorClass ~= nil and (inspectorClass == objInsp and "ObjectInspector") or (inspectorClass == tbug.specialMasterListType2InspectorClass["ScriptsViewer"] and "ScriptsViewer"))) or "n/a")))) end
     if inspectorClass ~= nil and inspectorClass.acquire ~= nil then
 
         local inspector = inspectorClass:acquire(subject, name, reuseActiveInspector, titleName, data)
@@ -2081,14 +2082,15 @@ function tbug.refreshSavedInspectors()
     end
 end
 
+local function refreshAddOnsAndLibrariesAndSavedVariablesNow()
+    --Update libs and AddOns
+    tbug_refreshAddOnsAndLibraries()
+    --Find and update global SavedVariable tables
+    tbug_refreshSavedVariablesTable()
+end
 
 local function onPlayerActivated(event)
-    if not EVENT_ADD_ONS_LOADED then
-        --Update libs and AddOns
-        tbug_refreshAddOnsAndLibraries()
-        --Find and update global SavedVariable tables
-        tbug_refreshSavedVariablesTable()
-    end
+    refreshAddOnsAndLibrariesAndSavedVariablesNow()
 end
 
 --The possible slash commands in the chat editbox
@@ -2486,30 +2488,15 @@ local function onAddOnLoaded(event, addOnName)
     end)
 
     updateTbugGlobalMouseUpHandler(isMouseRightAndLeftAndSHIFTClickEnabled(true))
-
-    EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated)
 end
-
-
 EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADD_ON_LOADED, onAddOnLoaded)
 
+--Only needed before update 46
 if EVENT_ADD_ONS_LOADED then
     local function onAllAddOnsLoaded()
-        --Update libs and AddOns
-        tbug_refreshAddOnsAndLibraries()
-        --Find and update global SavedVariable tables
-        tbug_refreshSavedVariablesTable()
+        refreshAddOnsAndLibrariesAndSavedVariablesNow()
     end
     EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADD_ONS_LOADED, onAllAddOnsLoaded)
+else
+    EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated)
 end
-
-
-
---[[
---SHIFT+linksklick auf function:
-Beim Klicken auf function (row.DataEntry.data.value) kann per row.index die Zeile (oder row.key der Schlüssel) ermittelt werden.
-Dann müsste man noch zur row herausfinden, in welchem inspector das geklickt wurde. Über den aktuell aktiven Tab in der tabScrollList:
-self.panel.inspector ?
-Und die aktuell inspizierte control über self.panel.subject
-
-]]
