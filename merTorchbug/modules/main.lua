@@ -2083,7 +2083,7 @@ end
 
 
 local function onPlayerActivated(event)
-    if not EVENT_ADD_ONS_LOADED then
+    if IsPlayerActivated() then
         --Update libs and AddOns
         tbug_refreshAddOnsAndLibraries()
         --Find and update global SavedVariable tables
