@@ -308,7 +308,7 @@ local function cleanTitle(titleText)
                     titleMocTemplatePattern = titleMocTemplatePattern .. "%d*"
                 else
                     --is the character a normal a-zA-Z0-9?
-                    local strRepChar = string.gsub(character, '%w', '')
+                    local strRepChar = (string.gsub(character, '%w', ''))
                     --Any non normal character left?
                     if strRepChar ~= "" then
                         titleMocTemplatePattern = titleMocTemplatePattern .. "%" .. character
@@ -327,11 +327,11 @@ local function cleanTitle(titleText)
         titleText = titleText:match(titleMocTemplatePattern)
     end
     --Remove any inheritance info of classes -> metaindices
-    titleText = titleText:gsub(title2ChatCleanUpIndex, '')
+    titleText = (string.gsub(titleText, title2ChatCleanUpIndex, ''))
     --Remove »Child:
-    titleText = titleText:gsub(title2ChatCleanUpChild, '')
+    titleText = (string.gsub(titleText, title2ChatCleanUpChild, ''))
     --Remove suffix "colored table or userdata" like " <|c86bff9table: 0000020E4A8004F0|r|r>"
-    return titleText:gsub(title2ChatCleanUpTableAndColor, '')
+    return (string.gsub(titleText, title2ChatCleanUpTableAndColor, ''))
 end
 tbug.CleanTitle = cleanTitle
 
@@ -473,8 +473,8 @@ local function inspectResults(specialInspectionString, searchData, data, source,
 
         --Else: Show error message
         local err = tos(...)
-        err = err:gsub("(stack traceback)", "|cff3333%1", 1)
-        err = err:gsub("%S+/(%S+%.lua:)", "|cff3333> |c999999%1")
+        err = (string.gsub(err, "(stack traceback)", "|cff3333%1", 1))
+        err = (string.gsub(err, "%S+/(%S+%.lua:)", "|cff3333> |c999999%1"))
         df("[TBUG]<<<ERROR>>>\n%s", err)
         return
     end
@@ -662,7 +662,7 @@ function tbug.prepareItemLink(control, asPlainText)
     if itemLink and itemLink ~= "" and asPlainText == true then
         --Controls within ESO will show itemLinks "comiled" as clickable item's link. If we only want the ||h* plain text
         --we need to remove the leading | so that it's not recognized as an itemlink anymore
-        local ilPlaintext = itemLink:gsub("^%|", "", 1)
+        local ilPlaintext = (string.gsub(itemLink, "^%|", "", 1))
         itemLink = "| " .. ilPlaintext
     end
     return itemLink
