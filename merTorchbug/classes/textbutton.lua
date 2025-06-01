@@ -2,6 +2,13 @@ local tbug = TBUG or SYSTEMS:GetSystem("merTorchbug")
 local classes = tbug.classes
 local TextButton = classes.TextButton
 
+local types = tbug.types
+local stringType = types.string
+local numberType = types.number
+local functionType = types.func
+local tableType = types.table
+local userDataType = types.userdata
+local structType = types.struct
 
 function TextButton:__init__(parent, name)
     self.control = assert(parent:GetNamedChild(name))
