@@ -68,6 +68,8 @@ local panelNames = tbug.panelNames
 local customKeysForInspectorRows = tbug.customKeysForInspectorRows
 local customKey__usedInScenes = customKeysForInspectorRows.usedInScenes
 
+local scrollListFunctionsToHookAndHideControls = tbug.scrollListFunctionsToHookAndHideControls
+
 
 local tbug_glookup = tbug.glookup
 local tbug_getKeyOfObject = tbug.getKeyOfObject
@@ -2456,7 +2458,7 @@ local function onAddOnLoaded(event, addOnName)
         end
     end
 
-    --Scroll lists hooks
+    --Scroll lists hooks - Hide controls of inspctors (e.g. edit box, or slider)
     local function checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
         local panelOfInspector = tbug_inspectorScrollLists[selfScrollList]
         if panelOfInspector ~= nil then
@@ -2469,34 +2471,23 @@ local function onAddOnLoaded(event, addOnName)
         end
     end
 
-    --For the mouse wheel and up/down button press
-    SecurePostHook("ZO_ScrollList_ScrollRelative", function(selfScrollList, delta, onScrollCompleteCallback, animateInstantly)
-        --tbug._selfScrollList = selfScrollList
-        --d("[tbug]ZO_ScrollList_ScrollRelative")
-        checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
-    end)
-    --For the click on the scroll bar control
-    SecurePostHook("ZO_Scroll_ScrollAbsoluteInstantly", function(selfScrollList, value)
-        --tbug._selfScrollList = selfScrollList
-        --d("[tbug]ZO_Scroll_ScrollAbsoluteInstantly")
-        checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
-    end)
-    SecurePostHook("ZO_ScrollList_ScrollAbsolute", function(selfScrollList, value)
-        --tbug._selfScrollList = selfScrollList
-        --d("[tbug]ZO_ScrollList_ScrollAbsolute")
-        checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
-    end)
+    for _, scrollListFuncName in ipairs(scrollListFunctionsToHookAndHideControls) do
+        SecurePostHook(scrollListFuncName, function(selfScrollList, ...)
+            --tbug._selfScrollList = selfScrollList
+            --d("[tbug]" .. tos(scrollListFuncName))
+            checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
+        end)
+
+    end
 
     updateTbugGlobalMouseUpHandler(isMouseRightAndLeftAndSHIFTClickEnabled(true))
 end
 EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADD_ON_LOADED, onAddOnLoaded)
 
---Only needed before update 46
-if EVENT_ADD_ONS_LOADED then
-    local function onAllAddOnsLoaded()
-        refreshAddOnsAndLibrariesAndSavedVariablesNow()
-    end
-    EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADD_ONS_LOADED, onAllAddOnsLoaded)
-else
-    EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated)
+--Update all loaded libraries and addon lists
+local function onAllAddOnsLoaded()
+    refreshAddOnsAndLibrariesAndSavedVariablesNow()
 end
+EM:RegisterForEvent(myNAME .."_AddOnsLoaded", EVENT_ADD_ONS_LOADED, onAllAddOnsLoaded)
+
+--EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated) --not needed 20250629
