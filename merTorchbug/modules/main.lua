@@ -10,6 +10,7 @@ local strfind = string.find
 local strgmatch = string.gmatch
 local strlower = string.lower
 local strsub = string.sub
+local strgsub = string.gsub
 local strlen = string.len
 local zo_ls = zo_loadstring
 local tins = table.insert
@@ -66,6 +67,8 @@ local panelNames = tbug.panelNames
 
 local customKeysForInspectorRows = tbug.customKeysForInspectorRows
 local customKey__usedInScenes = customKeysForInspectorRows.usedInScenes
+
+local scrollListFunctionsToHookAndHideControls = tbug.scrollListFunctionsToHookAndHideControls
 
 
 local tbug_glookup = tbug.glookup
@@ -308,7 +311,7 @@ local function cleanTitle(titleText)
                     titleMocTemplatePattern = titleMocTemplatePattern .. "%d*"
                 else
                     --is the character a normal a-zA-Z0-9?
-                    local strRepChar = (string.gsub(character, '%w', ''))
+                    local strRepChar = (strgsub(character, '%w', ''))
                     --Any non normal character left?
                     if strRepChar ~= "" then
                         titleMocTemplatePattern = titleMocTemplatePattern .. "%" .. character
@@ -327,11 +330,11 @@ local function cleanTitle(titleText)
         titleText = titleText:match(titleMocTemplatePattern)
     end
     --Remove any inheritance info of classes -> metaindices
-    titleText = (string.gsub(titleText, title2ChatCleanUpIndex, ''))
+    titleText = (strgsub(titleText, title2ChatCleanUpIndex, ''))
     --Remove »Child:
-    titleText = (string.gsub(titleText, title2ChatCleanUpChild, ''))
+    titleText = (strgsub(titleText, title2ChatCleanUpChild, ''))
     --Remove suffix "colored table or userdata" like " <|c86bff9table: 0000020E4A8004F0|r|r>"
-    return (string.gsub(titleText, title2ChatCleanUpTableAndColor, ''))
+    return (strgsub(titleText, title2ChatCleanUpTableAndColor, ''))
 end
 tbug.CleanTitle = cleanTitle
 
@@ -473,8 +476,8 @@ local function inspectResults(specialInspectionString, searchData, data, source,
 
         --Else: Show error message
         local err = tos(...)
-        err = (string.gsub(err, "(stack traceback)", "|cff3333%1", 1))
-        err = (string.gsub(err, "%S+/(%S+%.lua:)", "|cff3333> |c999999%1"))
+        err = (strgsub(err, "(stack traceback)", "|cff3333%1", 1))
+        err = (strgsub(err, "%S+/(%S+%.lua:)", "|cff3333> |c999999%1"))
         df("[TBUG]<<<ERROR>>>\n%s", err)
         return
     end
@@ -662,7 +665,7 @@ function tbug.prepareItemLink(control, asPlainText)
     if itemLink and itemLink ~= "" and asPlainText == true then
         --Controls within ESO will show itemLinks "comiled" as clickable item's link. If we only want the ||h* plain text
         --we need to remove the leading | so that it's not recognized as an itemlink anymore
-        local ilPlaintext = (string.gsub(itemLink, "^%|", "", 1))
+        local ilPlaintext = (strgsub(itemLink, "^%|", "", 1))
         itemLink = "| " .. ilPlaintext
     end
     return itemLink
@@ -2081,14 +2084,15 @@ function tbug.refreshSavedInspectors()
     end
 end
 
+local function refreshAddOnsAndLibrariesAndSavedVariablesNow()
+    --Update libs and AddOns
+    tbug_refreshAddOnsAndLibraries()
+    --Find and update global SavedVariable tables
+    tbug_refreshSavedVariablesTable()
+end
 
 local function onPlayerActivated(event)
-    if IsPlayerActivated() then
-        --Update libs and AddOns
-        tbug_refreshAddOnsAndLibraries()
-        --Find and update global SavedVariable tables
-        tbug_refreshSavedVariablesTable()
-    end
+    refreshAddOnsAndLibrariesAndSavedVariablesNow()
 end
 
 --The possible slash commands in the chat editbox
@@ -2454,7 +2458,7 @@ local function onAddOnLoaded(event, addOnName)
         end
     end
 
-    --Scroll lists hooks
+    --Scroll lists hooks - Hide controls of inspctors (e.g. edit box, or slider)
     local function checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
         local panelOfInspector = tbug_inspectorScrollLists[selfScrollList]
         if panelOfInspector ~= nil then
@@ -2467,49 +2471,23 @@ local function onAddOnLoaded(event, addOnName)
         end
     end
 
-    --For the mouse wheel and up/down button press
-    SecurePostHook("ZO_ScrollList_ScrollRelative", function(selfScrollList, delta, onScrollCompleteCallback, animateInstantly)
-        --tbug._selfScrollList = selfScrollList
-        --d("[tbug]ZO_ScrollList_ScrollRelative")
-        checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
-    end)
-    --For the click on the scroll bar control
-    SecurePostHook("ZO_Scroll_ScrollAbsoluteInstantly", function(selfScrollList, value)
-        --tbug._selfScrollList = selfScrollList
-        --d("[tbug]ZO_Scroll_ScrollAbsoluteInstantly")
-        checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
-    end)
-    SecurePostHook("ZO_ScrollList_ScrollAbsolute", function(selfScrollList, value)
-        --tbug._selfScrollList = selfScrollList
-        --d("[tbug]ZO_ScrollList_ScrollAbsolute")
-        checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
-    end)
+    for _, scrollListFuncName in ipairs(scrollListFunctionsToHookAndHideControls) do
+        SecurePostHook(scrollListFuncName, function(selfScrollList, ...)
+            --tbug._selfScrollList = selfScrollList
+            --d("[tbug]" .. tos(scrollListFuncName))
+            checkForInspectorPanelScrollBarScrolledAndHideControls(selfScrollList)
+        end)
+
+    end
 
     updateTbugGlobalMouseUpHandler(isMouseRightAndLeftAndSHIFTClickEnabled(true))
-
-    EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated)
 end
-
-
 EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADD_ON_LOADED, onAddOnLoaded)
 
-if EVENT_ADD_ONS_LOADED then
-    local function onAllAddOnsLoaded()
-        --Update libs and AddOns
-        tbug_refreshAddOnsAndLibraries()
-        --Find and update global SavedVariable tables
-        tbug_refreshSavedVariablesTable()
-    end
-    EM:RegisterForEvent(myNAME .."_AddOnLoaded", EVENT_ADD_ONS_LOADED, onAllAddOnsLoaded)
+--Update all loaded libraries and addon lists
+local function onAllAddOnsLoaded()
+    refreshAddOnsAndLibrariesAndSavedVariablesNow()
 end
+EM:RegisterForEvent(myNAME .."_AddOnsLoaded", EVENT_ADD_ONS_LOADED, onAllAddOnsLoaded)
 
-
-
---[[
---SHIFT+linksklick auf function:
-Beim Klicken auf function (row.DataEntry.data.value) kann per row.index die Zeile (oder row.key der Schlüssel) ermittelt werden.
-Dann müsste man noch zur row herausfinden, in welchem inspector das geklickt wurde. Über den aktuell aktiven Tab in der tabScrollList:
-self.panel.inspector ?
-Und die aktuell inspizierte control über self.panel.subject
-
-]]
+--EM:RegisterForEvent(myNAME.."_AddOnActivated", EVENT_PLAYER_ACTIVATED, onPlayerActivated) --not needed 20250629
