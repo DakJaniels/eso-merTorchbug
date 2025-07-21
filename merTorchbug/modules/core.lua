@@ -195,9 +195,19 @@ local function invoke(object, method, ...)
 end
 tbug.invoke = invoke
 
-
 function tbug.isControl(object)
-    return type(object) == userDataType and type(object.IsControlHidden) == functionType
+	if type(object) ~= userDataType then
+		return false
+	end
+
+	local ok, result = pcall(function()
+		return object.IsControlHidden
+	end)
+	if not ok then
+		return false
+	end
+
+	return type(result) == functionType
 end
 
 
