@@ -11,7 +11,8 @@
 ## AddOnVersion: 0175
 ## Description: |t32:32:/esoui/art/icons/crafting_fishing_torchbug.dds|t is a developer tool for inspection and on-the-fly modification of Lua environment, tables and controls.
 ## SavedVariables: merTorchbugSavedVars merTorchbugSavedVars_Dumps
-## OptionalDependsOn: LibAsync>=30002 LibScrollableMenu>=020306 LibStub ControlOutline>=010700 DebugLogViewer>=697
+## DependsOn: LibAsync>=30002 LibScrollableMenu>=020306
+## OptionalDependsOn: LibStub ControlOutline>=010700 DebugLogViewer>=697
 
 modules/_constants.lua
 modules/core.lua
