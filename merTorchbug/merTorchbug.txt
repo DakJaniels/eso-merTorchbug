@@ -6,12 +6,12 @@
 
 ## Title: |ce5ca5cMer|r Torchbug|t32:32:merTorchbug/tb.dds|t
 ## Author: Merlight, Baertram
-## APIVersion: 101046 101047
+## APIVersion: 101048 101049
 ## Version: 1.75
 ## AddOnVersion: 0175
 ## Description: |t32:32:/esoui/art/icons/crafting_fishing_torchbug.dds|t is a developer tool for inspection and on-the-fly modification of Lua environment, tables and controls.
 ## SavedVariables: merTorchbugSavedVars merTorchbugSavedVars_Dumps
-## OptionalDependsOn: LibAsync>=30002 LibScrollableMenu>=020306 LibStub ControlOutline>=010700 DebugLogViewer>=697
+## OptionalDependsOn: LibAsync LibScrollableMenu LibStub ControlOutline DebugLogViewer
 
 modules/_constants.lua
 modules/core.lua

@@ -51,7 +51,7 @@ tbug.author =   "merlight, Baertram"
 --->local lookupEventName = tbug.Events.eventList
 
 
---------------------------------------- Version 1.75 - Baertram (last updated 2025-01-12)
+--------------------------------------- Version 1.75 - Baertram (last updated 2026-02-05)
 ---- [Added]
 --Libraries detection via "lib" prefix
 --Added context menu enties to the events e/E char at the title bar (and at the event inspector rows):
@@ -61,7 +61,7 @@ tbug.author =   "merlight, Baertram"
 --Objects, class & libs detection at context menu so one can send <object or lib>:<functionName> or <.variableName> to scripts tab
 --ScriptsViewer inspector: Created new ScriptsViewer inspector(s) able to run scripts in a separate window
 --Added ScriptsViewer contextmenu to saved script history to open it in a new ScriptsViewer inspector
-
+--More enumerations (new bagIds e.g.)
 
 ---- [Fixed]
 --Some XML fixed height and width values versus resizeToFitDescendents ESO log errors
@@ -74,6 +74,7 @@ tbug.author =   "merlight, Baertram"
 
 local stringType = "string"
 local numberType = "number"
+local booleanType = "boolean"
 local functionType = "function"
 local tableType = "table"
 local userDataType = "userdata"
@@ -82,6 +83,7 @@ tbug.types = {}
 local types = tbug.types
 types.string = stringType
 types.number = numberType
+types.boolean = booleanType
 types.func = functionType
 types.table = tableType
 types.userdata = userDataType
@@ -385,6 +387,7 @@ tbug.titlePatterns = {
 --and removed as the panel is destroyed
 tbug.inspectorScrollLists = {}
 
+--Functions to hook into and hide merTbug inspector row controls, e.g. the edit or slider control
 local scrollListFunctionsToHookAndHideControls = {
     "ZO_ScrollList_ScrollRelative", "ZO_Scroll_ScrollAbsoluteInstantly", "ZO_ScrollList_ScrollAbsolute",
 }

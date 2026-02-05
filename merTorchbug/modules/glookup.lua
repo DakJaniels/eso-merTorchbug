@@ -402,17 +402,18 @@ local function doRefresh()
         end
     end
 
+    --Enumerations for right click contextMenus to choose from
     local enumAnchorPosition = g_enums[keyToEnums["point"]]
     enumAnchorPosition[BOTTOM] = "BOTTOM"
     enumAnchorPosition[BOTTOMLEFT] = "BOTTOMLEFT"
     enumAnchorPosition[BOTTOMRIGHT] = "BOTTOMRIGHT"
     enumAnchorPosition[CENTER] = "CENTER"
     enumAnchorPosition[LEFT] = "LEFT"
-    enumAnchorPosition[NONE] = "NONE"
     enumAnchorPosition[RIGHT] = "RIGHT"
     enumAnchorPosition[TOP] = "TOP"
     enumAnchorPosition[TOPLEFT] = "TOPLEFT"
     enumAnchorPosition[TOPRIGHT] = "TOPRIGHT"
+    --enumAnchorPosition[NONE] = "NONE"
 
     local enumActorCategories = g_enums[keyToEnums["actorCategories"]] --GameplayActorCategories
     enumActorCategories[GAMEPLAY_ACTOR_CATEGORY_PLAYER]  = "GAMEPLAY_ACTOR_CATEGORY_PLAYER"
@@ -447,6 +448,7 @@ local function doRefresh()
     enumControlTypes[CT_TEXTURECOMPOSITE] = "CT_TEXTURECOMPOSITE"
     enumControlTypes[CT_POLYGON] = "CT_POLYGON"
     enumControlTypes[CT_VECTOR] = "CT_VECTOR"
+    enumControlTypes[CT_CANVAS] = "CT_CANVAS"
 
     local enumDrawLayer = g_enums[keyToEnums["layer"]]
     enumDrawLayer[DL_BACKGROUND]    = "DL_BACKGROUND"
@@ -520,9 +522,8 @@ local function doRefresh()
     enumBags[BAG_HOUSE_BANK_NINE]   = "BAG_HOUSE_BANK_NINE"
     enumBags[BAG_HOUSE_BANK_TEN]    = "BAG_HOUSE_BANK_TEN"
     enumBags[BAG_COMPANION_WORN]    = "BAG_COMPANION_WORN"
-    if BAG_FURNITURE_VAULT then
-        enumBags[BAG_FURNITURE_VAULT]   = "BAG_FURNITURE_VAULT"
-    end
+    enumBags[BAG_FURNITURE_VAULT]   = "BAG_FURNITURE_VAULT"
+    enumBags[BAG_VENGEANCE]         = "BAG_VENGEANCE"
 
 
     -- some enumerations share prefix with other unrelated constants,

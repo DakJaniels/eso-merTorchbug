@@ -18,6 +18,7 @@ local numberType = types.number
 local functionType = types.func
 local tableType = types.table
 local userDataType = types.userdata
+local booleanType = types.boolean
 local structType = types.struct
 
 local searchURLs              = tbug.searchURLs
@@ -76,7 +77,7 @@ local getterOrSetterStr = "%s()"
 local getterOrSetterWithControlStr = "%s:%s()"
 
 local searchActionsStr = "Search actions"
-local externalUrlGitHubSearchString = "Search %q in ESOUI sources at \'GitHub\'"
+local externalUrlGitHubSearchString = "Search %q on \'GitHub\' (ESOUI)"
 
 local checkForSpecialDataEntryAsKey = tbug.checkForSpecialDataEntryAsKey
 
@@ -1531,15 +1532,26 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 local keyStr = key
                 if keyType == numberType then
                     keyStr = p_data.keyText
-                        or (
-                                (isSpecialTableKeySoUseKeyNumber and valueIsTable == true and tos(key))
-                            or  (not isSpecialTableKeySoUseKeyNumber and (
-                                    (p_data.value ~= nil and (
-                                            ( valueIsTable == true and (p_data.value.name or (p_data.value._timeStamp ~= nil and tbug.formatTimestamp(p_data.value._timeStamp))))
-                                            or (not valueIsTable and p_data.value) )
-                                    )  )
-                                )
-                    ) or tos(key)
+                    if keyStr == nil then
+                        keyStr = ((isSpecialTableKeySoUseKeyNumber == true and valueIsTable == true) and tos(key)) or nil
+                    end
+                    if keyStr == nil then
+                        if not isSpecialTableKeySoUseKeyNumber then
+                            --local dataValue = p_data.value
+                            if currentValue ~= nil then
+                                if valueIsTable == true then
+                                    keyStr = (currentValue.name or (currentValue._timeStamp ~= nil and tbug.formatTimestamp(currentValue._timeStamp))) or nil
+                                else
+                                    if valType ~= booleanType then
+                                        keyStr = currentValue
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    if keyStr == nil then
+                        keyStr = tos(key)
+                    end
                 end
 
                 tins(searchSubmenu,
