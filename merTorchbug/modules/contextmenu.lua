@@ -26,7 +26,7 @@ local tbug_GetDefaultTemplate = tbug.GetDefaultTemplate
 local tbug_GetTemplate        = tbug.GetTemplate
 --local tbug_getControlName     = tbug.getControlName
 local tbug_glookup
-
+local tbugScriptViewerValueForNewWindow = tbug.ScriptsViewer._name
 
 --LibScrollableMenu
 local lsm = LibScrollableMenu
@@ -367,11 +367,13 @@ end
 local searchExternalURL = tbug.searchExternalURL
 
 
+
 --Show the "Scripts" tab and put the key/value, and if it's a function an opening and closing () behind it, to the "test script" editbox
-local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, isClassOrObjectOrLibrary, showInNewTab, scriptStrIsValue)
+local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, isClassOrObjectOrLibrary, showInNewTab, scriptStrIsValue, noDirectExecute)
     if not p_self or not p_row or not p_data or isKey == nil then return end
     isFunctionsDataType = isFunctionsDataType or false
     isClassOrObjectOrLibrary = isClassOrObjectOrLibrary or false
+    noDirectExecute = noDirectExecute or false
     if not showInNewTab then
         showInNewTab = IsShiftKeyDown()
     end
@@ -397,6 +399,7 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
             --Value
             scriptStr = tos(value)
         end
+
         if tbug.doDebug then d("[TBUG]useForScript - scriptStr: " .. tos(scriptStr) .. "; isKey: " .. tos(isKey) .. "; valueType: " .. tos(type(value)) ..", showInNewTab: " ..tos(showInNewTab)) end
         if scriptStr == "" then return end
 
@@ -434,17 +437,31 @@ local function useForScript(p_self, p_row, p_data, isKey, isFunctionsDataType, i
     end
     --d("[tbug]useForScript - scriptStr: " .. tos(scriptStr) .. ", isFunction: " .. tos(isFunctionsDataType))
 
-    globalInspector = globalInspector or tbug.getGlobalInspector()
-    local panels = globalInspector ~= nil and globalInspector.panels
-    if panels == nil then return end
-    if panels.scriptHistory == nil then return end
-    --d(">found scriptHistory panel")
-
     --Show the global inspector scripts tab, or open a new inspector with scripts viewer window
     if showInNewTab == true then
-        local tabTitle = scriptStrIsValue and scriptStr or nil
-        tbug_slashCommandWrapper(scriptStr, nil, true, { specialMasterlistType = "ScriptsViewer", title = tabTitle })
+        local tabTitle = (scriptStrIsValue and scriptStr) or nil
+        if noDirectExecute then
+            if p_data.scriptStr == nil then p_data.scriptStr = scriptStr end
+            if p_data.value == tbugScriptViewerValueForNewWindow then
+                --Increase the ScriptsViewer shown counter
+                tbug.ScriptsViewer.numScriptViewersShown = tbug.ScriptsViewer.numScriptViewersShown + 1
+                tabTitle = "ScriptsViewer#" .. tos(tbug.ScriptsViewer.numScriptViewersShown)
+            end
+        end
+
+        tbug_slashCommandWrapper(scriptStr, nil, true, {
+            specialMasterlistType = "ScriptsViewer",
+            title = tabTitle,
+            noDirectExecute = noDirectExecute,
+            scriptStr = (noDirectExecute == true and p_data.scriptStr) or nil, --We try to open a new ScriptsInspector windw from slash command/keybind -> Pass through the scriptStr for the editbox
+        })
     else
+        globalInspector = globalInspector or tbug.getGlobalInspector()
+        local panels = globalInspector ~= nil and globalInspector.panels
+        if panels == nil then return end
+        if panels.scriptHistory == nil then return end
+        --d(">found scriptHistory panel")
+
         tbug_slashCommandWrapper("scripts", nil, false, nil)
         --d(">>tab selected - set script to editbox now")
         --Set the script text
@@ -1521,7 +1538,8 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                 --if not wasAddedScriptsContextMenus or isScriptHistoryDataType then
                 if rowActionsSuffix == "" or isScriptHistoryDataType then
                     AddCustomScrollableMenuEntry("Show in ScriptViewer", function()
-                        useForScript(p_self, p_row, p_data, (not isScriptHistoryDataType and true) or false, isFunctionsDataType, true, true, isScriptHistoryDataType) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
+                                    --p_self, p_row, p_data, isKey,                                          isFunctionsDataType, isClassOrObjectOrLibrary, showInNewTab, scriptStrIsValue, noDirectExecute
+                        useForScript(p_self, p_row, p_data, (not isScriptHistoryDataType and true) or false, isFunctionsDataType, true, true, isScriptHistoryDataType, true) end, LSM_ENTRY_TYPE_NORMAL, nil, nil
                     )
                 end
 

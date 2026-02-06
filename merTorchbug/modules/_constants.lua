@@ -50,18 +50,19 @@ tbug.author =   "merlight, Baertram"
 --EVENT_DISPLAY_ACTIVE_COMBAT_TIP 131531 shows as EVENT_TUTORIAL_TRIGGER_COMPLETED 131535 in the (saved) events data? _eventName is wrong, _eventId is correct. Name and id do not match?
 --->local lookupEventName = tbug.Events.eventList
 
-
 --------------------------------------- Version 1.75 - Baertram (last updated 2026-02-05)
 ---- [Added]
 --Libraries detection via "lib" prefix
---Added context menu enties to the events e/E char at the title bar (and at the event inspector rows):
+--More enumerations (new bagIds e.g.)
+--Added context menu enties to the events e/E button at the GlobalInspector title bar (and at the event inspector rows):
 ---Start/Stop event tracking
 ---Setting to automatically start the event tracking as addon loads (button to enable that and reload the UI now)
 ---Save and load events tracked. Load shows them in an extra inspector using the eventviewer layout so you can compare them to current event viewer's tracked events
 --Objects, class & libs detection at context menu so one can send <object or lib>:<functionName> or <.variableName> to scripts tab
---ScriptsViewer inspector: Created new ScriptsViewer inspector(s) able to run scripts in a separate window
---Added ScriptsViewer contextmenu to saved script history to open it in a new ScriptsViewer inspector
---More enumerations (new bagIds e.g.)
+--ScriptsViewer inspector: Created new ScriptsViewer inspector(s) able to run scripts in a separate window. Open the ScriptsViewer via contextMenu on a variable/table.
+---ScriptsViewer UI got a button, which clicked shows a list of saved scripts from the global scripts tab, that you can load
+---Added ScriptsViewer contextmenu to saved script history to open it in a new ScriptsViewer inspector
+---Added keybind and slash command /tbugsv <scriptText> (ot /tbsv) to open a new ScriptsViewer
 
 ---- [Fixed]
 --Some XML fixed height and width values versus resizeToFitDescendents ESO log errors
@@ -69,7 +70,7 @@ tbug.author =   "merlight, Baertram"
 --Scrolling tabs won't resize to invisibly small anymore if window size is changed to very small (or below 0), or if many tabs added
 --Fixed delayed calls to slash commands to accept negative values
 
---
+
 ------------------------------------------------------------------------------------------------------------------------
 
 local stringType = "string"
@@ -252,6 +253,10 @@ tbug.panelClassNames = {
     ["savedInspectors"] = dummy, --Used for the GlobalInspector -> "SavedInsp" tab
 }
 
+--Table for the slashCommand/keybind to open an empty ScriptInspector -> Will use this as object to pass in and open the inspector for,
+--and the arguments passed in from the SlashCommand will just be in the scriptInspector's editBox then (transfered there via the data table)
+tbug.ScriptsViewer = { _name = "TBUG.ScriptsViewer", numScriptViewersShown = 0 }
+
 --The panel names for the global inspector tabs: Used at "GlobalInspector:makePanel"
 --Index of the table = tab's index
 --Key:  the tab's internal key value
@@ -292,6 +297,11 @@ local panelNames = {
 tbug.panelNames = panelNames
 tbug.panelCount = NonContiguousCount(panelNames)
 tbug.filterComboboxFilterTypesPerPanel = {} --for the filter comboBox dropdown entries, see file glookup.lua function doRefresh for the fill
+
+--Slash commands which should open a new window
+tbug.openNewWindowSlashCommands = {
+     ["scriptsViewer"] = true
+}
 
 --The string prefix for special /tb <specialInspectTabTitle> calls
 local specialInspectTabTitles = {

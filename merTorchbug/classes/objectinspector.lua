@@ -34,6 +34,7 @@ local editConfirmAllowedTypes = {
     [RT.SCRIPTHISTORY_TABLE] = true,
     [RT.SAVEDINSPECTORS_TABLE] = true,
 }
+local tbugScriptViewerValueForNewWindow = tbug.ScriptsViewer._name
 
 --------------------------------
 local function roundDecimalToPlace(decimal, place)
@@ -543,7 +544,7 @@ ObjectInspector._nextObjectId = 1
 ObjectInspector._templateName = "tbugTabWindow"
 
 ------------------------------------------------------------------------------------------------------------------------
-function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName, data)
+function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName, data) --e.g. ScriptsViewerClass:acquire
     local lastActive = (Class ~= nil and Class._lastActive ~= nil and true) or false
     local lastActiveSubject = (lastActive == true and Class._lastActive.subject ~= nil and true) or false
 
@@ -583,12 +584,12 @@ function ObjectInspector.acquire(Class, subject, name, recycleActive, titleName,
     if not recycleActive and inspector and not overrideInspectorCreation then
         if customClassUsed then
             if not inspector.usesCustomInspectorClass then
-                if tbug.doDebug then d(">Found inspector does not use customClass, but we want to show one!") end
+                if tbug.doDebug then d(">1Found inspector does not use customClass, but we want to show one!") end
                 overrideInspectorCreation = true
             end
         else
             if inspector.usesCustomInspectorClass then
-                if tbug.doDebug then d(">Found inspector does use customClass, but we do not want to show one!") end
+                if tbug.doDebug then d(">2Found inspector does use customClass, but we do not want to show one!") end
                 overrideInspectorCreation = true
             end
         end
@@ -729,7 +730,8 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
             if isScriptsInspector == true or isScriptsViewer == true then
                 local panel = (self.activeTab ~= nil and self.activeTab.panel) or nil
                 if panel then
-                    panel:testScript(nil, nil, nil, title, false)
+--d("[TBUG]TestScript now1")
+                    panel:testScript(nil, nil, nil, (data ~= nil and (data.scriptStr or "")) or title, false)
                 end
             end
             return tabControlLoop
@@ -804,7 +806,8 @@ function ObjectInspector:openTabFor(object, title, inspectorTitle, useInspectorT
         self:selectTab(tabControl, isMOC)
 
         if isScriptsInspector == true or isScriptsViewer == true then
-            panel:testScript(nil, nil, nil, title, false)
+--d("[TBUG]TestScript now2")
+            panel:testScript(nil, nil, nil, (data ~= nil and (data.scriptStr or "")) or title, false)
         end
     --else
         --d("[TBUG]ERROR - panel not created - ObjectInspector:openTabFor - title: " .. tos(title))
@@ -828,9 +831,18 @@ function ObjectInspector:refresh(isMOC, openedFromExistingInspector, wasClickedA
     self:openTabFor(self.subject, self.subjectName, self.titleName, wasClickedAtGlobalInspector, data, isMOC, openedFromExistingInspector)
 end
 
-
 function ObjectInspector:release()
-    --d("[tbug]ObjectInspector:release")
+    local isScriptsViewer = (self.isScriptsViewer ~= nil and self.isScriptsViewer) or false
+--d("[tbug]ObjectInspector:release - isScriptsViewer: " .. tos(isScriptsViewer) .. ", currentlyShown: " .. tos(tbug.ScriptsViewer.numScriptViewersShown))
+    if isScriptsViewer == true then
+        --Check if the title is starting with ScriptsViewer# (was assigned to TBUG.ScriptsViewer)
+        if self.titleName == tbugScriptViewerValueForNewWindow then
+            --Decrease the ScriptsViewer shown counter
+            tbug.ScriptsViewer.numScriptViewersShown = zo_clamp(tbug.ScriptsViewer.numScriptViewersShown - 1, 0, 999)
+--d("<closing ScriptsViewer tab with TBUG.ScriptsViewer - new count opened: " ..tos(tbug.ScriptsViewer.numScriptViewersShown))
+        end
+    end
+
     if self.subject then
         self._activeObjects[self.subject] = nil
         --self.subjectsToPanel[self.subject] = nil
@@ -840,4 +852,6 @@ function ObjectInspector:release()
     self._parentSubject = nil
     self.control:SetHidden(true)
     self:removeAllTabs()
+
+
 end

@@ -176,14 +176,14 @@ end
 local TableInspectorPanel = classes.TableInspectorPanel
 local ObjectInspectorPanel = classes.ObjectInspectorPanel
 
+--ScriptsInspectorPanel
 local ScriptsInspectorPanel = classes.ScriptsInspectorPanel .. TableInspectorPanel
 ScriptsInspectorPanel.CONTROL_PREFIX = "$(parent)PanelScripts"
 ScriptsInspectorPanel.TEMPLATE_NAME = "tbugScriptsInspectorPanel"
 --Update the table tbug.panelClassNames with the ScriptInspectorPanel class
 tbug.panelClassNames["scriptInspector"] = ScriptsInspectorPanel
 
-
-local ObjectInspectorPanel = classes.ObjectInspectorPanel
+--ScriptsViewerPanel
 local ScriptsViewerPanel = classes.ScriptsViewerPanel .. ScriptsInspectorPanel
 ScriptsViewerPanel.CONTROL_PREFIX = "$(parent)PanelScriptsViewer"
 ScriptsViewerPanel.TEMPLATE_NAME = "tbugScriptsViewerPanel"
@@ -213,13 +213,14 @@ function ScriptsInspectorPanel:__init__(control, ...)
         if currentScriptEditBoxText == nil or currentScriptEditBoxText == "" then return end
         tbug_addScriptHistory(currentScriptEditBoxText, isScriptsViewer)
     end
-    local selfVar = self
     self.scriptSaveButton:SetHandler("OnClicked", function(buttonObj) onSaveScriptButtonClicked(buttonObj, false) end)
+
+    --local selfVar = self
 end
 
 
 function ScriptsViewerPanel:__init__(control, ...)
-    --d("[TBUG]ScriptsViewerPanel:__init__")
+--d("[TBUG]ScriptsViewerPanel:__init__ - shownCount: " .. tos(tbug.ScriptsViewer.numScriptViewersShown))
     TableInspectorPanel.__init__(self, control, ...)
 
     self.isScriptsViewer = true
@@ -255,6 +256,25 @@ function ScriptsViewerPanel:__init__(control, ...)
         tbug_addScriptHistory(currentScriptEditBoxText, isScriptsViewer)
     end
     self.scriptSaveButton:SetHandler("OnClicked", function(buttonObj) onSaveScriptButtonClicked(buttonObj, selfVar.isScriptsViewer) end)
+
+    self.savedScriptsButton = GetControl(mainControl, "SavedScriptsButton") --tbugGlobalInspectorPanelScripts1SavedScriptsButton
+    self.savedScriptsButton:SetText("|t24:24:esoui/art/worldmap/mapnav_uparrow_up.dds|t")
+    local function onSavedScriptsButtonClicked(selfButton, isScriptsViewer)
+        --todo 20260206 ShowCustomScrollableMenu here with all saved scripts as entries, selecting one will put it to the editBox
+        ClearCustomScrollableMenu()
+        local svScriptsHist = tbug.savedVars.scriptHistory
+        for idx, scriptHistoryEntry in ipairs(svScriptsHist) do
+            local entryName = "#" .. tos(idx) .. ": " .. scriptHistoryEntry
+            AddCustomScrollableMenuEntry(entryName, function(comboBox, itemName, item, selectionChanged, oldItem)
+               self.scriptEditBox:SetText(scriptHistoryEntry)
+            end, nil, nil, {
+                tooltip = entryName,
+            })
+        end
+        ShowCustomScrollableMenu(selfButton, { visibleRowsDropdown = 20, maxDropdownWidth = 800, enableFilter = true, headerCollapsible = true })
+    end
+    self.savedScriptsButton:SetHandler("OnClicked", function(buttonObj) onSavedScriptsButtonClicked(buttonObj, false) end)
+    self.savedScriptsButton:SetHidden(false)
 end
 
 

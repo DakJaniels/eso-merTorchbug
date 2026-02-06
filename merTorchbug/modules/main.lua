@@ -48,6 +48,7 @@ local title2ChatCleanUpIndex =              titlePatterns.title2ChatCleanUpIndex
 local title2ChatCleanUpChild =              titlePatterns.title2ChatCleanUpChild
 local title2ChatCleanUpTableAndColor =      titlePatterns.title2ChatCleanUpTableAndColor
 local specialInspectTabTitles  = tbug.specialInspectTabTitles
+local tbugScriptViewerValueForNewWindow = tbug.ScriptsViewer._name
 
 local specialLibraryGlobalVarNames = tbug.specialLibraryGlobalVarNames
 local lookupTabLibrary = tbug.LookupTabs["library"]
@@ -64,6 +65,7 @@ local endsWith = tbug.endsWith
 local classes = tbug.classes
 local filterModes = tbug.filterModes
 local panelNames = tbug.panelNames
+local openNewWindowSlashCommands = tbug.openNewWindowSlashCommands
 
 local customKeysForInspectorRows = tbug.customKeysForInspectorRows
 local customKey__usedInScenes = customKeysForInspectorRows.usedInScenes
@@ -80,6 +82,7 @@ local tbug_SetTemplate = tbug.SetTemplate
 --local tbug_getActiveTabPanel = tbug.GetActiveTabPanel
 
 
+
 local specialMasterListType2InspectorClass = tbug.specialMasterListType2InspectorClass
 
 local tbug_inspect
@@ -87,7 +90,8 @@ local objInsp
 local globalInspector
 local tbug_getGlobalInspector
 local tbug_savedTable
-
+local useForScript
+local tbug_slashCommandWrapper
 
 local function evalString(source, funcOnly)
     funcOnly = funcOnly or false
@@ -418,13 +422,14 @@ tbug.hasMember = hasMember
 
 
 local preventEndlessLoop = false
-local function inspectResults(specialInspectionString, searchData, data, source, status, ...) --... contains the compiled result of pcall (evalString)
+local function inspectResults(specialInspectionString, searchData, data, source, status, ...) --status is the return value of evalString, ... contains the compiled result of pcall (evalString)
     local doDebug = tbug.doDebug
     if doDebug then
         TBUG._status = status
         TBUG._evalData = {...}
     end
 
+    local noDirectExecute = (data ~= nil and data.noDirectExecute) or false --Do not execute the code/script but just show it in the ScriptsViewer editbox? In this case evalString was not called and statzs is nil, ... is nil too!
 
     local recycle
     local doOpenNewInspector = tbug.doOpenNewInspector
@@ -446,7 +451,6 @@ local function inspectResults(specialInspectionString, searchData, data, source,
     --Prevent SHIFT key handling at EVENT_GLOBAL_MOUSE_UP, as the shift key always needs to be pressed there!
     if doDebug then d("tb: inspectResults - specialInspectionString: " ..tos(specialInspectionString) .. ", source: " ..tos(source) .. ", status: " ..tos(status) .. ", recycle: " ..tos(recycle) .. ", isMOC: " ..tos(isMOC) .. ", searchData: " ..tos(searchData)) end
     if not status then
-
         local foundNotAllowedCharacters = zo_plainstrfind(source, "=")
         if doDebug then d("[TB]inspectResults - execution of '" .. tos(source) .."' resulted in an error. foundNotAllowedCharacters: " ..tos(foundNotAllowedCharacters)) end
         --Passed in params 2ff are maybe a search string and not something to execute?
@@ -531,10 +535,9 @@ local function inspectResults(specialInspectionString, searchData, data, source,
             if doDebug then d(">>tabTitle: " ..tos(tabTitle)) end
 
 
-            --todo 20250330 Detect if passed in data contains a "custom class" like ScriptsViewer and then
-            --todo 20250303 do not always reuse the firstInspector to try to show that, but create a new inspctor with that class
-            --Any custom inspector class passed in?
-            local useCustomInspectorClass = false
+            --20250330 Detect if passed in data contains a "custom class" like ScriptsViewer and then
+            --do not always reuse the firstInspector to try to show that, but create a new inspctor with that class
+            local useCustomInspectorClass = false --Any custom inspector class passed in?
             if data ~= nil then
                 if not recycle then
                     --Shall the inspector be opened with a new one and a special class? e.g ScriptsViewer
@@ -592,7 +595,7 @@ local function inspectResults(specialInspectionString, searchData, data, source,
                         errorOccured = true
                     end
                 else
-                    if doDebug then d(">>create new inspector! useCustomInspectorClass: " ..tos(useCustomInspectorClass) .. ", firstInspector.usesCustomInspectorClass: " ..tos(firstInspector.usesCustomInspectorClass)) end
+                    if doDebug then d(">>create new inspector! useCustomInspectorClass: " ..tos(useCustomInspectorClass) .. ", firstInspector.usesCustomInspectorClass: " ..tos(firstInspector.usesCustomInspectorClass) .. ", noDirectExecute: " .. tos(noDirectExecute)) end
                     --Or open new one (SHIFT key was pressed)
                     tbug_inspect = tbug_inspect or tbug.inspect
                     tbug_inspect(res, tabTitle, source, recycle, nil, ires, {...}, data, searchData, isMOC, nil)
@@ -683,7 +686,7 @@ local function acquireInspector(inspectorClass, subject, name, reuseActiveInspec
     if tbug.doDebug then d("[tbug]acquireInspector - reuse: " ..(tos(reuseActiveInspector) ..(", class: " .. (tos((inspectorClass ~= nil and (inspectorClass == objInsp and "ObjectInspector") or (inspectorClass == tbug.specialMasterListType2InspectorClass["ScriptsViewer"] and "ScriptsViewer"))) or "n/a")))) end
     if inspectorClass ~= nil and inspectorClass.acquire ~= nil then
 
-        local inspector = inspectorClass:acquire(subject, name, reuseActiveInspector, titleName, data)
+        local inspector = inspectorClass:acquire(subject, name, reuseActiveInspector, titleName, data) --> Calls ObjectInspector.acquire
         if inspector ~= nil then
             if tbug.doDebug then d(">inspector.usesCustomInspectorClass: " ..tos(inspector.usesCustomInspectorClass)) end
 
@@ -725,9 +728,10 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
     local newInspectorClass = objInsp
     local useCustomInspectorClass = false
     local dataTitle
-
+    local noDirectExecute = false
     --Any custom inspector class passed in?
     if data ~= nil then
+        noDirectExecute = data.noDirectExecute or false --do not execute the code but show it in the ScriptViewer e.g.
         dataTitle = data.title
         if tbug.doDebug then d(">data.title: " .. tos(dataTitle)) end
 
@@ -754,6 +758,7 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
 
 
     if rawequal(object, _G) then
+--d("!!!!!!rawequal _G")
         if doDebug then d(">rawequal _G") end
         tbug_getGlobalInspector = tbug_getGlobalInspector or tbug.getGlobalInspector
         globalInspector = globalInspector or tbug_getGlobalInspector()
@@ -765,6 +770,7 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
     else
 
         if resType == tableType then
+--d("!!!!!!TABLE")
             if doDebug then d(">table") end
             local title = tbug_glookup(object) or winTitle or tos(object)
             if wasClickedAtGlobalInspector == true and winTitle ~= nil and winTitle ~= "" and winTitle ~= title and not startsWith(winTitle, "table: ") then
@@ -807,6 +813,7 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
             ]]
 
         elseif isControl(object) then
+--d("!!!!!!CONTROL")
             if doDebug then d(">isControl") end
             local title = ""
             if type(winTitle) == stringType then
@@ -828,13 +835,16 @@ function tbug.inspect(object, tabTitle, winTitle, recycleActive, objectParent, c
 
         else
             if useCustomInspectorClass == true and _G[object] ~= nil then
+--d("!!!!!!useCustomInspectorClass - noDirectExecute: " ..tos(noDirectExecute))
                 inspector = acquireInspector(newInspectorClass, object, tabTitle, recycleActive, winTitle, data, searchData, isMOC, nil)
 
             else
                 if resType == functionType then
+--d("!!!!!!FUNCTION")
                     if doDebug then d(">function") end
                     showFunctionReturnValue(object, tabTitle, winTitle, objectParent)
                 else
+--d("!!!!!!OTHERS")
                     if doDebug then d(">all others...") end
                     --Check if the source of the call was ending on () -> it was a function call then
                     --Output the function data then
@@ -1210,6 +1220,26 @@ function tbug.slashCommandMOC(comingFromEventGlobalMouseUp, searchValues)
 end
 local tbug_slashCommandMOC = tbug.slashCommandMOC
 
+function tbug.OpenNewWindow(windowType, searchValues)
+    if not openNewWindowSlashCommands[windowType] then return end
+
+    --Open a new ScriptsViewer?
+    if windowType == "scriptsViewer" then
+        searchValues = searchValues or ""
+        useForScript = useForScript or tbug.useForScript
+        local p_self = {}
+        local p_row = {}
+        local p_data = {
+            key = 1,
+            value = tbugScriptViewerValueForNewWindow, --pass in this table to open with the ScriptInspector UI, and then use p_data.scriptStr for the editBox there
+            scriptStr = searchValues,
+        }
+                    --p_self, p_row, p_data, isKey, isFunctionsDataType, isClassOrObjectOrLibrary, showInNewTab, scriptStrIsValue
+        useForScript(p_self, p_row, p_data, false, nil, nil, true, false, true) --noDirectExecute = true ! so the function knows to use p_data.value as table and p_data.scriptsStr for the editbox later
+        --> Calls tbug_slashCommandWrapper
+    end
+end
+local tbug_openNewWindow = tbug.OpenNewWindow
 
 function tbug.slashCommand(args, searchValues)
     local supportedGlobalInspectorArgs = tbug.allowedSlashCommandsForPanels
@@ -1219,9 +1249,11 @@ function tbug.slashCommand(args, searchValues)
 
     --local openInNewInspector = tbug.doOpenNewInspector
     local data = tbug.dataForInspector
+    local noDirectExecute = (data ~= nil and data.noDirectExecute) or false --do not execute the code but show it in the ScriptViewer e.g.
 
     if args ~= "" then
         if tbug.doDebug then d("[tbug]slashCommand - " ..tos(args) .. ", searchValues: " ..tos(searchValues)) end
+
         local argsOptions = parseSlashCommandArgumentsAndReturnTable(args, true)
 
         --local moreThanOneArg = (argsOptions and #argsOptions > 1) or false
@@ -1231,10 +1263,13 @@ function tbug.slashCommand(args, searchValues)
             tbug_slashCommandMOC(false, searchValues)
         elseif argOne == "free" then
             SetGameCameraUIMode(true)
+        elseif data == nil and openNewWindowSlashCommands[args] then --attention: pass in "args" ("scriptsViewer" e.g.), and not "argOne"!
+            tbug_openNewWindow(args, searchValues)
         else
             local isSupportedGlobalInspectorArg = supportedGlobalInspectorArgs[argOne] or false
             --Check if only a number was passed in and then select the tab index of that number
             if not isSupportedGlobalInspectorArg then
+                --Passed in first param is a number? Open this tab in global inspector then
                 local firstArgNum = ton(argOne)
                 if firstArgNum ~= nil and type(firstArgNum) == numberType and panelNames[firstArgNum] ~= nil then
                     argOne = panelNames[firstArgNum].slashCommand[1] -- use the 1st slashCommand of that panel as arguent 1 now
@@ -1266,8 +1301,8 @@ function tbug.slashCommand(args, searchValues)
                     inspectResults(nil, searchData, data, args, evalString(args)) --evalString uses pcall and returns boolean, table(nilable)
                 end
             else
-                local specialInspectTabTitle
                 --e.g. listtlc -> Calls function ListTLC()
+                local specialInspectTabTitle
                 for startStr, replaceData in pairs(specialInspectTabTitles) do
                     if startsWith(argOne, startStr) then
                         specialInspectTabTitle = replaceData.tabTitle
@@ -1282,9 +1317,9 @@ function tbug.slashCommand(args, searchValues)
                         break
                     end
                 end
-                if tbug.doDebug then d(">>>>>specialInspectTabTitle: " ..tos(specialInspectTabTitle) .. ", args: " ..tos(args)) end
+                if tbug.doDebug then d(">>>>>specialInspectTabTitle: " ..tos(specialInspectTabTitle) .. ", args: " ..tos(args) .. ", noDirectExecute: " .. tos(noDirectExecute)) end
                 --d(">inspectResults2")
-                inspectResults(specialInspectTabTitle, searchData, data, args, evalString(args)) --evalString uses pcall and returns boolean, table(nilable) (->where the table will be the ... at inspectResults)
+                inspectResults(specialInspectTabTitle, searchData, data, args, evalString(args)) --evalString uses pcall and returns boolean, table(nilable) (->where the table will be the ... at inspectResults) -- Passin dummy TBUG to inspect for a new ScriptsViewer open from SlashCommand/Keybind
             end
         end
     elseif tbugGlobalInspector then
@@ -1316,7 +1351,7 @@ function tbug.slashCommandWrapper(args, searchValues, openInNewInspector, data)
 
     return tbug_slashCommand(args, searchValues)
 end
---local tbug_slashCommandWrapper = tbug.slashCommandWrapper
+tbug_slashCommandWrapper = tbug.slashCommandWrapper
 
 
 function tbug.SoundStop()
@@ -1341,6 +1376,12 @@ function tbug.slashCommandScripts(args)
     tbug_slashCommand("scripts", args)
 end
 local tbug_slashCommandScripts = tbug.slashCommandScripts
+
+function tbug.slashCommandScriptsViewer(args)
+    clearDataForInspector()
+    tbug_slashCommand("scriptsViewer", args)
+end
+local tbug_slashCommandScriptsViewer = tbug.slashCommandScriptsViewer
 
 function tbug.slashCommandAddOns(args)
     clearDataForInspector()
@@ -2132,6 +2173,12 @@ local function slashCommands()
     end
     SLASH_COMMANDS["/tbugs"]    = tbug_slashCommandScripts
 
+    --Show the scripts viewer inspector
+    if SLASH_COMMANDS["/tbsv"]  == nil then
+        SLASH_COMMANDS["/tbsv"]  = tbug_slashCommandScriptsViewer
+    end
+    SLASH_COMMANDS["/tbugsv"]    = tbug_slashCommandScriptsViewer
+
     --Show the events tab at the torchbug UI
     if SLASH_COMMANDS["/tbe"]  == nil then
         SLASH_COMMANDS["/tbe"]  = tbug_slashCommandEvents
@@ -2275,6 +2322,7 @@ local function loadKeybindings()
     for i=1, tbug.maxScriptKeybinds, 1 do
         ZO_CreateStringId("SI_BINDING_NAME_TBUG_SCRIPT" ..tos(i),  "Run script #"..tos(i))
     end
+    ZO_CreateStringId("SI_BINDING_NAME_TBUG_SCRIPTSVIEWER",  "Open new ScriptsViewer")
 end
 
 

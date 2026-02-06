@@ -152,6 +152,10 @@
 					<Dimensions x="100" y="25" />
 					<Anchor point="BOTTOM" relativePoint="BOTTOM" relativeTo="$(parent)" offsetY="-5" offsetX="10" />
 				</Button>
+				<Button name="$(parent)SavedScriptsButton" inherits="ZO_DefaultButton" text="" tier="LOW" layer="CONTROLS" level="2">
+					<Dimensions x="25" y="25" />
+					<Anchor point="LEFT" relativePoint="RIGHT" relativeTo="$(parent)SaveButton" offsetY="0" offsetX="30" />
+				</Button>
 				<Control name="$(parent)List" inherits="ZO_ScrollList" tier="LOW" layer="CONTROLS" level="2" hidden="true">
 					<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$(parent)ScriptBackdrop" offsetY="0" offsetX="0" />
 					<Dimensions x="0" y="0"/>

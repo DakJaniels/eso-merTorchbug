@@ -25,6 +25,9 @@
       <Action name="TBUG_SCRIPT5">
         <Down>TBUG.runScript(5)</Down>
       </Action>
+      <Action name="TBUG_SCRIPTSVIEWER">
+        <Down>TBUG.OpenNewWindow("scriptsViewer")</Down>
+      </Action>
     </Category>
   </Layer>
 </Bindings>
