@@ -50,11 +50,12 @@ tbug.author =   "merlight, Baertram"
 --EVENT_DISPLAY_ACTIVE_COMBAT_TIP 131531 shows as EVENT_TUTORIAL_TRIGGER_COMPLETED 131535 in the (saved) events data? _eventName is wrong, _eventId is correct. Name and id do not match?
 --->local lookupEventName = tbug.Events.eventList
 
---------------------------------------- Version 1.75 - Baertram (last updated 2026-02-05)
+--------------------------------------- Version 1.75 - Baertram (last updated 2026-02-11)
 ---- [Added]
 --Libraries detection via "lib" prefix
 --More enumerations (new bagIds e.g.)
 --Added context menu enties to the events e/E button at the GlobalInspector title bar (and at the event inspector rows):
+--Added # of entries to contextMenu's header if you can choose e.g. from an enumeration (BagId, itemType etc.)
 ---Start/Stop event tracking
 ---Setting to automatically start the event tracking as addon loads (button to enable that and reload the UI now)
 ---Save and load events tracked. Load shows them in an extra inspector using the eventviewer layout so you can compare them to current event viewer's tracked events
@@ -69,6 +70,7 @@ tbug.author =   "merlight, Baertram"
 --Show chat output only if TBUG.doDebug == true
 --Scrolling tabs won't resize to invisibly small anymore if window size is changed to very small (or below 0), or if many tabs added
 --Fixed delayed calls to slash commands to accept negative values
+--Some constants and enumerations in contextMenus did not show all possible values (ITEMTYPE_* e.g.)
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -466,6 +468,8 @@ tbug.keyToSpecialEnumExclude = keyToSpecialEnumExclude
 --These entries will "record" all created subTables in function makeEnum so that one can combine them later on in
 --g_enums["SPECIALIZED_ITEMTYPE"] again for 1 consistent table with all entries
 local keyToSpecialEnumNoSubtablesInEnum = {
+    --["ACTION_RESULT_"]               = true,
+    ["ITEMTYPE_"]                    = true,
     ["SPECIALIZED_ITEMTYPE_"]        = true,
 }
 tbug.keyToSpecialEnumNoSubtablesInEnum = keyToSpecialEnumNoSubtablesInEnum

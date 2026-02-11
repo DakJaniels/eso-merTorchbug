@@ -41,14 +41,16 @@ local g_nonEnumPrefixes = tbug.nonEnumPrefixes
 local mtEnum = { __index = function (_, v) return v end }
 local g_enums = setmetatable({}, autovivify(mtEnum))
 tbug.enums = g_enums
+tbug.enumsContextMenuCache = {}
 local g_needRefresh = true
 local g_refreshRunning = false
 
 local g_tmpGroups = setmetatable({}, autovivify(nil))
 tbug.enumTmpGroups = g_tmpGroups
 local g_tmpKeys = {}
+--tbug._g_tmpKeys = g_tmpKeys
 local g_tmpStringIds = {}
---tbug.tmpStringIds = g_tmpStringIds
+--tbug._tmpStringIds = g_tmpStringIds
 
 local getTBUGGlobalInspectorPanelIdByName = tbug.getTBUGGlobalInspectorPanelIdByName
 local hideLoadingSpinner = tbug.hideLoadingSpinner
@@ -172,7 +174,7 @@ local function makeEnum(group, prefix, minKeys, calledFromTmpGroupsLoop)
     if calledFromTmpGroupsLoop then
         --Is the current prefix a specical one which could be split into multiple subTables at g_enums?
         --And should these split subTables be combined again to one in the end, afer the while ... do loop was finished?
-        -->e.g. SPECIALIZED_ITEMTYPE_*
+        -->e.g. SPECIALIZED_ITEMTYPE_*, ITEMTYPE_*
         for prefixRecordAllSubtables, isActivated in pairs(keyToSpecialEnumNoSubtablesInEnum) do
             if isActivated and strfind(prefix, prefixRecordAllSubtables, 1) == 1 then
                 --d(">anti-split into subtables found: " ..tos(prefix))
@@ -191,7 +193,7 @@ local function makeEnum(group, prefix, minKeys, calledFromTmpGroupsLoop)
 end
 
 local function makeEnumWithMinMaxAndIterationExclusion(group, prefix, key)
-    local doDebug = false
+    local doDebug = false --true --todo change to false before release!
     --[[
     local firstEntryKey = next(group)
     if strfind(firstEntryKey, "ITEM_", 1, true) then
@@ -586,14 +588,14 @@ local function doRefresh()
         if specialEnumNoSubtables_subTables and not ZO_IsTableEmpty(specialEnumNoSubtables_subTables) then
             for prefixWhichGotSubtables, subtableNames in pairs(specialEnumNoSubtables_subTables) do
                 local prefixWithoutLastUnderscore = strsub(prefixWhichGotSubtables, 1, -2)
-                --d(">>combining subtables to 1 table: " ..tos(prefixWithoutLastUnderscore))
+        --d(">>combining subtables to 1 table: " ..tos(prefixWithoutLastUnderscore))
                 g_enums[prefixWithoutLastUnderscore] = g_enums[prefixWithoutLastUnderscore] or {}
                 for _, subTablePrefixWithoutUnderscore in ipairs(subtableNames) do
-                    --d(">>>subtable name: " ..tos(subTablePrefixWithoutUnderscore))
+        --d(">>>subtable name: " ..tos(subTablePrefixWithoutUnderscore))
                     local subTableData = g_enums[subTablePrefixWithoutUnderscore]
                     if subTableData ~= nil then
                         for constantValue, constantName in pairs(subTableData) do
-                            --d(">>>>copied constant from subtable: " ..tos(constantName) .. " (" .. tos(constantValue) ..")")
+        --d(">>>>copied constant from subtable: " ..tos(constantName) .. " (" .. tos(constantValue) ..")")
                             if type(constantName) == stringType then
                                 g_enums[prefixWithoutLastUnderscore][constantValue] = constantName
                             end
@@ -712,17 +714,17 @@ local function doRefresh()
 
             --Create the 1table for the before split subtables -> like SPECIALIZED_ITEMTYPE_ again now
             -->Loop all the relevant subtables
-            if specialEnumNoSubtables_subTables and not ZO_IsTableEmpty(specialEnumNoSubtables_subTables) then
+            if not ZO_IsTableEmpty(specialEnumNoSubtables_subTables) then
                 for prefixWhichGotSubtables, subtableNames in pairs(specialEnumNoSubtables_subTables) do
                     local prefixWithoutLastUnderscore = strsub(prefixWhichGotSubtables, 1, -2)
-                    --d(">>combining subtables to 1 table: " ..tos(prefixWithoutLastUnderscore))
+        --d(">>combining subtables to 1 table: " ..tos(prefixWithoutLastUnderscore))
                     g_enums[prefixWithoutLastUnderscore] = g_enums[prefixWithoutLastUnderscore] or {}
                     for _, subTablePrefixWithoutUnderscore in ipairs(subtableNames) do
-                        --d(">>>subtable name: " ..tos(subTablePrefixWithoutUnderscore))
+        --d(">>>subtable name: " ..tos(subTablePrefixWithoutUnderscore))
                         local subTableData = g_enums[subTablePrefixWithoutUnderscore]
                         if subTableData ~= nil then
                             for constantValue, constantName in pairs(subTableData) do
-                                --d(">>>>copied constant from subtable: " ..tos(constantName) .. " (" .. tos(constantValue) ..")")
+        --d(">>>>copied constant from subtable: " ..tos(constantName) .. " (" .. tos(constantValue) ..")")
                                 if type(constantName) == stringType then
                                     g_enums[prefixWithoutLastUnderscore][constantValue] = constantName
                                 end

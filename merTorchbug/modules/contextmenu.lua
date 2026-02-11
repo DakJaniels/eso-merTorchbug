@@ -20,6 +20,10 @@ local tableType = types.table
 local userDataType = types.userdata
 local booleanType = types.boolean
 local structType = types.struct
+local table = table
+local table_insert = table.insert
+local table_remove = table.remove
+local table_sort = table.sort
 
 local searchURLs              = tbug.searchURLs
 local tbug_GetDefaultTemplate = tbug.GetDefaultTemplate
@@ -775,7 +779,7 @@ local function registerExcludedEventId(eventId)
 end
 
 local function addToExcluded(eventId)
-    table.insert(tbug.Events.eventsTableExcluded, eventId)
+    table_insert(tbug.Events.eventsTableExcluded, eventId)
 end
 local function removeFromExcluded(eventId, removeAll)
     removeAll = removeAll or false
@@ -784,7 +788,7 @@ local function removeFromExcluded(eventId, removeAll)
     else
         for idx, eventIdToFind in ipairs(tbug.Events.eventsTableExcluded) do
             if eventIdToFind == eventId then
-                table.remove(tbug.Events.eventsTableExcluded, idx)
+                table_remove(tbug.Events.eventsTableExcluded, idx)
                 return true
             end
         end
@@ -802,7 +806,7 @@ local function addToIncluded(eventId, onlyThisEvent)
     if onlyThisEvent == true then
         tbug.Events.eventsTableIncluded = {}
     end
-    table.insert(tbug.Events.eventsTableIncluded, eventId)
+    table_insert(tbug.Events.eventsTableIncluded, eventId)
 end
 local function removeFromIncluded(eventId, removeAll)
     removeAll = removeAll or false
@@ -811,7 +815,7 @@ local function removeFromIncluded(eventId, removeAll)
     else
         for idx, eventIdToFind in ipairs(tbug.Events.eventsTableIncluded) do
             if eventIdToFind == eventId then
-                table.remove(tbug.Events.eventsTableIncluded, idx)
+                table_remove(tbug.Events.eventsTableIncluded, idx)
                 return true
             end
         end
@@ -890,7 +894,7 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
                 registerExcludedEventId(eventId)
             end,
         }
-        table.insert(eventTrackingSubMenuTable, eventTrackingSubMenuTableEntry)
+        table_insert(eventTrackingSubMenuTable, eventTrackingSubMenuTableEntry)
         eventTrackingSubMenuTableEntry = {
             label = strformat("Include this event"),
             callback = function()
@@ -899,7 +903,7 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
                 registerOnlyIncludedEvents()
             end,
         }
-        table.insert(eventTrackingSubMenuTable, eventTrackingSubMenuTableEntry)
+        table_insert(eventTrackingSubMenuTable, eventTrackingSubMenuTableEntry)
         eventTrackingSubMenuTableEntry = {
             label = strformat("ONLY show this event"),
             callback = function()
@@ -908,12 +912,12 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
                 registerOnlyIncludedEvents()
             end,
         }
-        table.insert(eventTrackingSubMenuTable, eventTrackingSubMenuTableEntry)
+        table_insert(eventTrackingSubMenuTable, eventTrackingSubMenuTableEntry)
         eventTrackingSubMenuTableEntry = {
             label = "-",
             callback = noCallbackFunc,
         }
-        table.insert(eventTrackingSubMenuTable, eventTrackingSubMenuTableEntry)
+        table_insert(eventTrackingSubMenuTable, eventTrackingSubMenuTableEntry)
     end
     eventTrackingSubMenuTableEntry = {
         label = "Re-register ALL events (clear excluded/included)",
@@ -928,7 +932,7 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
             return false
         end,
     }
-    table.insert(eventTrackingSubMenuTable, eventTrackingSubMenuTableEntry)
+    table_insert(eventTrackingSubMenuTable, eventTrackingSubMenuTableEntry)
     AddCustomScrollableSubMenuEntry(strformat("Event: \'%s\'", tos(eventName)), eventTrackingSubMenuTable)
 
     --Included events
@@ -944,7 +948,7 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
                     --Todo Any option needed?
                 end,
             }
-            table.insert(eventTrackingIncludedSubMenuTable, eventTrackingIncludedSubMenuTableEntry)
+            table_insert(eventTrackingIncludedSubMenuTable, eventTrackingIncludedSubMenuTableEntry)
         end
         AddCustomScrollableSubMenuEntry("INcluded events",  eventTrackingIncludedSubMenuTable)
     end
@@ -966,7 +970,7 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
                     tbug.Events.RegisterSingleEvent(eventsInspector, eventIdExcluded)
                 end,
             }
-            table.insert(eventTrackingExcludedSubMenuTable, eventTrackingExcludedSubMenuTableEntry)
+            table_insert(eventTrackingExcludedSubMenuTable, eventTrackingExcludedSubMenuTableEntry)
         end
         AddCustomScrollableSubMenuEntry("EXcluded events", eventTrackingExcludedSubMenuTable)
     end
@@ -992,7 +996,7 @@ local function showEventsContextMenu(p_self, p_row, p_data, isEventMainUIToggle)
                         tbug.LoadEventsTracked(k, loadDetailsStr)
                     end,
                 }
-                table.insert(eventTrackingSettingsLoadSavedSubmenu, eventTrackingSettingsLoadSubmenuEntry)
+                table_insert(eventTrackingSettingsLoadSavedSubmenu, eventTrackingSettingsLoadSubmenuEntry)
             end
             AddCustomScrollableSubMenuEntry("Load tracked events", eventTrackingSettingsLoadSavedSubmenu)
         end
@@ -1312,7 +1316,7 @@ local function buildItemLinkContextMenuEntries(p_self, p_row, p_data, prefixDept
     --tbug._itemLinkPrefixesSubmenuTab = itemLinkPrefixesSubmenuTab
 
     if not ZO_IsTableEmpty(itemLinkPrefixesSubmenuTab) then
-        table.sort(itemLinkPrefixesSubmenuTab, function(a, b) return a.submenuName < b.submenuName end)
+        table_sort(itemLinkPrefixesSubmenuTab, function(a, b) return a.submenuName < b.submenuName end)
 
         AddCustomScrollableMenuEntry("ItemLink functions", noCallbackFunc, LSM_ENTRY_TYPE_HEADER, nil, nil)
 
@@ -1413,6 +1417,9 @@ local function addScriptContextMenuEntriesForClassOrObjectIdentifierKey(p_key, p
     return retVar
 end
 
+local function sortEnumsContextMenuTableByValue(entryA, entryB)
+    return entryA.enumValue < entryB.enumValue
+end
 
 --Row context menu at inspectors
 --Custom context menu entry creation for inspector rows / LibScrollableMenu support as of version 1.7
@@ -2019,6 +2026,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     --Do we have a setter function given?
                     --Check if any enumeration is provided and add the givenenum entries to the context menu entries
                     local enumsWereAdded = false
+                    local numEnumContextMenuEntries = 0
                     local enumContextMenuEntries = {}
                     if prop == nil then
                         if key ~= nil then
@@ -2036,7 +2044,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                     end
                     if prop ~= nil then
                         local enumProp = prop.enum or key
-                        --Check for enums
+                        --Check for enums e.g. ITEMTYPE_ -> Show contextMenu submenu list with all enumeration entries of the ITEMTYPE_*
                         if enumProp ~= nil then
                             local enumsTab = tbug.enums[enumProp]
                             if enumsTab ~= nil then
@@ -2045,11 +2053,24 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                                 local controlOfInspectorRow = p_self.subject
                                 if controlOfInspectorRow then
                                     --Setter control and func are given, enums as well
-                                    --Loop all enums now
-                                    for enumValue, enumName in pairs(enumsTab) do
-                                        table.insert(enumContextMenuEntries, {enumName = enumName, enumValue=enumValue})
+
+                                    --Create a enum contextMenu cache with sorted data
+                                    local cachedEnumsForContextMenu = tbug.enumsContextMenuCache[enumProp]
+                                    if cachedEnumsForContextMenu ~= nil then
+                                        enumContextMenuEntries = cachedEnumsForContextMenu
+                                    else
+                                        --Build cache, sorted
+                                        local newCachedEnumsForContextMenuEntry = {}
+                                        --Loop all enums now
+                                        for enumValue, enumName in pairs(enumsTab) do
+                                            newCachedEnumsForContextMenuEntry[#newCachedEnumsForContextMenuEntry +1] = { enumName =enumName, enumValue =enumValue}
+                                        end
+                                        table_sort(newCachedEnumsForContextMenuEntry, sortEnumsContextMenuTableByValue)
+                                        tbug.enumsContextMenuCache[enumProp] = newCachedEnumsForContextMenuEntry
+                                        enumContextMenuEntries = newCachedEnumsForContextMenuEntry
                                     end
-                                    enumsWereAdded = #enumContextMenuEntries > 0
+                                    numEnumContextMenuEntries = #enumContextMenuEntries
+                                    enumsWereAdded = numEnumContextMenuEntries > 0
 
                                     local setterName = prop.setOrig or prop.set
                                     local setterOfCtrl
@@ -2070,7 +2091,7 @@ tbug._contextMenuLast.canEditValue =  canEditValue
                         end
                         --Divider line needed from enums?
                         if enumsWereAdded then
-                            local headlineText = canEditValue and "Choose value" or "Possible values"
+                            local headlineText = ((canEditValue and "Choose value") or "Possible values") .. " (#" .. tos(numEnumContextMenuEntries) ..")"
                             --local entryFont = canEditValue and "ZoFontGame" or "ZoFontGameSmall"
                             --local entryFontColorNormal = canEditValue and DEFAULT_TEXT_COLOR or DISABLED_TEXT_COLOR
                             --local entryFontColorHighlighted = canEditValue and DEFAULT_TEXT_HIGHLIGHT or DISABLED_TEXT_COLOR
