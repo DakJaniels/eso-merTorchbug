@@ -454,7 +454,8 @@ local function inspectResults(specialInspectionString, searchData, data, source,
         local foundNotAllowedCharacters = zo_plainstrfind(source, "=")
         if doDebug then d("[TB]inspectResults - execution of '" .. tos(source) .."' resulted in an error. foundNotAllowedCharacters: " ..tos(foundNotAllowedCharacters)) end
         --Passed in params 2ff are maybe a search string and not something to execute?
-        if not preventEndlessLoop and source ~= nil and type(source) == stringType
+        --Skip when from script runner: source is raw Lua, don't reinterpret as inspect+search
+        if not tbug.isScriptViewerRunningScript and not preventEndlessLoop and source ~= nil and type(source) == stringType
                 and not foundNotAllowedCharacters --no = (assignment) in the string
                 and (searchData == nil or (searchData ~= nil and searchData.searchText == "")) then
             if doDebug then d(">testing other args") end
