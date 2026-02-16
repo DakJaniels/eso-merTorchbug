@@ -53,7 +53,8 @@ local function runLua(command, isScriptsViewer)
     assert(zo_ls(command))
     ]]
     --Instead of only using LoadString, sue TBUG inspector to check code for functin, or control/table to inspect etc.
-    tbug.isScriptViewerRunningScript = isScriptsViewer
+	--Always true when running from edit box (ScriptsInspector or ScriptsViewer): don't parse source as inspect+search
+	tbug.isScriptViewerRunningScript = true
     tbug_slashCommand(command)
     tbug.isScriptViewerRunningScript = nil
 end
