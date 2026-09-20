@@ -40,8 +40,9 @@ tbug.IsEventTracking = false
 
 local tbug_inspectorScrollLists = tbug.inspectorScrollLists
 
-local titlePatterns =       tbug.titlePatterns
-local titleTemplate =       titlePatterns.normalTemplate
+local titlePatterns      =       tbug.titlePatterns
+local tablePatternPrefix =   "^table: "
+local titleTemplate      =       titlePatterns.normalTemplate
 local titleMocTemplate =    titlePatterns.mouseOverTemplate
 local titleMocTemplatePattern
 local title2ChatCleanUpIndex =              titlePatterns.title2ChatCleanUpIndex
@@ -2010,9 +2011,24 @@ function tbug.refreshScenes()
                     local fragmentName = tbug_glookup(vf)
                     local fragmentNameType = type(fragmentName)
                     if fragmentNameType ~= "string" then
+                        local fragmentNameWithoutTablePrefix = strgsub(tos(vf), tablePatternPrefix, "")
                         --d("[tbug]ERROR: Fragment name type wrong: " ..tos(fragmentNameType) .. ", Scene: " .. tos(v.name))
                         local wrongFragmentName = fragmentName
-                        fragmentName = "_FRAGMENT_WITHOUT_NAME" .. ((vf.control ~= nil and "_FOR_CONTROL-" .. getControlName(vf.control)) or ("_" .. tos(vf)))
+                        local metaTableName = (vf.__index ~= nil and "--" .. (tbug_glookup(vf.__index) or strgsub(tos(vf.__index), tablePatternPrefix, ""))) or ""
+                        fragmentName = "_" .. ( (vf.control ~= nil and "CONTROL-" .. getControlName(vf.control))
+                                                    or  (vf.actionLayerName ~= nil and "ACTION_LAYER-" .. tos(vf.actionLayerName))
+                                                    or  (vf.__index ~= nil and (
+                                                        (
+                                                            ( vf.__index == ZO_WindowSoundFragment and "WINDOW_SOUND" .. (sceneName ~= nil and "_SCENE-" .. sceneName) .. ((vf.showSoundId ~= nil and "_ShowSoundId-" .. tos(vf.showSoundId)) or (vf.hideSoundId ~= nil and "_HideSoundId-" .. tos(vf.hideSoundId))) )
+                                                            or ( vf.__index == ZO_TutorialTriggerFragment and "TUTORIAL_TRIGGER" .. ((vf.onShowTutorialTriggerType ~= nil and "_Type-" .. tos(vf.onShowTutorialTriggerType))) )
+                                                            or ( vf.title ~= nil and "TITLE-" .. tos(vf.title) .. metaTableName )
+                                                            or ( "METATABLE" .. metaTableName )
+                                                        )
+                                                        .. "-" .. fragmentNameWithoutTablePrefix
+                                                        )
+                                                    )
+                                                    or  ("-" .. fragmentNameWithoutTablePrefix) )
+                                        .. "_FRAGMENT"
                         local fragmentWithoutNameData = fragmentsWithError[fragmentName]
                         if fragmentWithoutNameData ~= nil then
                             fragmentWithoutNameData.__scenes = fragmentWithoutNameData.__scenes or {}
