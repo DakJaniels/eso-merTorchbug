@@ -1995,22 +1995,42 @@ function tbug.refreshScenes()
     tbug.FragmentsOutput = {}
     scenes = {}
     fragments = {}
+    local fragmentsWithError = {}
     local globalScenes = _G.SCENE_MANAGER.scenes
     if globalScenes ~= nil then
-        for k,v in pairs(globalScenes) do
+        for sceneName, scene in pairs(globalScenes) do
             --Add the scenes for the output at the "Scenes" tbug globalInspector tab
-            scenes[k] = v
-            tbug.ScenesOutput[k] = v
+            scenes[sceneName]            = scene
+            tbug.ScenesOutput[sceneName] = scene
 
             --Add the fragments for the output at the "Fragm." tbug globalInspector tab
-            if v.fragments ~= nil then
-                local fragmentsOfScene = v.fragments
+            if scene.fragments ~= nil then
+                local fragmentsOfScene = scene.fragments
                 for kf, vf in ipairs(fragmentsOfScene) do
                     local fragmentName = tbug_glookup(vf)
+                    local fragmentNameType = type(fragmentName)
+                    if fragmentNameType ~= "string" then
+                        --d("[tbug]ERROR: Fragment name type wrong: " ..tos(fragmentNameType) .. ", Scene: " .. tos(v.name))
+                        local wrongFragmentName = fragmentName
+                        fragmentName = "_FRAGMENT_WITHOUT_NAME" .. ((vf.control ~= nil and "_FOR_CONTROL-" .. getControlName(vf.control)) or ("_" .. tos(vf)))
+                        local fragmentWithoutNameData = fragmentsWithError[fragmentName]
+                        if fragmentWithoutNameData ~= nil then
+                            fragmentWithoutNameData.__scenes = fragmentWithoutNameData.__scenes or {}
+                            fragmentWithoutNameData.__scenes[sceneName] = scene
+                        else
+                            fragmentWithoutNameData = {
+                                __scenes = { [sceneName] = scene },
+                                _object = vf,
+                                nameWrongType = wrongFragmentName,
+                                name = fragmentName,
+                            }
+                        end
+                        fragmentsWithError[fragmentName] = fragmentWithoutNameData
+                    end
                     if fragmentName ~= nil and fragmentName ~= "" then
                         fragments[fragmentName] = fragments[fragmentName] or vf
-                        fragments[fragmentName][customKey__usedInScenes] = fragments[fragmentName][customKey__usedInScenes] or {}
-                        fragments[fragmentName][customKey__usedInScenes][k] = v
+                        fragments[fragmentName][customKey__usedInScenes]            = fragments[fragmentName][customKey__usedInScenes] or {}
+                        fragments[fragmentName][customKey__usedInScenes][sceneName] = scene
                     end
                 end
             end
@@ -2022,6 +2042,7 @@ function tbug.refreshScenes()
     for fragmentName, fragmentData in pairs(fragments) do
         table.insert(orderFragmentsTab, fragmentName)
     end
+tbug._fragmentsWithError = fragmentsWithError
     tsort(orderFragmentsTab)
     for _, fragmentName in ipairs(orderFragmentsTab) do
         tbug.FragmentsOutput[fragmentName] = fragments[fragmentName]
